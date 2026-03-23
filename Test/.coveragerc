@@ -1,0 +1,43 @@
+"""
+测试覆盖率配置
+生成 HTML 和 XML 格式的覆盖率报告
+"""
+
+# pytest-cov 配置示例
+# 运行命令：pytest --cov=app --cov=charts --cov=models --cov-report=html --cov-report=term-missing
+
+COVERAGE_CONFIG = {
+    'run': {
+        'source': [
+            'app.py',
+            'charts.py',
+            'models.py',
+            'map_utils.py'
+        ],
+        'omit': [
+            'Test/*',
+            'conftest.py',
+            '*/venv/*',
+            '*/site-packages/*'
+        ]
+    },
+    'report': {
+        'exclude_lines': [
+            'pragma: no cover',
+            'def __repr__',
+            'raise AssertionError',
+            'raise NotImplementedError',
+            'if __name__ == .__main__.:',
+            'if TYPE_CHECKING:',
+            '@abstractmethod'
+        ]
+    }
+}
+
+# 覆盖率阈值要求
+COVERAGE_THRESHOLDS = {
+    'overall': 70,      # 整体覆盖率至少 70%
+    'app': 80,          # app.py 至少 80%
+    'charts': 60,       # charts.py 至少 60%
+    'models': 90        # models.py 至少 90%
+}

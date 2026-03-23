@@ -1,0 +1,37 @@
+# 测试依赖包
+
+# 核心测试框架
+pytest>=7.0.0
+pytest-html>=3.2.0
+pytest-cov>=4.0.0
+
+# Web 测试
+pytest-flask>=1.2.0
+
+# 浏览器自动化测试（可选）
+selenium>=4.0.0
+webdriver-manager>=3.8.0
+
+# 性能测试
+pytest-benchmark>=4.0.0
+
+# 安全测试
+bandit>=1.7.0
+
+# 数据库测试
+pytest-postgresql>=4.0.0  # 如果使用 PostgreSQL
+pytest-mysql>=2.0.0       # 如果使用 MySQL
+
+# Mock 和 Faker
+pytest-mock>=3.10.0
+faker>=15.0.0
+
+# 报告生成
+# allure-pytest>=2.13.0  # 已移除 - 与 Python 3.10+ 不兼容
+pytest-html>=3.2.0  # 使用 pytest-html 作为主要报告工具
+
+# 代码质量
+flake8>=6.0.0
+black>=23.0.0
+isort>=5.12.0
+pylint>=2.16.0

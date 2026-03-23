@@ -1,4 +1,3 @@
-import pytest
 from charts import (
     get_price_scatter,
     get_weight_line,

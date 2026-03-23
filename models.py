@@ -1,8 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
-db = SQLAlchemy()
-from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+import re
 
 db = SQLAlchemy()
 
@@ -14,6 +13,9 @@ class User(UserMixin, db.Model):
     role = db.Column(db.String(20), default='user')  # 'admin' 或 'user'
 
     def set_password(self, password):
+        # 密码强度验证
+        if len(password) < 6:
+            raise ValueError("密码长度至少 6 位")
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
@@ -21,6 +23,15 @@ class User(UserMixin, db.Model):
 
     def is_admin(self):
         return self.role == 'admin'
+    
+    @staticmethod
+    def validate_username(username):
+        """验证用户名是否合法（只允许字母、数字、下划线、中文）"""
+        if not username or len(username) < 3 or len(username) > 20:
+            return False
+        # 允许中文、字母、数字、下划线
+        pattern = r'^[\u4e00-\u9fa5a-zA-Z0-9_]+$'
+        return bool(re.match(pattern, username))
 
 
 class DogBreed(db.Model):

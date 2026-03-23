@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>测试报告 - 2026-03-23</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+        h1 { color: #333; border-bottom: 3px solid #667eea; padding-bottom: 10px; }
+        .summary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; margin-bottom: 30px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .summary-item { text-align: center; }
+        .summary-value { font-size: 2em; font-weight: bold; }
+        .summary-label { font-size: 0.9em; opacity: 0.9; }
+        .pass { color: #28a745; }
+        .fail { color: #dc3545; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        tr:nth-child(even) { background-color: #f8f9fa; }
+        tr:hover { background-color: #e9ecef; }
+        .status-pass { color: #28a745; font-weight: bold; }
+        .status-fail { color: #dc3545; font-weight: bold; }
+        .icon { font-size: 1.2em; margin-right: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 测试报告</h1>
+        
+        <div class="summary">
+            <div class="summary-item">
+                <div class="summary-value">5</div>
+                <div class="summary-label">总测试数</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-value" style="color: #28a745;">4</div>
+                <div class="summary-label">✅ 通过</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-value" style="color: #dc3545;">1</div>
+                <div class="summary-label">❌ 失败</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-value">80.0%</div>
+                <div class="summary-label">通过率</div>
+            </div>
+        </div>
+        
+        <h2>测试结果详情</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>测试项目</th>
+                    <th>状态</th>
+                    <th>错误信息</th>
+                </tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                    <td>1</td>
+                    <td>导入 app 模块</td>
+                    <td class="status-pass"><span class="icon">✅</span> PASS</td>
+                    <td>-</td>
+                </tr>
+
+                <tr>
+                    <td>2</td>
+                    <td>导入 models</td>
+                    <td class="status-pass"><span class="icon">✅</span> PASS</td>
+                    <td>-</td>
+                </tr>
+
+                <tr>
+                    <td>3</td>
+                    <td>导入 conftest</td>
+                    <td class="status-fail"><span class="icon">❌</span> FAIL</td>
+                    <td>cannot import name 'conftest' from 'Test' (D:\PycharmProjects\fastApiProject\Test\__init__.py)</td>
+                </tr>
+
+                <tr>
+                    <td>4</td>
+                    <td>数据库配置</td>
+                    <td class="status-pass"><span class="icon">✅</span> PASS</td>
+                    <td>-</td>
+                </tr>
+
+                <tr>
+                    <td>5</td>
+                    <td>测试文件检查</td>
+                    <td class="status-pass"><span class="icon">✅</span> PASS</td>
+                    <td>-</td>
+                </tr>
+
+            </tbody>
+        </table>
+        
+        <p style="margin-top: 30px; color: #666; font-size: 0.9em;">
+            报告生成时间：2026-03-23T20:29:52.889079
+        </p>
+    </div>
+</body>
+</html>

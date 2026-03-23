@@ -52,7 +52,7 @@
 # get_china_map()
 # get_bar_chart()
 #
-# 然后在 app.py 中为每个图表创建单独的路由：
+# 然后在 app_new.py 中为每个图表创建单独的路由：
 #
 # python
 # @app.route('/map/world')

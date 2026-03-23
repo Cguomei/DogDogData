@@ -1,4 +1,4 @@
-# 测试数据库模型（可选）
+# 测试数据库模型
 import pytest
 from models import User, DogBreed
 from sqlalchemy.exc import IntegrityError
