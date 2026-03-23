@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<!--    <title>Title</title>-->
+</head>
+<body>
+{% extends "base.html" %}
+
+{% block title %}狗粮数据分析 - 狗狗数据分析{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <h2 class="text-center">🍖 狗粮数据看板</h2>
+    <p class="text-center text-muted">基于狗粮销售数据的实时统计</p>
+</div>
+
+<!-- 核心指标卡片 -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card text-white bg-info mb-3">
+            <div class="card-header">狗粮品牌数</div>
+            <div class="card-body">
+                <h3 class="card-title">{{ stats.total_brands }}</h3>
+                <p class="card-text">种</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card text-white bg-success mb-3">
+            <div class="card-header">平均价格</div>
+            <div class="card-body">
+                <h3 class="card-title">¥{{ stats.avg_price }}</h3>
+                <p class="card-text">元</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 两列图表 -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">🌍 产地分布 TOP5</div>
+            <div class="card-body">
+                <canvas id="originChart" width="400" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">📊 价格区间分布</div>
+            <div class="card-body">
+                <canvas id="priceDistChart" width="400" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 数据表格 -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">📋 狗粮列表（前100条）</div>
+            <div class="card-body">
+                <table class="table table-striped" id="food-table">
+                    <thead>
+                        <tr>
+                            <th>品牌</th>
+                            <th id="price-header" style="cursor: pointer;">价格 ⬍</th>
+                            <th>产地</th>
+                        </tr>
+                    </thead>
+                    <tbody id="food-tbody">
+                        <tr><td colspan="3" class="text-center">加载中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// 绘制产地分布饼图
+const originCtx = document.getElementById('originChart').getContext('2d');
+const originData = {
+    labels: [{% for name, cnt in stats.top_origins %}'{{ name }}',{% endfor %}],
+    datasets: [{
+        data: [{% for name, cnt in stats.top_origins %}{{ cnt }},{% endfor %}],
+        backgroundColor: ['#36a2eb', '#ff6384', '#ffce56', '#4bc0c0', '#9966ff']
+    }]
+};
+new Chart(originCtx, {
+    type: 'pie',
+    data: originData
+});
+
+// 绘制价格分布柱状图
+const priceCtx = document.getElementById('priceDistChart').getContext('2d');
+const priceLabels = [{% for label, cnt in stats.price_dist %}'{{ label }}',{% endfor %}];
+const priceCounts = [{% for label, cnt in stats.price_dist %}{{ cnt }},{% endfor %}];
+new Chart(priceCtx, {
+    type: 'bar',
+    data: {
+        labels: priceLabels,
+        datasets: [{
+            label: '数量',
+            data: priceCounts,
+            backgroundColor: '#4bc0c0'
+        }]
+    },
+    options: {
+        scales: {
+            y: { beginAtZero: true }
+        }
+    }
+});
+
+// 加载狗粮列表
+let foodData = [];                 // 保存原始数据
+let priceSortOrder = 'asc';        // 当前排序方向：'asc' 升序，'desc' 降序
+
+// 加载数据
+fetch('/api/food')
+    .then(res => res.json())
+    .then(data => {
+        foodData = data;            // 保存数据
+        renderTable(foodData);       // 首次渲染
+    })
+    .catch(err => {
+        console.error('加载失败', err);
+        document.getElementById('food-tbody').innerHTML = '<tr><td colspan="3" class="text-danger">加载失败</td></tr>';
+    });
+
+// 渲染表格函数
+function renderTable(data) {
+    const tbody = document.getElementById('food-tbody');
+    if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="text-center">暂无数据</td></tr>';
+        return;
+    }
+    tbody.innerHTML = data.map(item => `
+        <tr>
+            <td>${item.name || '-'}</td>
+            <td>¥${item.price || '-'}</td>
+            <td>${item.origin || '-'}</td>
+        </tr>
+    `).join('');
+}
+
+// 排序函数
+function sortByPrice(order) {
+    const sorted = [...foodData].sort((a, b) => {
+        const priceA = parseFloat(a.price) || 0;
+        const priceB = parseFloat(b.price) || 0;
+        if (order === 'asc') return priceA - priceB;
+        else return priceB - priceA;
+    });
+    renderTable(sorted);
+}
+
+// 点击表头排序
+document.getElementById('price-header').addEventListener('click', function () {
+    // 切换排序方向
+    priceSortOrder = priceSortOrder === 'asc' ? 'desc' : 'asc';
+    // 更新表头箭头（可选）
+    this.innerHTML = priceSortOrder === 'asc' ? '价格 ⬆' : '价格 ⬇';
+    // 执行排序
+    sortByPrice(priceSortOrder);
+});
+
+</script>
+{% endblock %}
+
+
+
+</body>
+</html>

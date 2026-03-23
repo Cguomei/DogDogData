@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+
+<body>
+{% extends "base.html" %}
+
+{% block title %}数据看板 - 狗狗数据分析{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <h2 class="text-center">🐾 狗狗数据全景看板</h2>
+    <div class="text-center mb-4">
+    <span class="bg-primary text-white px-4 py-2 rounded-pill">数据最后更新: 2025-03-18</span>
+    </div>
+    <p class="text-center text-muted">基于京东狗狗销售数据的实时统计</p>
+</div>
+
+<!-- 核心指标卡片 -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary mb-3">
+            <div class="card-header">狗狗总数</div>
+            <div class="card-body">
+                <h3 class="card-title">{{ stats.total_dogs }}</h3>
+                <p class="card-text">条记录</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success mb-3">
+            <div class="card-header">平均价格</div>
+            <div class="card-body">
+                <h3 class="card-title">¥{{ stats.avg_price }}</h3>
+                <p class="card-text">所有狗狗均价</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info mb-3">
+            <div class="card-header">店铺总数</div>
+            <div class="card-body">
+                <h3 class="card-title">{{ stats.total_shops }}</h3>
+                <p class="card-text">家店铺</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning mb-3">
+            <div class="card-header">品种总数</div>
+            <div class="card-body">
+                <h3 class="card-title">{{ stats.total_breeds }}</h3>
+                <p class="card-text">种狗狗</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 两列布局：左侧 TOP5，右侧等级比例 -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">🔥 热门狗狗品种 TOP5</div>
+            <ul class="list-group list-group-flush">
+                {% if stats.top_breeds %}
+                    {% for name, count in stats.top_breeds %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ name }}
+                        <span class="badge bg-primary rounded-pill">{{ count }}</span>
+                    </li>
+                    {% endfor %}
+                {% else %}
+                    <li class="list-group-item">暂无数据</li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">🏆 热门店铺 TOP5</div>
+            <ul class="list-group list-group-flush">
+                {% if stats.top_shops %}
+                    {% for name, count in stats.top_shops %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ name }}
+                        <span class="badge bg-success rounded-pill">{{ count }}</span>
+                    </li>
+                    {% endfor %}
+                {% else %}
+                    <li class="list-group-item">暂无数据</li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- 价格分布与等级比例 -->
+<div class="row">
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header">📊 价格区间分布</div>
+            <div class="card-body">
+                {% if stats.price_dist %}
+                    {% for label, count in stats.price_dist %}
+                    <div class="mb-2">
+                        <span>{{ label }}：{{ count }} 条</span>
+                        <div class="progress">
+                            {% set percent = (count / stats.total_dogs * 100) if stats.total_dogs > 0 else 0 %}
+                            <div class="progress-bar" role="progressbar" style="width: {{ percent }}%;" aria-valuenow="{{ percent }}" aria-valuemin="0" aria-valuemax="100">{{ percent|round(1) }}%</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">暂无价格分布数据</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header">🥇 等级比例</div>
+            <div class="card-body">
+                {% set total_level = stats.level_pet + stats.level_blood %}
+                {% if total_level > 0 %}
+                <canvas id="levelChart" width="400" height="200"></canvas>
+                <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+                <script>
+                    const ctx = document.getElementById('levelChart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: ['宠物级', '血统级'],
+                            datasets: [{
+                                data: [{{ stats.level_pet }}, {{ stats.level_blood }}],
+                                backgroundColor: ['#36a2eb', '#ff6384']
+                            }]
+                        }
+                    });
+                </script>
+                {% else %}
+                <p class="text-muted">暂无等级数据</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 看板中添加一个“热门狗狗品种”表格 -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">📋 狗狗品种库（动态加载）</div>
+            <div class="card-body">
+                <table class="table" id="breed-table">
+                    <thead>
+                        <tr>
+                            <th>品种名</th>
+                            <th>平均寿命(年)</th>
+                            <th>体型</th>
+                            <th>人气值</th>
+                        </tr>
+                    </thead>
+                    <tbody id="breed-tbody">
+                        <tr><td colspan="4" class="text-center">加载中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+fetch('/api/breeds')
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        // ========== 1. 填充表格 ==========
+        const tbody = document.getElementById('breed-tbody');
+        if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center">暂无数据</td></tr>';
+        } else {
+            tbody.innerHTML = data.map(b => `
+                <tr>
+                    <td>${b.breed_name}</td>
+                    <td>${b.avg_life_years ?? '-'}</td>
+                    <td>${b.size_category ?? '-'}</td>
+                    <td>${b.popularity}</td>
+                </tr>
+            `).join('');
+        }
+
+        // ========== 2. 初始化 DataTables ==========
+        const tableId = '#breed-table';
+        if (!$.fn.DataTable.isDataTable(tableId)) {
+            $(tableId).DataTable({
+<!--                language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/zh-CN.json' },-->
+                language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/zh-CN.json' },// 强制 HTTPS
+                pageLength: 5,
+                order: [[3, 'desc']],
+                responsive: true
+            });
+        }
+
+        // ========== 3. 绘制 ECharts 图表 ==========
+        // 柱状图（品种人气）
+        const popularityChart = echarts.init(document.getElementById('popularityChart'));
+        const breedNames = data.map(b => b.breed_name);
+        const popularities = data.map(b => b.popularity);
+        popularityChart.setOption({
+            title: { text: '品种人气值', left: 'center' },
+            tooltip: { trigger: 'axis' },
+            xAxis: { type: 'category', data: breedNames, axisLabel: { rotate: 30 } },
+            yAxis: { type: 'value' },
+            series: [{
+                name: '人气',
+                type: 'bar',
+                data: popularities,
+                itemStyle: { color: '#36a2eb' }
+            }]
+        });
+
+        // 饼图（体型分布）
+        const sizeChart = echarts.init(document.getElementById('sizeChart'));
+        const sizeCount = {};
+        data.forEach(b => {
+            const size = b.size_category || '未知';
+            sizeCount[size] = (sizeCount[size] || 0) + 1;
+        });
+        const pieData = Object.entries(sizeCount).map(([name, value]) => ({ name, value }));
+        sizeChart.setOption({
+            title: { text: '体型分布', left: 'center' },
+            tooltip: { trigger: 'item' },
+            series: [{
+                type: 'pie',
+                radius: '50%',
+                data: pieData
+            }]
+        });
+
+        // 隐藏加载动画
+        document.getElementById('loading-spinner').style.display = 'none';
+    })
+    .catch(error => {
+        console.error('数据加载失败:', error);
+        document.getElementById('breed-tbody').innerHTML = '<tr><td colspan="4" class="text-center text-danger">加载失败，请稍后重试</td></tr>';
+        document.getElementById('loading-spinner').style.display = 'none';
+    });
+</script>
+
+<!-- 图表区域 -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">📊 品种人气柱状图</div>
+            <div class="card-body">
+                <div id="popularityChart" style="width: 100%; height: 300px;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">🥧 体型分布饼图</div>
+            <div class="card-body">
+                <div id="sizeChart" style="width: 100%; height: 300px;"></div>
+            </div>
+        </div>
+    </div>
+    <!--在表格和图表容器内先放置加载动画，数据到达后隐藏-->
+    <div class="text-center" id="loading-spinner" style="display: none;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">加载中...</span>
+        </div>
+    </div>
+</div>
+
+<!--ECharts 默认会随着容器大小变化而自动 resize，希望窗口改变时图表也能自适应，可以添加一个监听-->
+<script>
+window.addEventListener('resize', () => {
+    const charts = ['popularityChart', 'sizeChart'];
+    charts.forEach(id => {
+        const chart = echarts.getInstanceByDom(document.getElementById(id));
+        chart?.resize();
+    });
+});
+</script>
+
+<!-- 快速跳转链接 -->
+<div class="row mt-4">
+    <div class="col text-center">
+        <a href="/chart/scatter" class="btn btn-outline-primary m-1">价格散点图</a>
+        <a href="/chart/line" class="btn btn-outline-success m-1">体重折线图</a>
+        <a href="/chart/bar" class="btn btn-outline-info m-1">级别柱状图</a>
+        <a href="/chart/hist" class="btn btn-outline-warning m-1">TOP10直方图</a>
+        <a href="/chart/funnel" class="btn btn-outline-danger m-1">价格漏斗图</a>
+        <a href="/chart/map" class="btn btn-outline-secondary m-1">世界地图</a>
+    </div>
+</div>
+{% endblock %}
+
+
+</body>
+</html>

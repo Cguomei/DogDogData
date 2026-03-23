@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}品种管理 - 狗狗数据分析{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <h2 class="text-center">📋 品种数据管理</h2>
+    <p class="text-center text-muted">在这里可以增、删、改、查狗狗品种</p>
+</div>
+
+<!-- 新增品种表单（模态框） -->
+<button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addModal">
+    ➕ 新增品种
+</button>
+
+<!-- 品种列表表格 -->
+<table class="table table-striped" id="breed-admin-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>品种名</th>
+            <th>平均寿命(年)</th>
+            <th>体型</th>
+            <th>人气值</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody id="admin-breed-tbody">
+        <tr><td colspan="6" class="text-center">加载中...</td></tr>
+    </tbody>
+</table>
+
+<!-- 新增品种模态框 -->
+<div class="modal fade" id="addModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">新增品种</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addForm">
+                    <div class="mb-3">
+                        <label for="breed_name" class="form-label">品种名</label>
+                        <input type="text" class="form-control" id="breed_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="avg_life_years" class="form-label">平均寿命(年)</label>
+                        <input type="number" step="0.1" class="form-control" id="avg_life_years">
+                    </div>
+                    <div class="mb-3">
+                        <label for="size_category" class="form-label">体型</label>
+                        <select class="form-control" id="size_category">
+                            <option value="">-- 请选择 --</option>
+                            <option value="小型">小型</option>
+                            <option value="中型">中型</option>
+                            <option value="大型">大型</option>
+                            <option value="超大型">超大型</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="popularity" class="form-label">人气值</label>
+                        <input type="number" class="form-control" id="popularity" value="0">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="saveAddBtn">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑品种模态框（结构类似，但用 data-id 记录当前编辑的ID） -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">编辑品种</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <input type="hidden" id="edit_id">
+                    <div class="mb-3">
+                        <label for="edit_breed_name" class="form-label">品种名</label>
+                        <input type="text" class="form-control" id="edit_breed_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_avg_life_years" class="form-label">平均寿命(年)</label>
+                        <input type="number" step="0.1" class="form-control" id="edit_avg_life_years">
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_size_category" class="form-label">体型</label>
+                        <select class="form-control" id="edit_size_category">
+                            <option value="">-- 请选择 --</option>
+                            <option value="小型">小型</option>
+                            <option value="中型">中型</option>
+                            <option value="大型">大型</option>
+                            <option value="超大型">超大型</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_popularity" class="form-label">人气值</label>
+                        <input type="number" class="form-control" id="edit_popularity">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="saveEditBtn">保存修改</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 加载数据并渲染表格
+function loadBreeds() {
+    fetch('/api/breeds')
+        .then(res => res.json())
+        .then(data => {
+            const tbody = document.getElementById('admin-breed-tbody');
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">暂无数据</td></tr>';
+            } else {
+                tbody.innerHTML = data.map(b => `
+                    <tr>
+                        <td>${b.id}</td>
+                        <td>${b.breed_name}</td>
+                        <td>${b.avg_life_years ?? '-'}</td>
+                        <td>${b.size_category ?? '-'}</td>
+                        <td>${b.popularity}</td>
+                        <td>
+                            <button class="btn btn-sm btn-warning" onclick="editBreed(${b.id})">编辑</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteBreed(${b.id})">删除</button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        });
+}
+
+// 新增品种
+document.getElementById('saveAddBtn').addEventListener('click', () => {
+    const data = {
+        breed_name: document.getElementById('breed_name').value,
+        avg_life_years: document.getElementById('avg_life_years').value || null,
+        size_category: document.getElementById('size_category').value || null,
+        popularity: parseInt(document.getElementById('popularity').value) || 0
+    };
+    fetch('/api/breeds', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    .then(res => res.json())
+    .then(res => {
+        if (res.id) {
+            $('#addModal').modal('hide');
+            loadBreeds();  // 重新加载表格
+            // 清空表单
+            document.getElementById('addForm').reset();
+        } else {
+            alert('添加失败');
+        }
+    });
+});
+
+// 删除品种（需要后端实现 DELETE 接口）
+function deleteBreed(id) {
+    if (!confirm('确定要删除该品种吗？')) return;
+    fetch(`/api/breeds/${id}`, { method: 'DELETE' })
+        .then(res => res.json())
+        .then(res => {
+            if (res.message) loadBreeds();
+            else alert('删除失败');
+        });
+}
+
+// 编辑：打开模态框并加载数据
+function editBreed(id) {
+    // 先获取当前数据（可从已有表格获取，也可重新请求）
+    fetch(`/api/breeds/${id}`)
+        .then(res => res.json())
+        .then(b => {
+            document.getElementById('edit_id').value = b.id;
+            document.getElementById('edit_breed_name').value = b.breed_name;
+            document.getElementById('edit_avg_life_years').value = b.avg_life_years || '';
+            document.getElementById('edit_size_category').value = b.size_category || '';
+            document.getElementById('edit_popularity').value = b.popularity;
+            $('#editModal').modal('show');
+        });
+}
+
+// 保存编辑
+document.getElementById('saveEditBtn').addEventListener('click', () => {
+    const id = document.getElementById('edit_id').value;
+    const data = {
+        breed_name: document.getElementById('edit_breed_name').value,
+        avg_life_years: document.getElementById('edit_avg_life_years').value || null,
+        size_category: document.getElementById('edit_size_category').value || null,
+        popularity: parseInt(document.getElementById('edit_popularity').value) || 0
+    };
+    fetch(`/api/breeds/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    .then(res => res.json())
+    .then(res => {
+        if (res.message) {
+            $('#editModal').modal('hide');
+            loadBreeds();
+        } else {
+            alert('修改失败');
+        }
+    });
+});
+
+// 页面加载时首次加载数据
+loadBreeds();
+</script>
+{% endblock %}

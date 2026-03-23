@@ -1,0 +1,54 @@
+/* static/css/style.css */
+body {
+    padding-top: 60px;
+    background-color: #f8f9fa;
+}
+
+.navbar-brand {
+    font-weight: bold;
+}
+
+.chart-container {
+    margin: 20px auto;
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+footer {
+    margin-top: 40px;
+    text-align: center;
+    color: #6c757d;
+}
+
+/* 卡片样式 */
+.card {
+    margin-bottom: 1.5rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+/* 表格样式 */
+#breed-table td, #breed-table th {
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+#breed-table td:first-child, #breed-table th:first-child {
+    min-width: 120px;
+}
+
+/* 其他自定义样式... */
