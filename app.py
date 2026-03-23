@@ -100,6 +100,12 @@ def register_routes(app):
         stats = get_dashboard_stats_from_summary()
         return render_template('index.html', stats=stats)
     
+    # ===== 图表列表页面 =====
+    @app.route('/charts')
+    def charts_list():
+        """图表列表页面"""
+        return render_template('charts_list.html')
+    
     # ===== 品种管理页面 =====
     @app.route('/admin/breeds')
     @login_required
@@ -379,6 +385,14 @@ def register_routes(app):
         except Exception as e:
             db.session.rollback()
             return jsonify({"error": f"删除失败：{str(e)}"}), 500
+    
+    # ===== 狗粮数据 API =====
+    @app.route('/api/food')
+    def get_food():
+        """获取狗粮列表数据"""
+        from charts import get_dog_food_list
+        food_list = get_dog_food_list()
+        return jsonify(food_list)
 
 
 def start_scheduler(app):

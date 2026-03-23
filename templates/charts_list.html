@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}图表列表{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">📊 图表列表</h1>
+    
+    <div class="row g-4">
+        <!-- 价格散点图 -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="bi bi-scatter-chart" style="font-size: 3rem; color: #667eea;"></i>
+                    <h5 class="card-title mt-3">价格散点图</h5>
+                    <p class="card-text">展示狗狗价格分布情况</p>
+                    <a href="/chart/scatter" class="btn btn-primary">查看图表</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 体重折线图 -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="bi bi-graph-up" style="font-size: 3rem; color: #43e97b;"></i>
+                    <h5 class="card-title mt-3">体重折线图</h5>
+                    <p class="card-text">展示狗狗体重变化趋势</p>
+                    <a href="/chart/line" class="btn btn-success">查看图表</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 级别柱状图 -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="bi bi-bar-chart-fill" style="font-size: 3rem; color: #fa709a;"></i>
+                    <h5 class="card-title mt-3">级别柱状图</h5>
+                    <p class="card-text">展示狗狗级别分布</p>
+                    <a href="/chart/bar" class="btn btn-danger">查看图表</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 直方图 -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="bi bi-bar-chart-line" style="font-size: 3rem; color: #fee140;"></i>
+                    <h5 class="card-title mt-3">狗狗 + 店铺 TOP10</h5>
+                    <p class="card-text">展示热门品种和店铺</p>
+                    <a href="/chart/hist" class="btn btn-warning">查看图表</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 漏斗图 -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="bi bi-funnel" style="font-size: 3rem; color: #4facfe;"></i>
+                    <h5 class="card-title mt-3">价格段漏斗图</h5>
+                    <p class="card-text">展示不同价格段的狗狗数量</p>
+                    <a href="/chart/funnel" class="btn btn-info">查看图表</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 世界地图 -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="bi bi-globe" style="font-size: 3rem; color: #38f9d7;"></i>
+                    <h5 class="card-title mt-3">狗狗家乡分布</h5>
+                    <p class="card-text">展示狗狗产地分布</p>
+                    <a href="/chart/map" class="btn btn-success">查看图表</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

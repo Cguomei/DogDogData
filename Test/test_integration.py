@@ -4,7 +4,7 @@
 """
 import pytest
 from time import sleep
-from bug_tracker import report_bug
+from Test.bug_tracker import report_bug
 
 
 class TestUserRegistrationFlow:

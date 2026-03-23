@@ -246,46 +246,53 @@ def get_weight_line():
     return c.render_embed()
 
 
-# ==================== 3. 级别柱状图 ====================
+# ==================== 3. 级别柱状图（体型分布分析）====================
 def get_level_bar():
-    """级别柱状图（宠物级 vs 血统级）"""
+    """体型分布分析图（小型/中型/大型）"""
     n_list = []
     n_list1 = []
     n_list2 = []
+    n_list3 = []
     try:
         con = pymysql.connect(**DB_CONFIG)
         cur = con.cursor()
         sql = """
             select dog_name, 
-                   count(case when pet_level='宠物级' then 1 end) as 宠物级,
-                   count(case when pet_level='血统级' then 1 end) as 血统级
+                   count(case when size='小型犬' then 1 end) as small,
+                   count(case when size='中型犬' then 1 end) as medium,
+                   count(case when size='大型犬' then 1 end) as large
             from jd_dogs 
+            WHERE size IS NOT NULL AND size != ''
             GROUP BY dog_name 
-            ORDER BY count(*) DESC;
+            ORDER BY count(*) DESC
+            LIMIT 20;
         """
         cur.execute(sql)
         name = cur.fetchall()
         for n in name:
             n_list.append(n[0])
-            n_list1.append(n[1])
-            n_list2.append(n[2])
+            n_list1.append(n[1] if n[1] else 0)  # 小型犬
+            n_list2.append(n[2] if n[2] else 0)  # 中型犬
+            n_list3.append(n[3] if n[3] else 0)  # 大型犬
         con.close()
     except Exception as e:
-        print("级别柱状图数据库查询出错：", e)
-        return "<p>级别柱状图数据加载失败</p>"
+        print("体型分布图数据库查询出错：", e)
+        return "<p>体型分布图数据加载失败</p>"
 
     bar = (
         Bar(init_opts=opts.InitOpts(width="100%", height="500px", theme=ThemeType.LIGHT))
         .add_xaxis(n_list)
-        .add_yaxis("宠物级", n_list1)
-        .add_yaxis("血统级", n_list2)
+        .add_yaxis("小型犬", n_list1, stack="stack")
+        .add_yaxis("中型犬", n_list2, stack="stack")
+        .add_yaxis("大型犬", n_list3, stack="stack")
         .set_global_opts(
             xaxis_opts=opts.AxisOpts(
                 type_="category",
                 axispointer_opts=opts.AxisPointerOpts(is_show=True, type_="shadow"),
                 axislabel_opts=opts.LabelOpts(rotate=-45)
             ),
-            title_opts=opts.TitleOpts(title="血统占比")
+            title_opts=opts.TitleOpts(title="🐕 体型分布分析 - TOP20 犬种"),
+            legend_opts=opts.LegendOpts(pos_top="10%")
         )
     )
     return bar.render_embed()
@@ -357,27 +364,27 @@ def get_shop_top10_hist():
 
 # ==================== 5. 价格段漏斗图 ====================
 def get_price_funnel():
-    """价格段漏斗图"""
+    """价格段漏斗图 - ECharts 官方风格"""
     n_list = []
     try:
         con = pymysql.connect(**DB_CONFIG)
         cur = con.cursor()
         sql = """
-            SELECT price, count(*) AS number 
+            SELECT price_range, count(*) AS number 
             FROM
                 (select case when 0 < price and price <= 2500 then '0-2.5k'
                              when 2500 < price and price <= 5000 then '2.5k-5k'
                              when 5000 < price and price <= 7500 then '5k-7.5k'
                              when 7500 < price and price <= 10000 then '7.5k-1w'
                              when 10000 < price and price <= 20000 then '1w-2w'
-                             when price > 20000 then '2w以上'
-                        else '000'
-                        end as price
+                             when price > 20000 then '2w 以上'
+                        else '其他'
+                        end as price_range
                 FROM jd_dogs
-                WHERE 1
+                WHERE price IS NOT NULL AND price > 0
                 ) AS price_summaries
-            GROUP BY price
-            ORDER BY price;
+            GROUP BY price_range
+            ORDER BY FIELD(price_range, '0-2.5k', '2.5k-5k', '5k-7.5k', '7.5k-1w', '1w-2w', '2w 以上');
         """
         cur.execute(sql)
         name = cur.fetchall()
@@ -389,16 +396,55 @@ def get_price_funnel():
         return "<p>价格段漏斗图数据加载失败</p>"
 
     c = (
-        Funnel(init_opts=opts.InitOpts(theme=ThemeType.LIGHT, width="100%", height="600px"))
+        Funnel(init_opts=opts.InitOpts(
+            width="100%",
+            height="600px",
+            bg_color="#f5f5f5"
+        ))
         .add(
-            "价格段",
+            "狗狗数量",
             n_list,
-            sort_="ascending",
-            label_opts=opts.LabelOpts(position="inside"),
+            sort_="descending",
+            gap=2,
+            label_opts=opts.LabelOpts(
+                is_show=True,
+                position="inside",
+                formatter="{b}: {c}",
+                font_size=12,
+                color="#fff",
+                font_weight="bold"
+            ),
+            itemstyle_opts=opts.ItemStyleOpts(
+                border_width=1,
+                border_color="#fff"
+            )
         )
         .set_global_opts(
-            title_opts=opts.TitleOpts(title="宠物狗价格分布", pos_left='center', pos_top='10'),
-            legend_opts=opts.LegendOpts(pos_top='20%')
+            title_opts=opts.TitleOpts(
+                title="🐶 狗狗价格段漏斗图",
+                subtitle="从低价到高价的价格分布展示",
+                pos_left="center",
+                title_textstyle_opts=opts.TextStyleOpts(
+                    font_size=18,
+                    font_weight="bold",
+                    color="#333"
+                ),
+                subtitle_textstyle_opts=opts.TextStyleOpts(
+                    font_size=12,
+                    color="#666"
+                )
+            ),
+            tooltip_opts=opts.TooltipOpts(
+                is_show=True,
+                trigger="item",
+                formatter="{b}: {c}只 ({d}%)",
+                background_color="rgba(255, 255, 255, 0.9)",
+                border_color="#667eea",
+                border_width=1
+            ),
+            legend_opts=opts.LegendOpts(
+                is_show=False
+            )
         )
     )
     return c.render_embed()
@@ -474,11 +520,11 @@ def get_dog_food_stats():
 
         # 价格区间分布（自定义区间）
         price_ranges = [
-            (0, 50, '0-50元'),
-            (50, 100, '50-100元'),
-            (100, 200, '100-200元'),
-            (200, 500, '200-500元'),
-            (500, 10000, '500元以上')
+            (0, 50, '0-50 元'),
+            (50, 100, '50-100 元'),
+            (100, 200, '100-200 元'),
+            (200, 500, '200-500 元'),
+            (500, 10000, '500 元以上')
         ]
         price_dist = []
         for low, high, label in price_ranges:
@@ -500,6 +546,34 @@ def get_dog_food_stats():
             'price_dist': []
         }
     return stats
+
+
+def get_dog_food_list(limit=100):
+    """获取狗粮列表数据（用于前端表格展示）"""
+    food_list = []
+    try:
+        con = pymysql.connect(**DB_CONFIG)
+        cur = con.cursor()
+        sql = f"""
+            SELECT food_name, price, origin 
+            FROM dog_wykl 
+            WHERE food_name IS NOT NULL AND food_name != ''
+            ORDER BY food_id
+            LIMIT {limit}
+        """
+        cur.execute(sql)
+        rows = cur.fetchall()
+        for row in rows:
+            food_list.append({
+                'name': row[0] if row[0] else '-',
+                'price': float(row[1]) if row[1] and str(row[1]).replace('.', '', 1).isdigit() else '-',
+                'origin': row[2] if row[2] else '-'
+            })
+        con.close()
+    except Exception as e:
+        print("获取狗粮列表出错：", e)
+        food_list = []
+    return food_list
 
 # =====  执行所有原始统计查询，并将结果插入/更新到汇总表。========
 def update_dashboard_summary():

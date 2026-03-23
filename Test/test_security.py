@@ -4,7 +4,7 @@
 """
 import pytest
 import re
-from bug_tracker import report_bug
+from Test.bug_tracker import report_bug
 
 
 class TestSQLInjection:

@@ -5,7 +5,7 @@
 import pytest
 import time
 from statistics import mean, median, stdev
-from bug_tracker import report_bug
+from Test.bug_tracker import report_bug
 
 
 class PerformanceTester:
