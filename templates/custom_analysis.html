@@ -1,0 +1,414 @@
+{% extends "base.html" %}
+
+{% block title %}自定义数据分析 - 狗狗数据分析{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- 页面标题 -->
+    <div class="row mb-5">
+        <div class="col-lg-8 mx-auto text-center">
+            <h1 class="display-4 fw-bold mb-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                <i class="bi bi-sliders"></i> 自定义数据分析
+            </h1>
+            <p class="lead text-muted">上传您的数据文件，选择图表类型，一键生成专业可视化图表</p>
+        </div>
+    </div>
+
+    <!-- 步骤 1: 上传数据 -->
+    <div class="row mb-4">
+        <div class="col-lg-8 mx-auto">
+            <div class="card border-0" style="border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08);">
+                <div class="card-header py-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; font-weight: 600;">
+                    <i class="bi bi-cloud-upload"></i> 步骤 1: 上传数据文件
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-3">
+                        <label for="dataFile" class="form-label fw-bold">选择文件</label>
+                        <input type="file" class="form-control form-control-lg" id="dataFile" accept=".csv,.xlsx,.xls">
+                        <div class="form-text">支持 CSV、Excel 文件格式 (最大 10MB)</div>
+                    </div>
+                    
+                    <div id="uploadProgress" class="collapse">
+                        <div class="progress mb-3" style="height: 25px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 role="progressbar" style="width: 100%; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);">
+                                正在解析数据...
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="fileInfo" class="collapse mt-3">
+                        <div class="alert alert-success d-flex align-items-center">
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                            <div>
+                                <strong>文件解析成功!</strong>
+                                <span id="fileDetails"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary btn-lg" onclick="uploadFile()" id="uploadBtn" disabled>
+                            <i class="bi bi-upload"></i> 上传并解析数据
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 步骤 2: 配置图表 -->
+    <div class="row mb-4" id="chartConfigSection" style="display: none;">
+        <div class="col-lg-8 mx-auto">
+            <div class="card border-0" style="border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08);">
+                <div class="card-header py-3" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; border: none; font-weight: 600;">
+                    <i class="bi bi-pie-chart"></i> 步骤 2: 配置图表
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="chartType" class="form-label fw-bold">图表类型</label>
+                            <select class="form-select form-select-lg" id="chartType">
+                                <option value="bar">柱状图</option>
+                                <option value="line">折线图</option>
+                                <option value="scatter">散点图</option>
+                                <option value="pie">饼图</option>
+                                <option value="area">面积图</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="chartTitle" class="form-label fw-bold">图表标题</label>
+                            <input type="text" class="form-control form-control-lg" id="chartTitle" placeholder="请输入图表标题">
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="xColumn" class="form-label fw-bold">X 轴数据列</label>
+                            <select class="form-select form-select-lg" id="xColumn"></select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="yColumn" class="form-label fw-bold">Y 轴数据列</label>
+                            <select class="form-select form-select-lg" id="yColumn"></select>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button class="btn btn-success btn-lg" onclick="generateChart()">
+                            <i class="bi bi-magic"></i> 生成图表
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 步骤 3: 显示图表 -->
+    <div class="row mb-4" id="chartDisplaySection" style="display: none;">
+        <div class="col-12">
+            <div class="card border-0" style="border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08);">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; font-weight: 600;">
+                    <span><i class="bi bi-graph-up"></i> <span id="resultChartTitle">分析结果</span></span>
+                    <button class="btn btn-sm btn-light" onclick="downloadChart()">
+                        <i class="bi bi-download"></i> 下载图表
+                    </button>
+                </div>
+                <div class="card-body p-4">
+                    <div id="resultChart" style="width: 100%; height: 500px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据预览 -->
+    <div class="row mb-4" id="dataPreviewSection" style="display: none;">
+        <div class="col-12">
+            <div class="card border-0" style="border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08);">
+                <div class="card-header py-3" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; border: none; font-weight: 600;">
+                    <i class="bi bi-table"></i> 数据预览 (前 10 行)
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="previewTable">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let uploadedData = null;
+let columns = [];
+
+// 监听文件选择
+document.getElementById('dataFile').addEventListener('change', function() {
+    const file = this.files[0];
+    if (file) {
+        document.getElementById('uploadBtn').disabled = false;
+    } else {
+        document.getElementById('uploadBtn').disabled = true;
+    }
+});
+
+// 上传文件
+async function uploadFile() {
+    const fileInput = document.getElementById('dataFile');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        alert('请先选择文件');
+        return;
+    }
+    
+    // 显示进度条
+    document.getElementById('uploadProgress').classList.add('collapse');
+    document.getElementById('uploadProgress').classList.remove('collapse');
+    document.getElementById('uploadBtn').disabled = true;
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+        const response = await fetch('/api/upload-data', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            uploadedData = result.data;
+            columns = result.columns;
+            
+            // 显示文件信息
+            document.getElementById('fileDetails').textContent = 
+                `共 ${result.row_count} 行数据，${columns.length} 个字段`;
+            document.getElementById('fileInfo').classList.remove('collapse');
+            
+            // 填充列选择器
+            populateColumnSelects(columns);
+            
+            // 显示配置区域
+            document.getElementById('chartConfigSection').style.display = 'block';
+            
+            // 显示数据预览
+            showDataPreview(result.data, columns);
+            document.getElementById('dataPreviewSection').style.display = 'block';
+            
+            // 隐藏进度条
+            setTimeout(() => {
+                document.getElementById('uploadProgress').classList.add('collapse');
+            }, 500);
+            
+        } else {
+            alert('上传失败：' + result.error);
+            document.getElementById('uploadProgress').classList.add('collapse');
+            document.getElementById('uploadBtn').disabled = false;
+        }
+    } catch (error) {
+        alert('上传出错：' + error.message);
+        document.getElementById('uploadProgress').classList.add('collapse');
+        document.getElementById('uploadBtn').disabled = false;
+    }
+}
+
+// 填充列选择器
+function populateColumnSelects(cols) {
+    const xSelect = document.getElementById('xColumn');
+    const ySelect = document.getElementById('yColumn');
+    
+    xSelect.innerHTML = '';
+    ySelect.innerHTML = '';
+    
+    cols.forEach(col => {
+        xSelect.add(new Option(col, col));
+        ySelect.add(new Option(col, col));
+    });
+}
+
+// 显示数据预览
+function showDataPreview(data, cols) {
+    const table = document.getElementById('previewTable');
+    const thead = table.querySelector('thead');
+    const tbody = table.querySelector('tbody');
+    
+    // 表头
+    let headerHtml = '<tr>';
+    cols.forEach(col => {
+        headerHtml += `<th>${col}</th>`;
+    });
+    headerHtml += '</tr>';
+    thead.innerHTML = headerHtml;
+    
+    // 表体
+    let bodyHtml = '';
+    data.slice(0, 10).forEach(row => {
+        bodyHtml += '<tr>';
+        cols.forEach(col => {
+            bodyHtml += `<td>${row[col] !== undefined ? row[col] : ''}</td>`;
+        });
+        bodyHtml += '</tr>';
+    });
+    tbody.innerHTML = bodyHtml;
+}
+
+// 生成图表
+async function generateChart() {
+    const chartType = document.getElementById('chartType').value;
+    const xColumn = document.getElementById('xColumn').value;
+    const yColumn = document.getElementById('yColumn').value;
+    const title = document.getElementById('chartTitle').value || '自定义图表';
+    
+    if (!uploadedData) {
+        alert('请先上传数据');
+        return;
+    }
+    
+    // 准备数据
+    const xData = uploadedData.map(row => row[xColumn]);
+    const yData = uploadedData.map(row => parseFloat(row[yColumn]) || 0);
+    
+    // 渲染图表
+    renderChart(chartType, xData, yData, title, xColumn, yColumn);
+    
+    // 显示图表区域
+    document.getElementById('chartDisplaySection').style.display = 'block';
+    document.getElementById('resultChartTitle').textContent = title;
+    
+    // 滚动到图表位置
+    document.getElementById('chartDisplaySection').scrollIntoView({ behavior: 'smooth' });
+}
+
+// 渲染图表
+function renderChart(type, xData, yData, title, xLabel, yLabel) {
+    const chart = echarts.init(document.getElementById('resultChart'));
+    
+    // 创建渐变色
+    const gradientColor = new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+        { offset: 0, color: '#667eea' },
+        { offset: 1, color: '#764ba2' }
+    ]);
+    
+    const option = {
+        title: {
+            text: title,
+            left: 'center',
+            textStyle: {
+                fontSize: 20,
+                fontWeight: 'bold',
+                color: '#667eea'
+            }
+        },
+        tooltip: {
+            trigger: type === 'pie' ? 'item' : 'axis',
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            borderColor: '#667eea',
+            borderWidth: 2,
+            textStyle: { color: '#333' }
+        },
+        toolbox: {
+            feature: {
+                saveAsImage: { show: true, title: '保存为图片' },
+                dataView: { show: true, title: '数据视图' },
+                restore: { show: true, title: '还原' }
+            },
+            right: '10%'
+        },
+        grid: {
+            left: '3%',
+            right: '4%',
+            bottom: '10%',
+            top: '15%',
+            containLabel: true
+        }
+    };
+    
+    // 根据图表类型配置不同选项
+    if (type === 'bar') {
+        option.xAxis = {
+            type: 'category',
+            data: xData,
+            name: xLabel,
+            axisLabel: { rotate: 45 }
+        };
+        option.yAxis = {
+            type: 'value',
+            name: yLabel
+        };
+        option.series = [{
+            type: 'bar',
+            data: yData,
+            itemStyle: { color: gradientColor, borderRadius: [8, 8, 0, 0] },
+            label: { show: true, position: 'top' }
+        }];
+    } else if (type === 'line') {
+        option.xAxis = {
+            type: 'category',
+            data: xData,
+            name: xLabel,
+            axisLabel: { rotate: 45 }
+        };
+        option.yAxis = {
+            type: 'value',
+            name: yLabel
+        };
+        option.series = [{
+            type: 'line',
+            data: yData,
+            smooth: true,
+            areaStyle: {
+                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                    { offset: 0, color: 'rgba(102, 126, 234, 0.5)' },
+                    { offset: 1, color: 'rgba(102, 126, 234, 0.1)' }
+                ])
+            },
+            itemStyle: { color: '#667eea' }
+        }];
+    } else if (type === 'scatter') {
+        option.xAxis = {
+            type: 'value',
+            name: xLabel
+        };
+        option.yAxis = {
+            type: 'value',
+            name: yLabel
+        };
+        option.series = [{
+            type: 'scatter',
+            data: xData.map((x, i) => [x, yData[i]]),
+            itemStyle: { color: gradientColor },
+            symbolSize: 10
+        }];
+    } else if (type === 'pie') {
+        option.series = [{
+            type: 'pie',
+            radius: ['40%', '70%'],
+            data: xData.map((x, i) => ({ name: x, value: yData[i] })),
+            label: { formatter: '{b}\\n{d}%' }
+        }];
+    }
+    
+    chart.setOption(option);
+    
+    // 响应窗口大小变化
+    window.addEventListener('resize', () => {
+        chart.resize();
+    });
+}
+
+// 下载图表
+function downloadChart() {
+    const canvas = document.querySelector('#resultChart canvas');
+    if (canvas) {
+        const link = document.createElement('a');
+        link.download = '自定义图表.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    }
+}
+</script>
+{% endblock %}

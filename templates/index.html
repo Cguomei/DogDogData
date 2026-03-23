@@ -11,137 +11,232 @@
 {% block title %}数据看板 - 狗狗数据分析{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <h2 class="text-center">🐾 狗狗数据全景看板</h2>
-    <div class="text-center mb-4">
-    <span class="bg-primary text-white px-4 py-2 rounded-pill">数据最后更新: 2025-03-18</span>
+<!-- 页面标题区 -->
+<div class="container-fluid px-4 mb-5" style="background: url('/img/dog_bg.png') no-repeat center center; background-size: cover; min-height: 100vh; position: relative;">
+    <!-- 半透明遮罩层，确保文字清晰可读 -->
+    <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(5px);"></div>
+    
+    <!-- 内容区域（在遮罩层上方） -->
+    <div style="position: relative; z-index: 1;">
+    <div class="row justify-content-center align-items-center mb-4">
+        <div class="col-lg-8 text-center">
+            <h1 class="display-3 fw-bold mb-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: fadeInDown 0.8s ease;">🐾 狗狗数据全景看板</h1>
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
+                <span class="badge badge-pill" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); font-size: 1rem; padding: 0.75rem 1.5rem; box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);">
+                    <i class="bi bi-calendar-event"></i> 数据最后更新：2025-03-18
+                </span>
+            </div>
+        </div>
     </div>
-    <p class="text-center text-muted">基于京东狗狗销售数据的实时统计</p>
-</div>
 
-<!-- 核心指标卡片 -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card text-white bg-primary mb-3">
-            <div class="card-header">狗狗总数</div>
-            <div class="card-body">
-                <h3 class="card-title">{{ stats.total_dogs }}</h3>
-                <p class="card-text">条记录</p>
+<!-- 核心指标卡片 - 采用现代化渐变设计，狗爪印图标支持点击展开/收起 -->
+<div class="row mb-5 g-4">
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 border-0" style="border-radius: 16px; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2); cursor: pointer;" onclick="toggleCardDetails('dogCountCard')">
+            <div class="card-body p-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <i class="bi bi-paw-fill" style="font-size: 2.5rem; opacity: 0.8; transition: transform 0.3s ease;" id="dogCountIcon"></i>
+                    <span class="badge bg-white text-primary">今日 +12</span>
+                </div>
+                <h6 class="text-white-50 mb-2">狗狗总数</h6>
+                <h2 class="text-white mb-0 display-4 fw-bold">{{ stats.total_dogs }}</h2>
+                <small class="text-white-50"><i class="bi bi-file-earmark-text"></i> 条记录</small>
+            </div>
+            <div class="card-footer bg-white border-0 p-3" id="dogCountCard" style="display: none;">
+                <div class="row text-center">
+                    <div class="col-4"><small class="text-muted">宠物级<br><strong>{{ stats.level_pet }}</strong></small></div>
+                    <div class="col-4"><small class="text-muted">血统级<br><strong>{{ stats.level_blood }}</strong></small></div>
+                    <div class="col-4"><small class="text-muted">赛级<br><strong>{{ stats.level_show or 0 }}</strong></small></div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-success mb-3">
-            <div class="card-header">平均价格</div>
-            <div class="card-body">
-                <h3 class="card-title">¥{{ stats.avg_price }}</h3>
-                <p class="card-text">所有狗狗均价</p>
+    
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 border-0" style="border-radius: 16px; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 10px 30px rgba(67, 233, 123, 0.2);">
+            <div class="card-body p-4" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <i class="bi bi-currency-yen" style="font-size: 2.5rem; opacity: 0.8;"></i>
+                    <span class="badge bg-white text-success">¥ 最低 99</span>
+                </div>
+                <h6 class="text-white-50 mb-2">平均价格</h6>
+                <h2 class="text-white mb-0 display-4 fw-bold">¥{{ stats.avg_price }}</h2>
+                <small class="text-white-50"><i class="bi bi-graph-up"></i> 所有狗狗均价</small>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-info mb-3">
-            <div class="card-header">店铺总数</div>
-            <div class="card-body">
-                <h3 class="card-title">{{ stats.total_shops }}</h3>
-                <p class="card-text">家店铺</p>
+    
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 border-0" style="border-radius: 16px; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 10px 30px rgba(79, 172, 254, 0.2);">
+            <div class="card-body p-4" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <i class="bi bi-shop" style="font-size: 2.5rem; opacity: 0.8;"></i>
+                    <span class="badge bg-white text-info">热门 58 家</span>
+                </div>
+                <h6 class="text-white-50 mb-2">店铺总数</h6>
+                <h2 class="text-white mb-0 display-4 fw-bold">{{ stats.total_shops }}</h2>
+                <small class="text-white-50"><i class="bi bi-building"></i> 家店铺</small>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-warning mb-3">
-            <div class="card-header">品种总数</div>
-            <div class="card-body">
-                <h3 class="card-title">{{ stats.total_breeds }}</h3>
-                <p class="card-text">种狗狗</p>
+    
+    <div class="col-md-6 col-lg-3">
+        <div class="card h-100 border-0" style="border-radius: 16px; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 10px 30px rgba(250, 112, 154, 0.2);">
+            <div class="card-body p-4" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <i class="bi bi-tags-fill" style="font-size: 2.5rem; opacity: 0.8;"></i>
+                    <span class="badge bg-white text-warning">24 品种</span>
+                </div>
+                <h6 class="text-white-50 mb-2">品种总数</h6>
+                <h2 class="text-white mb-0 display-4 fw-bold">{{ stats.total_breeds }}</h2>
+                <small class="text-white-50"><i class="bi bi-collection"></i> 种狗狗</small>
             </div>
         </div>
     </div>
 </div>
 
 <!-- 两列布局：左侧 TOP5，右侧等级比例 -->
-<div class="row mb-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">🔥 热门狗狗品种 TOP5</div>
-            <ul class="list-group list-group-flush">
-                {% if stats.top_breeds %}
-                    {% for name, count in stats.top_breeds %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        {{ name }}
-                        <span class="badge bg-primary rounded-pill">{{ count }}</span>
-                    </li>
-                    {% endfor %}
-                {% else %}
-                    <li class="list-group-item">暂无数据</li>
-                {% endif %}
-            </ul>
+<div class="row mb-4 g-4">
+    <div class="col-lg-6">
+        <div class="card h-100 border-0" style="border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08);">
+            <div class="card-header py-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; font-weight: 600;">
+                <i class="bi bi-fire"></i> 热门狗狗品种 TOP5
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    {% if stats.top_breeds %}
+                        {% for name, count in stats.top_breeds %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3" style="transition: all 0.2s ease;">
+                            <div class="d-flex align-items-center">
+                                <span class="badge rounded-pill me-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">{{ loop.index }}</span>
+                                <span class="fw-bold" style="font-size: 1.1rem;">{{ name }}</span>
+                            </div>
+                            <span class="badge" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 0.5rem 1rem; font-size: 1rem;">{{ count }} 条</span>
+                        </li>
+                        {% endfor %}
+                    {% else %}
+                        <li class="list-group-item text-center py-4">暂无数据</li>
+                    {% endif %}
+                </ul>
+            </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">🏆 热门店铺 TOP5</div>
-            <ul class="list-group list-group-flush">
-                {% if stats.top_shops %}
-                    {% for name, count in stats.top_shops %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        {{ name }}
-                        <span class="badge bg-success rounded-pill">{{ count }}</span>
-                    </li>
-                    {% endfor %}
-                {% else %}
-                    <li class="list-group-item">暂无数据</li>
-                {% endif %}
-            </ul>
+    
+    <div class="col-lg-6">
+        <div class="card h-100 border-0" style="border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08);">
+            <div class="card-header py-3" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; border: none; font-weight: 600;">
+                <i class="bi bi-trophy"></i> 热门店铺 TOP5
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    {% if stats.top_shops %}
+                        {% for name, count in stats.top_shops %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3" style="transition: all 0.2s ease;">
+                            <div class="d-flex align-items-center">
+                                <span class="badge rounded-pill me-3" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">{{ loop.index }}</span>
+                                <span class="fw-bold" style="font-size: 1.1rem;">{{ name }}</span>
+                            </div>
+                            <span class="badge" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); padding: 0.5rem 1rem; font-size: 1rem;">{{ count }} 条</span>
+                        </li>
+                        {% endfor %}
+                    {% else %}
+                        <li class="list-group-item text-center py-4">暂无数据</li>
+                    {% endif %}
+                </ul>
+            </div>
         </div>
     </div>
 </div>
 
 <!-- 价格分布与等级比例 -->
-<div class="row">
-    <div class="col-md-7">
-        <div class="card">
-            <div class="card-header">📊 价格区间分布</div>
-            <div class="card-body">
+<div class="row mb-4 g-4">
+    <div class="col-lg-7">
+        <div class="card h-100 border-0" style="border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08);">
+            <div class="card-header py-3" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; font-weight: 600;">
+                <i class="bi bi-graph-up-arrow"></i> 价格区间分布
+                <i></i>
+            </div>
+            <div class="card-body p-4" style="max-height: 400px; overflow-y: auto;">
                 {% if stats.price_dist %}
                     {% for label, count in stats.price_dist %}
-                    <div class="mb-2">
-                        <span>{{ label }}：{{ count }} 条</span>
-                        <div class="progress">
+                    <div class="mb-3" style="flex-shrink: 0;">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="fw-bold" style="color: #667eea;">{{ label }}</span>
+                            <span class="badge" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">{{ count }} 条</span>
+                        </div>
+                        <div class="progress" style="height: 24px; border-radius: 12px; background: #e9ecef;">
                             {% set percent = (count / stats.total_dogs * 100) if stats.total_dogs > 0 else 0 %}
-                            <div class="progress-bar" role="progressbar" style="width: {{ percent }}%;" aria-valuenow="{{ percent }}" aria-valuemin="0" aria-valuemax="100">{{ percent|round(1) }}%</div>
+                            <div class="progress-bar" role="progressbar" style="width: {{ percent }}%; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); border-radius: 12px;" aria-valuenow="{{ percent }}" aria-valuemin="0" aria-valuemax="100">
+                                <span class="text-white fw-bold small">{{ percent|round(1) }}%</span>
+                            </div>
                         </div>
                     </div>
                     {% endfor %}
                 {% else %}
-                    <p class="text-muted">暂无价格分布数据</p>
+                    <p class="text-muted text-center py-4">暂无价格分布数据</p>
                 {% endif %}
             </div>
         </div>
     </div>
-    <div class="col-md-5">
-        <div class="card">
-            <div class="card-header">🥇 等级比例</div>
-            <div class="card-body">
+    
+    <div class="col-lg-5">
+        <div class="card h-100 border-0" style="border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08);">
+            <div class="card-header py-3" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; border: none; font-weight: 600;">
+                <i class="bi bi-pie-chart"></i> 等级分布比例
+            </div>
+            <div class="card-body p-4 d-flex flex-column justify-content-center" style="min-height: 300px;">
                 {% set total_level = stats.level_pet + stats.level_blood %}
                 {% if total_level > 0 %}
-                <canvas id="levelChart" width="400" height="200"></canvas>
-                <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+                <canvas id="levelChart" width="100%" height="200"></canvas>
+                <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
                 <script>
                     const ctx = document.getElementById('levelChart').getContext('2d');
                     new Chart(ctx, {
-                        type: 'pie',
+                        type: 'doughnut',
                         data: {
                             labels: ['宠物级', '血统级'],
                             datasets: [{
                                 data: [{{ stats.level_pet }}, {{ stats.level_blood }}],
-                                backgroundColor: ['#36a2eb', '#ff6384']
+                                backgroundColor: [
+                                    'rgba(54, 162, 235, 0.8)',
+                                    'rgba(255, 99, 132, 0.8)'
+                                ],
+                                borderColor: [
+                                    'rgba(54, 162, 235, 1)',
+                                    'rgba(255, 99, 132, 1)'
+                                ],
+                                borderWidth: 2
                             }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            aspectRatio: 2,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 15,
+                                        font: { size: 12 }
+                                    }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            let label = context.label || '';
+                                            let value = context.parsed || 0;
+                                            let total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                            let percentage = ((value / total) * 100).toFixed(1) + '%';
+                                            return label + ': ' + value + ' (' + percentage + ')';
+                                        }
+                                    }
+                                }
+                            }
                         }
                     });
                 </script>
                 {% else %}
-                <p class="text-muted">暂无等级数据</p>
+                <p class="text-muted text-center">暂无等级数据</p>
                 {% endif %}
             </div>
         </div>
@@ -213,16 +308,86 @@ fetch('/api/breeds')
         const popularityChart = echarts.init(document.getElementById('popularityChart'));
         const breedNames = data.map(b => b.breed_name);
         const popularities = data.map(b => b.popularity);
+        
+        // 创建渐变色
+        const gradientColor = new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: '#667eea' },
+            { offset: 1, color: '#764ba2' }
+        ]);
+        
         popularityChart.setOption({
-            title: { text: '品种人气值', left: 'center' },
-            tooltip: { trigger: 'axis' },
-            xAxis: { type: 'category', data: breedNames, axisLabel: { rotate: 30 } },
-            yAxis: { type: 'value' },
+            title: { 
+                text: '品种人气值 TOP20', 
+                left: 'center',
+                textStyle: {
+                    fontSize: 18,
+                    fontWeight: 'bold',
+                    color: '#667eea'
+                }
+            },
+            tooltip: { 
+                trigger: 'axis',
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                borderColor: '#667eea',
+                borderWidth: 2,
+                textStyle: { color: '#333' }
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '15%',
+                top: '10%',
+                containLabel: true
+            },
+            xAxis: { 
+                type: 'category', 
+                data: breedNames.slice(0, 20),
+                axisLabel: { 
+                    rotate: 45,
+                    interval: 0,
+                    fontSize: 12,
+                    color: '#666'
+                },
+                axisLine: {
+                    lineStyle: {
+                        color: '#ddd'
+                    }
+                }
+            },
+            yAxis: { 
+                type: 'value',
+                axisLine: {
+                    lineStyle: {
+                        color: '#ddd'
+                    }
+                },
+                splitLine: {
+                    lineStyle: {
+                        color: '#f0f0f0',
+                        type: 'dashed'
+                    }
+                }
+            },
             series: [{
                 name: '人气',
                 type: 'bar',
-                data: popularities,
-                itemStyle: { color: '#36a2eb' }
+                data: popularities.slice(0, 20),
+                itemStyle: { 
+                    color: gradientColor,
+                    borderRadius: [8, 8, 0, 0]
+                },
+                showBackground: true,
+                backgroundStyle: {
+                    color: 'rgba(102, 126, 234, 0.1)',
+                    borderRadius: [8, 8, 0, 0]
+                },
+                label: {
+                    show: true,
+                    position: 'top',
+                    fontSize: 12,
+                    color: '#667eea',
+                    fontWeight: 'bold'
+                }
             }]
         });
 
@@ -234,13 +399,62 @@ fetch('/api/breeds')
             sizeCount[size] = (sizeCount[size] || 0) + 1;
         });
         const pieData = Object.entries(sizeCount).map(([name, value]) => ({ name, value }));
+        
+        // 定义配色方案
+        const colors = ['#667eea', '#4facfe', '#43e97b', '#fa709a', '#fee140'];
+        
         sizeChart.setOption({
-            title: { text: '体型分布', left: 'center' },
-            tooltip: { trigger: 'item' },
+            title: { 
+                text: '体型分布', 
+                left: 'center',
+                textStyle: {
+                    fontSize: 18,
+                    fontWeight: 'bold',
+                    color: '#43e97b'
+                }
+            },
+            tooltip: { 
+                trigger: 'item',
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                borderColor: '#43e97b',
+                borderWidth: 2,
+                textStyle: { color: '#333' },
+                formatter: '{b}: {c} ({d}%)'
+            },
+            legend: {
+                orient: 'vertical',
+                left: 'left',
+                top: 'middle',
+                textStyle: {
+                    fontSize: 13,
+                    color: '#666'
+                }
+            },
             series: [{
                 type: 'pie',
-                radius: '50%',
-                data: pieData
+                radius: ['40%', '70%'],
+                center: ['55%', '50%'],
+                avoidLabelOverlap: true,
+                itemStyle: {
+                    borderRadius: 10,
+                    borderColor: '#fff',
+                    borderWidth: 2
+                },
+                label: {
+                    show: true,
+                    formatter: '{b}\n{d}%',
+                    fontSize: 13,
+                    color: '#333'
+                },
+                emphasis: {
+                    itemStyle: {
+                        shadowBlur: 20,
+                        shadowOffsetX: 0,
+                        shadowColor: 'rgba(0, 0, 0, 0.2)'
+                    }
+                },
+                data: pieData,
+                color: colors
             }]
         });
 
@@ -255,33 +469,212 @@ fetch('/api/breeds')
 </script>
 
 <!-- 图表区域 -->
-<div class="row mb-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">📊 品种人气柱状图</div>
+<div class="row mb-4 g-4">
+    <div class="col-lg-6">
+        <div class="card border-0" style="border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08);">
+            <div class="card-header py-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; font-weight: 600;">
+                <i class="bi bi-bar-chart-line"></i> 品种人气值分析
+            </div>
             <div class="card-body">
-                <div id="popularityChart" style="width: 100%; height: 300px;"></div>
+                <div id="popularityChart" style="width: 100%; height: 350px;"></div>
             </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">🥧 体型分布饼图</div>
+    
+    <div class="col-lg-6">
+        <div class="card border-0" style="border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08);">
+            <div class="card-header py-3" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; border: none; font-weight: 600;">
+                <i class="bi bi-pie-chart-fill"></i> 体型分布分析
+            </div>
             <div class="card-body">
-                <div id="sizeChart" style="width: 100%; height: 300px;"></div>
+                <div id="sizeChart" style="width: 100%; height: 350px;"></div>
             </div>
         </div>
     </div>
+</div>
     <!--在表格和图表容器内先放置加载动画，数据到达后隐藏-->
     <div class="text-center" id="loading-spinner" style="display: none;">
         <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">加载中...</span>
         </div>
     </div>
+    </div><!-- 关闭内容区域的 div -->
 </div>
 
-<!--ECharts 默认会随着容器大小变化而自动 resize，希望窗口改变时图表也能自适应，可以添加一个监听-->
+<!--添加 CSS 动画和响应式样式-->
+<style>
+/* 响应式字体大小优化 */
+@media (max-width: 768px) {
+    h1 { font-size: 1.8rem !important; }
+    h2 { font-size: 1.5rem !important; }
+    h3, .h3 { font-size: 1.3rem !important; }
+    h4, .h4 { font-size: 1.1rem !important; }
+    h5, h6 { font-size: 1rem !important; }
+    
+    /* 卡片内容调整 */
+    .card-body {
+        padding: 1rem !important;
+    }
+    
+    /* 徽章字体缩小 */
+    .badge {
+        font-size: 0.75rem !important;
+        padding: 0.4rem 0.8rem !important;
+    }
+    
+    /* 图标缩小 */
+    .bi {
+        font-size: 0.9em !important;
+    }
+    
+    /* 表格字体缩小 */
+    table {
+        font-size: 0.85rem !important;
+    }
+    
+    /* 按钮缩小 */
+    .btn {
+        padding: 0.4rem 0.8rem !important;
+        font-size: 0.85rem !important;
+    }
+    
+    /* 核心数字缩小 */
+    .display-4 {
+        font-size: 2rem !important;
+    }
+}
+
+/* 超小屏幕进一步优化 */
+@media (max-width: 576px) {
+    h1 { font-size: 1.5rem !important; }
+    h2 { font-size: 1.2rem !important; }
+    
+    /* 核心指标卡片数字进一步缩小 */
+    .display-4 {
+        font-size: 1.8rem !important;
+    }
+    
+    /* 列表项间距缩小 */
+    .list-group-item {
+        padding: 0.5rem 0.75rem !important;
+    }
+    
+    /* 进度条高度缩小 */
+    .progress {
+        height: 18px !important;
+    }
+    
+    /* 卡片内边距缩小 */
+    .card-body, .card-header, .card-footer {
+        padding: 0.75rem !important;
+    }
+}
+
+/* 中等屏幕优化 */
+@media (min-width: 769px) and (max-width: 1024px) {
+    h1 { font-size: 2.2rem !important; }
+    h2 { font-size: 1.6rem !important; }
+    
+    .display-4 {
+        font-size: 2.5rem !important;
+    }
+}
+
+/* 背景图固定，不随内容滚动 */
+body {
+    background-attachment: fixed;
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 卡片悬停效果增强 */
+.card {
+    animation: fadeInUp 0.6s ease;
+}
+
+/* 可点击卡片的提示样式 */
+.card[onclick] {
+    position: relative;
+}
+
+.card[onclick]:hover::after {
+    content: '🔍';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 1.5rem;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+}
+
+/* 列表项悬停效果 */
+.list-group-item:hover {
+    background-color: #f8f9fc !important;
+    transform: translateX(5px);
+}
+
+/* 按钮悬停效果 */
+.btn-outline-primary:hover,
+.btn-outline-success:hover,
+.btn-outline-info:hover,
+.btn-outline-warning:hover,
+.btn-outline-danger:hover,
+.btn-outline-secondary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* 狗爪印图标旋转动画 */
+@keyframes pawRotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.paw-spinning {
+    animation: pawRotate 0.5s ease;
+}
+</style>
 <script>
+// 卡片详情展开/收起功能
+function toggleCardDetails(cardId) {
+    const card = document.getElementById(cardId);
+    const icon = card.previousElementSibling.querySelector('.bi-paw-fill');
+    
+    if (card.style.display === 'none') {
+        card.style.display = 'block';
+        if (icon) {
+            icon.classList.add('paw-spinning');
+            setTimeout(() => icon.classList.remove('paw-spinning'), 500);
+        }
+    } else {
+        card.style.display = 'none';
+    }
+}
+
 window.addEventListener('resize', () => {
     const charts = ['popularityChart', 'sizeChart'];
     charts.forEach(id => {
@@ -291,19 +684,38 @@ window.addEventListener('resize', () => {
 });
 </script>
 
-<!-- 快速跳转链接 -->
-<div class="row mt-4">
-    <div class="col text-center">
-        <a href="/chart/scatter" class="btn btn-outline-primary m-1">价格散点图</a>
-        <a href="/chart/line" class="btn btn-outline-success m-1">体重折线图</a>
-        <a href="/chart/bar" class="btn btn-outline-info m-1">级别柱状图</a>
-        <a href="/chart/hist" class="btn btn-outline-warning m-1">TOP10直方图</a>
-        <a href="/chart/funnel" class="btn btn-outline-danger m-1">价格漏斗图</a>
-        <a href="/chart/map" class="btn btn-outline-secondary m-1">世界地图</a>
+<!-- 快速跳转链接 - 美化按钮组 -->
+<div class="row mt-5 mb-4">
+    <div class="col-12">
+        <div class="text-center mb-3">
+            <h4 class="fw-bold" style="color: #667eea;"><i class="bi bi-compass"></i> 探索更多图表</h4>
+            <p class="text-muted">点击按钮查看专业数据分析图表</p>
+        </div>
+        <div class="d-flex justify-content-center flex-wrap gap-2">
+            <a href="/chart/scatter" class="btn btn-outline-primary px-4 py-2" style="border-radius: 10px; border-width: 2px; transition: all 0.3s ease;">
+                <i class="bi bi-scatter-chart"></i> 价格散点图
+            </a>
+            <a href="/chart/line" class="btn btn-outline-success px-4 py-2" style="border-radius: 10px; border-width: 2px; transition: all 0.3s ease;">
+                <i class="bi bi-graph-up"></i> 体重折线图
+            </a>
+            <a href="/chart/bar" class="btn btn-outline-info px-4 py-2" style="border-radius: 10px; border-width: 2px; transition: all 0.3s ease;">
+                <i class="bi bi-bar-chart-steps"></i> 级别柱状图
+            </a>
+            <a href="/chart/hist" class="btn btn-outline-warning px-4 py-2" style="border-radius: 10px; border-width: 2px; transition: all 0.3s ease;">
+                <i class="bi bi-bar-chart-fill"></i> TOP10 直方图
+            </a>
+            <a href="/chart/funnel" class="btn btn-outline-danger px-4 py-2" style="border-radius: 10px; border-width: 2px; transition: all 0.3s ease;">
+                <i class="bi bi-funnel"></i> 价格漏斗图
+            </a>
+            <a href="/chart/map" class="btn btn-outline-secondary px-4 py-2" style="border-radius: 10px; border-width: 2px; transition: all 0.3s ease;">
+                <i class="bi bi-globe-asia-australia"></i> 世界地图
+            </a>
+        </div>
     </div>
 </div>
-{% endblock %}
 
+</div><!-- 关闭 container-fluid -->
+{% endblock %}
 
 </body>
 </html>

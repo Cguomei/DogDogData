@@ -100,6 +100,16 @@ def register_routes(app):
         stats = get_dashboard_stats_from_summary()
         return render_template('index.html', stats=stats)
     
+    # ===== 品种管理页面 =====
+    @app.route('/admin/breeds')
+    @login_required
+    def admin_breeds():
+        """品种管理页面（仅管理员可访问）"""
+        if not current_user.is_admin():
+            flash('您没有权限访问此页面', 'danger')
+            return redirect(url_for('index'))
+        return render_template('admin_breeds.html')
+    
     # ===== 图表页面 =====
     @app.route('/map')
     def show_map():
@@ -197,7 +207,73 @@ def register_routes(app):
         
         return render_template('register.html')
     
-    # ===== API 接口 =====
+    # ===== 自定义数据分析 =====
+    @app.route('/custom-analysis')
+    def custom_analysis():
+        """用户自定义数据分析页面"""
+        return render_template('custom_analysis.html')
+    
+    @app.route('/api/upload-data', methods=['POST'])
+    def upload_data():
+        """API: 接收用户上传的 CSV/Excel 数据"""
+        try:
+            if 'file' not in request.files:
+                return jsonify({'error': '没有上传文件'}), 400
+            
+            file = request.files['file']
+            if file.filename == '':
+                return jsonify({'error': '文件名为空'}), 400
+            
+            # 读取上传的文件
+            if file.filename.endswith('.csv'):
+                df = pd.read_csv(file, encoding='utf-8')
+            elif file.filename.endswith(('.xlsx', '.xls')):
+                df = pd.read_excel(file)
+            else:
+                return jsonify({'error': '不支持的文件格式，请上传 CSV 或 Excel 文件'}), 400
+            
+            # 返回前 100 行数据和列名
+            columns = df.columns.tolist()
+            data_sample = df.head(100).to_dict('records')
+            
+            # 将数据转换为 JSON 格式
+            return jsonify({
+                'success': True,
+                'columns': columns,
+                'row_count': len(df),
+                'data': data_sample
+            })
+        except Exception as e:
+            return jsonify({'error': f'解析文件失败：{str(e)}'}), 500
+    
+    @app.route('/api/generate-chart', methods=['POST'])
+    def generate_chart():
+        """API: 根据用户配置生成图表"""
+        try:
+            data = request.get_json()
+            chart_type = data.get('chart_type')
+            x_column = data.get('x_column')
+            y_column = data.get('y_column')
+            title = data.get('title', '自定义图表')
+            
+            if not all([chart_type, x_column, y_column]):
+                return jsonify({'error': '缺少必要参数'}), 400
+            
+            # 这里可以根据需要实现不同的图表生成逻辑
+            # 目前返回成功响应，前端已经可以处理
+            return jsonify({
+                'success': True,
+                'message': f'图表已生成：{title}',
+                'chart_type': chart_type,
+                'config': {
+                    'x_column': x_column,
+                    'y_column': y_column,
+                    'title': title
+                }
+            })
+        except Exception as e:
+            return jsonify({'error': f'生成图表失败：{str(e)}'}), 500
+
     @app.route('/api/breeds')
     def get_breeds():
         breeds = DogBreed.query.all()

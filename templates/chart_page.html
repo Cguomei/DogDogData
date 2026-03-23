@@ -3,14 +3,63 @@
 {% block title %}{{ chart_title }} - 狗狗数据分析{% endblock %}
 
 {% block content %}
-<div class="chart-container">
-    <h2 class="text-center mb-4">{{ chart_title }}</h2>
-    <!-- 嵌入图表 HTML 片段（使用 safe 过滤器防止转义） -->
-    <div class="chart-wrapper">
-        {{ chart_html|safe }}
-    </div>
-    <div class="text-center mt-3">
-        <a href="/" class="btn btn-outline-secondary">返回首页</a>
+<div class="container-fluid px-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- 图表卡片 -->
+            <div class="card border-0 mb-4" style="border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); animation: fadeInUp 0.6s ease;">
+                <div class="card-header py-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2 class="mb-0 fw-bold" style="font-size: 1.5rem;">
+                            <i class="bi bi-graph-up"></i> {{ chart_title }}
+                        </h2>
+                        <a href="/" class="btn btn-light btn-sm" style="border-radius: 8px; padding: 0.5rem 1.5rem; font-weight: 600;">
+                            <i class="bi bi-arrow-left"></i> 返回首页
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-4 bg-white">
+                    <div class="chart-wrapper" style="min-height: 500px;">
+                        {{ chart_html|safe }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 说明信息 -->
+            <div class="card border-0" style="border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08);">
+                <div class="card-header py-3" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; font-weight: 600;">
+                    <i class="bi bi-info-circle"></i> 图表说明
+                </div>
+                <div class="card-body">
+                    <p class="mb-0 text-muted">
+                        <i class="bi bi-lightbulb"></i> 
+                        本图表基于真实狗狗销售数据生成，支持缩放、拖拽、数据视图等功能。您可以使用图表右上角的工具栏进行交互操作。
+                    </p>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+
+<style>
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.chart-wrapper {
+    animation: fadeIn 0.8s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+</style>
 {% endblock %}

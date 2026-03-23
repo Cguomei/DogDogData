@@ -389,7 +389,7 @@ def get_price_funnel():
         return "<p>价格段漏斗图数据加载失败</p>"
 
     c = (
-        Funnel(init_opts=opts.InitOpts(theme=ThemeType.LIGHT))
+        Funnel(init_opts=opts.InitOpts(theme=ThemeType.LIGHT, width="100%", height="600px"))
         .add(
             "价格段",
             n_list,
@@ -397,8 +397,8 @@ def get_price_funnel():
             label_opts=opts.LabelOpts(position="inside"),
         )
         .set_global_opts(
-            title_opts=opts.TitleOpts(title="宠物狗价格分布", pos_left='center'),
-            legend_opts=opts.LegendOpts(pos_top='6%')
+            title_opts=opts.TitleOpts(title="宠物狗价格分布", pos_left='center', pos_top='10'),
+            legend_opts=opts.LegendOpts(pos_top='20%')
         )
     )
     return c.render_embed()
