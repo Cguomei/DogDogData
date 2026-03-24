@@ -419,3 +419,31 @@
     pointer-events: none;
     z-index: 10001;
 }
+
+/* ==================== 导航栏召唤按钮 ==================== */
+#summon-pet-btn {
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        box-shadow: 0 0 5px rgba(255, 193, 7, 0.5);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(255, 193, 7, 0.8), 0 0 30px rgba(255, 193, 7, 0.4);
+        transform: scale(1.05);
+    }
+}
+
+#summon-pet-btn:hover {
+    animation: none;
+    box-shadow: 0 0 25px rgba(255, 193, 7, 1), 0 0 35px rgba(255, 193, 7, 0.6);
+    transform: scale(1.1);
+}
+
+#summon-pet-btn.active {
+    animation: none;
+    box-shadow: 0 0 30px rgba(255, 193, 7, 1);
+    transform: scale(0.95);
+}

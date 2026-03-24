@@ -169,6 +169,11 @@ class VirtualPet {
                 this.show();
             }
         });
+        
+        // 监听召唤宠物事件
+        window.addEventListener('summonPet', () => {
+            this.show();
+        });
 
         // 监听用户活动
         let userActivityTimer;

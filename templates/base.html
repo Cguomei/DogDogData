@@ -43,6 +43,12 @@
                     <li class="nav-item"><a class="nav-link" href="/custom-analysis">📊 自定义分析</a></li>
                     <li class="nav-item"><a class="nav-link" href="/admin/breeds">📋 品种管理</a></li>
                     <li class="nav-item"><a class="nav-link" href="/charts">图表列表</a></li>
+                    <!-- 网页小宠物入口 -->
+                    <li class="nav-item">
+                        <button class="btn btn-sm btn-outline-warning ms-2" id="summon-pet-btn" title="召唤小宠物">
+                            🐾 小宠物
+                        </button>
+                    </li>
 
                 {% if current_user.is_authenticated %}
                     <li class="nav-item dropdown">
@@ -92,6 +98,26 @@
     
     <!-- 网页小宠物脚本 -->
     <script src="{{ url_for('static', filename='js/pet.js') }}"></script>
+    
+    <!-- 召唤宠物按钮功能 -->
+    <script>
+        // 页面加载完成后初始化召唤按钮
+        document.addEventListener('DOMContentLoaded', function() {
+            const summonBtn = document.getElementById('summon-pet-btn');
+            if (summonBtn) {
+                summonBtn.addEventListener('click', function() {
+                    // 触发宠物的召唤事件
+                    window.dispatchEvent(new CustomEvent('summonPet'));
+                    
+                    // 按钮动画反馈
+                    this.classList.add('active');
+                    setTimeout(() => {
+                        this.classList.remove('active');
+                    }, 300);
+                });
+            }
+        });
+    </script>
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>
