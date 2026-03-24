@@ -44,6 +44,10 @@ def create_app(config_name=None):
     """
     app = Flask(__name__)
     
+    # 添加 MIME 类型配置，确保 JS 文件正确识别
+    app.config['JSON_AS_ASCII'] = False
+    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0  # 禁用缓存，方便开发调试
+    
     # 加载配置
     if config_name is None:
         config_name = os.getenv('FLASK_ENV', 'development')
@@ -68,6 +72,15 @@ def create_app(config_name=None):
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['X-XSS-Protection'] = '1; mode=block'
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        return response
+    
+    # 确保 JS 和 CSS 文件的 MIME 类型正确
+    @app.after_request
+    def ensure_correct_mime_type(response):
+        if request.path.endswith('.js'):
+            response.headers['Content-Type'] = 'application/javascript'
+        elif request.path.endswith('.css'):
+            response.headers['Content-Type'] = 'text/css'
         return response
     
     # 登录管理器配置
