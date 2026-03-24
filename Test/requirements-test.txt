@@ -11,6 +11,7 @@ pytest-flask>=1.2.0
 # 浏览器自动化测试（可选）
 selenium>=4.0.0
 webdriver-manager>=3.8.0
+playwright>=1.40.0
 
 # 性能测试
 pytest-benchmark>=4.0.0
