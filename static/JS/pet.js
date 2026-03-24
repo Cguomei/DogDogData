@@ -1,12 +1,12 @@
 /**
- * 网页小宠物 - 陪伴用户浏览网页的可爱小伙伴
- * 功能：可触摸、可喂食、会动、有状态
+ * 网页小宠物 - 2.5D 增强版
+ * 基于序列帧动画的伪 3D 效果
  * 
- * 状态系统：
- * - 心情：开心、普通、困倦、不开心
- * - 饥饿度：0-100 (0 为饱，100 为饿)
- * - 活力值：0-100 (活力越高越活跃)
- * - 亲密度：0-100 (互动越多越亲密)
+ * 功能特性：
+ * - 2.5D 旋转视角（鼠标移动控制）
+ * - 序列帧动画（吃饭、抚摸等）
+ * - 状态系统（饥饿、活力、心情）
+ * - 交互反馈（点击、悬停）
  */
 
 class VirtualPet {
@@ -15,27 +15,35 @@ class VirtualPet {
         this.config = {
             containerId: options.containerId || 'virtual-pet-container',
             petName: options.petName || '汪汪',
-            petType: options.petType || 'dog', // dog, cat, rabbit
-            autoHideTimeout: options.autoHideTimeout || 60000, // 60 秒无操作自动隐藏
-            animationSpeed: options.animationSpeed || 'normal', // slow, normal, fast
+            petType: options.petType || 'dog',
+            autoHideTimeout: options.autoHideTimeout || 60000,
+            spritePath: options.spritePath || '/static/img/pet_sprites/',
             ...options
         };
 
         // 宠物状态
         this.state = {
-            mood: 'happy', // happy, normal, sleepy, sad
-            hunger: 30, // 0-100
-            energy: 80, // 0-100
-            affection: 50, // 0-100
+            mood: 'happy',
+            hunger: 30,
+            energy: 80,
+            affection: 50,
             isSleeping: false,
             isVisible: true,
-            lastInteraction: Date.now()
+            lastInteraction: Date.now(),
+            currentAction: null,
+            rotationAngle: 0 // -45 到 45 度
         };
 
         // DOM 元素
         this.petElement = null;
         this.container = null;
         this.bubbleElement = null;
+        this.spriteElement = null;
+
+        // 动画帧管理
+        this.animationFrames = {};
+        this.currentFrame = 0;
+        this.animationInterval = null;
 
         // 初始化
         this.init();
@@ -47,6 +55,9 @@ class VirtualPet {
     init() {
         // 创建容器
         this.createContainer();
+        
+        // 加载精灵图
+        this.loadSprites();
         
         // 创建宠物元素
         this.createPet();
@@ -63,7 +74,7 @@ class VirtualPet {
         // 加载保存的状态
         this.loadState();
         
-        console.log('🐶 小宠物已初始化！');
+        console.log('🐶 2.5D 小宠物已初始化！');
     }
 
     /**
@@ -77,52 +88,68 @@ class VirtualPet {
     }
 
     /**
-     * 创建宠物元素
+     * 加载精灵图资源
+     */
+    async loadSprites() {
+        const spritePath = this.config.spritePath;
+        
+        // 预加载所有精灵图
+        const spritesToLoad = [
+            { name: 'eat_cycle', url: spritePath + 'eat_cycle.png' },
+            { name: 'pet_cycle', url: spritePath + 'pet_cycle.png' },
+            { name: 'eating_rotation', url: spritePath + 'eating_rotation.png' },
+            { name: 'petting_smooth', url: spritePath + 'petting_smooth.png' },
+            { name: 'idle', url: spritePath + 'idle.png' }
+        ];
+
+        const loadPromises = spritesToLoad.map(sprite => {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.src = sprite.url;
+                img.onload = () => {
+                    this.animationFrames[sprite.name] = img;
+                    console.log(`✅ 加载精灵图：${sprite.name}`);
+                    resolve(img);
+                };
+                img.onerror = () => {
+                    console.warn(`⚠️ 精灵图加载失败：${sprite.url}`);
+                    resolve(null);
+                };
+            });
+        });
+
+        await Promise.all(loadPromises);
+        console.log('🎨 所有精灵图加载完成');
+    }
+
+    /**
+     * 创建宠物元素（2.5D 版本）
      */
     createPet() {
-        const petTypes = {
-            dog: {
-                emoji: '🐶',
-                name: '汪汪',
-                color: '#FFB347'
-            },
-            cat: {
-                emoji: '🐱',
-                name: '喵喵',
-                color: '#FFB6C1'
-            },
-            rabbit: {
-                emoji: '🐰',
-                name: '兔兔',
-                color: '#DDA0DD'
-            }
-        };
-
-        const petInfo = petTypes[this.config.petType] || petTypes.dog;
-
         this.petElement = document.createElement('div');
-        this.petElement.className = 'virtual-pet';
-        this.petElement.innerHTML = `
-            <div class="pet-body" style="background-color: ${petInfo.color}">
-                <div class="pet-emoji">${petInfo.emoji}</div>
-                <div class="pet-name">${this.config.petName || petInfo.name}</div>
-                <div class="pet-status-indicators">
-                    <div class="status-bar hunger-bar" title="饥饿度">
-                        <div class="status-fill" style="width: ${this.state.hunger}%"></div>
-                    </div>
-                    <div class="status-bar energy-bar" title="活力值">
-                        <div class="status-fill" style="width: ${this.state.energy}%"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="pet-actions">
-                <button class="action-btn" data-action="feed" title="喂食">🍖</button>
-                <button class="action-btn" data-action="play" title="玩耍">🎾</button>
-                <button class="action-btn" data-action="pet" title="抚摸">❤️</button>
-                <button class="action-btn" data-action="sleep" title="睡觉">💤</button>
-            </div>
-        `;
-
+        this.petElement.className = 'pet-body-2d5';
+        
+        // 创建精灵图显示元素
+        this.spriteElement = document.createElement('div');
+        this.spriteElement.className = 'pet-sprite';
+        
+        // 设置默认显示（待机状态）
+        if (this.animationFrames['idle']) {
+            this.spriteElement.style.backgroundImage = `url(${this.animationFrames['idle'].src})`;
+        } else {
+            // 如果精灵图未加载，使用 emoji 占位
+            this.spriteElement.innerHTML = `
+                <div class="pet-emoji">🐶</div>
+                <div class="pet-name">${this.config.petName}</div>
+            `;
+        }
+        
+        // 添加投影效果
+        const shadowElement = document.createElement('div');
+        shadowElement.className = 'pet-shadow';
+        
+        this.petElement.appendChild(this.spriteElement);
+        this.petElement.appendChild(shadowElement);
         this.container.appendChild(this.petElement);
     }
 
@@ -137,9 +164,88 @@ class VirtualPet {
     }
 
     /**
+     * 播放序列帧动画
+     */
+    playSpriteAnimation(spriteName, frameCount, fps = 10, loop = true) {
+        const spriteImg = this.animationFrames[spriteName];
+        if (!spriteImg || !this.spriteElement) return;
+
+        // 计算单帧尺寸（假设精灵图是横向排列）
+        const frameWidth = spriteImg.width / frameCount;
+        const frameHeight = spriteImg.height;
+
+        let currentFrame = 0;
+
+        // 清除之前的动画
+        if (this.animationInterval) {
+            clearInterval(this.animationInterval);
+        }
+
+        // 设置背景图为精灵图
+        this.spriteElement.style.backgroundImage = `url(${spriteImg.src})`;
+
+        // 开始播放动画
+        this.animationInterval = setInterval(() => {
+            // 计算背景图位置
+            const offsetX = -(currentFrame * frameWidth);
+            this.spriteElement.style.backgroundPosition = `${offsetX}px 0`;
+            this.spriteElement.style.backgroundSize = `${frameCount * 100}% 100%`;
+
+            currentFrame++;
+
+            if (currentFrame >= frameCount) {
+                if (loop) {
+                    currentFrame = 0;
+                } else {
+                    clearInterval(this.animationInterval);
+                    this.animationInterval = null;
+                    return;
+                }
+            }
+        }, 1000 / fps);
+    }
+
+    /**
+     * 更新 2.5D 旋转角度
+     */
+    updateRotation(angleX = 0, angleY = 0) {
+        if (!this.petElement) return;
+
+        // 限制旋转角度在合理范围内
+        angleX = Math.max(-30, Math.min(30, angleX));
+        angleY = Math.max(-45, Math.min(45, angleY));
+
+        // 应用旋转变换
+        this.petElement.style.transform = `rotateX(${angleX}deg) rotateY(${angleY}deg)`;
+
+        // 根据旋转角度调整亮度模拟光照
+        const brightness = 1 + (Math.abs(angleY) / 90) * 0.2;
+        this.spriteElement.style.filter = `brightness(${brightness}) drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3))`;
+    }
+
+    /**
      * 绑定事件
      */
     bindEvents() {
+        // 鼠标移动控制视角（2.5D 核心功能）
+        document.addEventListener('mousemove', (e) => {
+            if (!this.state.isVisible || this.state.isSleeping) return;
+
+            const { clientX, clientY } = e;
+            const { innerWidth, innerHeight } = window;
+
+            // 计算鼠标位置相对于屏幕中心的偏移
+            const offsetX = (clientX - innerWidth / 2) / (innerWidth / 2);
+            const offsetY = (clientY - innerHeight / 2) / (innerHeight / 2);
+
+            // 转换为旋转角度（-45 到 45 度）
+            const angleY = offsetX * 45;
+            const angleX = -offsetY * 30;
+
+            // 平滑更新旋转
+            this.updateRotation(angleX, angleY);
+        });
+
         // 点击宠物
         this.petElement.addEventListener('click', (e) => {
             if (!e.target.classList.contains('action-btn')) {
@@ -147,18 +253,21 @@ class VirtualPet {
             }
         });
 
-        // 动作按钮
-        this.petElement.querySelectorAll('.action-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const action = btn.dataset.action;
-                this.performAction(action);
-            });
+        // 双击触发特殊动作
+        this.petElement.addEventListener('dblclick', () => {
+            this.performAction('spin');
         });
 
         // 鼠标悬停
         this.petElement.addEventListener('mouseenter', () => {
             this.showBubble('想要和我玩吗？');
+        });
+
+        // 鼠标离开
+        this.petElement.addEventListener('mouseleave', () => {
+            if (!this.state.currentAction) {
+                this.playSpriteAnimation('idle', 1, 1, true);
+            }
         });
 
         // 页面可见性变化
@@ -196,7 +305,10 @@ class VirtualPet {
             return;
         }
 
-        // 播放动画
+        // 播放点击涟漪特效
+        this.createClickRipple();
+        
+        // 播放弹跳动画
         this.playAnimation('bounce');
         
         // 增加亲密度
@@ -212,6 +324,20 @@ class VirtualPet {
         ];
         const reaction = reactions[Math.floor(Math.random() * reactions.length)];
         this.showBubble(reaction);
+    }
+
+    /**
+     * 创建点击涟漪特效
+     */
+    createClickRipple() {
+        const ripple = document.createElement('div');
+        ripple.className = 'pet-click-ripple';
+        this.petElement.appendChild(ripple);
+        
+        // 动画结束后移除
+        setTimeout(() => {
+            ripple.remove();
+        }, 600);
     }
 
     /**
@@ -236,11 +362,15 @@ class VirtualPet {
             case 'sleep':
                 this.toggleSleep();
                 break;
+            case 'spin':
+                // 双击旋转（2.5D 特效）
+                this.spin3D();
+                break;
         }
     }
 
     /**
-     * 喂食
+     * 喂食（播放吃饭动画）
      */
     feed() {
         if (this.state.hunger <= 10) {
@@ -248,11 +378,18 @@ class VirtualPet {
             return;
         }
 
-        this.playAnimation('eat');
-        this.updateState({
-            hunger: Math.max(0, this.state.hunger - 20),
-            energy: Math.min(100, this.state.energy + 5)
-        });
+        // 播放吃饭序列帧动画
+        this.playSpriteAnimation('eat_cycle', 4, 12, true);
+        this.state.currentAction = 'feed';
+
+        setTimeout(() => {
+            this.updateState({
+                hunger: Math.max(0, this.state.hunger - 20),
+                energy: Math.min(100, this.state.energy + 5)
+            });
+            this.state.currentAction = null;
+            this.playSpriteAnimation('idle', 1, 1, true);
+        }, 2000);
 
         const foods = ['好吃的！', '美味！', '嗷呜~', '还要吃！'];
         this.showBubble(foods[Math.floor(Math.random() * foods.length)]);
@@ -261,7 +398,7 @@ class VirtualPet {
     }
 
     /**
-     * 玩耍
+     * 玩耍（播放抚摸动画）
      */
     play() {
         if (this.state.energy < 20) {
@@ -269,13 +406,20 @@ class VirtualPet {
             return;
         }
 
-        this.playAnimation('play');
-        this.updateState({
-            energy: Math.max(0, this.state.energy - 15),
-            hunger: Math.min(100, this.state.hunger + 10),
-            mood: 'happy',
-            affection: Math.min(100, this.state.affection + 5)
-        });
+        // 播放平滑过渡动画
+        this.playSpriteAnimation('petting_smooth', 19, 15, true);
+        this.state.currentAction = 'play';
+
+        setTimeout(() => {
+            this.updateState({
+                energy: Math.max(0, this.state.energy - 15),
+                hunger: Math.min(100, this.state.hunger + 10),
+                mood: 'happy',
+                affection: Math.min(100, this.state.affection + 5)
+            });
+            this.state.currentAction = null;
+            this.playSpriteAnimation('idle', 1, 1, true);
+        }, 2000);
 
         const plays = ['好开心！', '真好玩！', '再来一次！', '嘿嘿~'];
         this.showBubble(plays[Math.floor(Math.random() * plays.length)]);
@@ -284,10 +428,12 @@ class VirtualPet {
     }
 
     /**
-     * 抚摸
+     * 抚摸（舒适反应）
      */
     pet() {
-        this.playAnimation('happy');
+        // 添加 CSS 动画类
+        this.spriteElement.classList.add('animate-pet');
+        
         this.updateState({
             mood: 'happy',
             affection: Math.min(100, this.state.affection + 3)
@@ -296,7 +442,30 @@ class VirtualPet {
         const pets = ['好舒服~', '喜欢主人！', '咕噜咕噜~', '蹭蹭~'];
         this.showBubble(pets[Math.floor(Math.random() * pets.length)]);
         
+        setTimeout(() => {
+            this.spriteElement.classList.remove('animate-pet');
+        }, 2000);
+        
         this.saveState();
+    }
+
+    /**
+     * 3D 旋转特效（双击触发）
+     */
+    spin3D() {
+        let angle = 0;
+        const spinInterval = setInterval(() => {
+            angle += 30;
+            this.updateRotation(0, angle);
+            
+            if (angle >= 360) {
+                clearInterval(spinInterval);
+                this.updateRotation(0, 0);
+            }
+        }, 50);
+
+        this.showBubble('哇！转圈圈！');
+        this.updateState({ affection: Math.min(100, this.state.affection + 10) });
     }
 
     /**
