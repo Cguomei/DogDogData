@@ -50,31 +50,31 @@ class VirtualPet {
     }
 
     /**
-     * 初始化宠物
+     * 初始化宠物（异步版本）
      */
-    init() {
-        // 创建容器
+    async init() {
+        // 1. 创建容器
         this.createContainer();
         
-        // 加载精灵图
-        this.loadSprites();
+        // 2. 先加载精灵图（确保可用）
+        await this.loadSprites();
         
-        // 创建宠物元素
+        // 3. 图片加载完成后再创建宠物
         this.createPet();
         
-        // 创建对话气泡
+        // 4. 创建对话气泡
         this.createBubble();
         
-        // 绑定事件
+        // 5. 绑定事件
         this.bindEvents();
         
-        // 启动状态循环
+        // 6. 启动状态循环
         this.startStateLoop();
         
-        // 加载保存的状态
+        // 7. 加载保存的状态
         this.loadState();
         
-        console.log('🐶 2.5D 小宠物已初始化！');
+        console.log('✅ 小宠物初始化成功');
     }
 
     /**
@@ -734,10 +734,10 @@ class VirtualPet {
     }
 }
 
-// 页面加载完成后初始化宠物
-document.addEventListener('DOMContentLoaded', () => {
+// 页面加载完成后初始化宠物（异步）
+document.addEventListener('DOMContentLoaded', async () => {
     // 延迟 500ms 初始化，确保页面完全加载
-    setTimeout(() => {
+    setTimeout(async () => {
         try {
             // 创建全局实例
             window.virtualPet = new VirtualPet({
@@ -746,6 +746,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 autoHideTimeout: 60000,
                 spritePath: '/static/img/pet_sprites/'
             });
+            // 等待异步初始化完成
+            await window.virtualPet.init();
             console.log('✅ 小宠物初始化成功');
         } catch (error) {
             console.error('❌ 小宠物初始化失败:', error);
