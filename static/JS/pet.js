@@ -127,18 +127,18 @@ class VirtualPet {
      */
     createPet() {
         this.petElement = document.createElement('div');
-        this.petElement.className = 'pet-body-2d5';
+        this.petElement.className = 'virtual-pet'; // 使用完整样式类
         
-        // 创建精灵图显示元素
+        // 1. 创建精灵图显示元素
         this.spriteElement = document.createElement('div');
         this.spriteElement.className = 'pet-sprite';
         
-        // 设置默认显示（待机状态，使用 pet_cycle）
+        // 设置默认显示（待机状态，使用 pet_cycle 的第一帧）
         if (this.animationFrames['pet_cycle']) {
+            // pet_cycle.png 是 1200x600，包含 4 帧，每帧 300px
             this.spriteElement.style.backgroundImage = `url(${this.animationFrames['pet_cycle'].src})`;
-            this.spriteElement.style.backgroundSize = 'contain';
-            this.spriteElement.style.backgroundRepeat = 'no-repeat';
-            this.spriteElement.style.backgroundPosition = 'center';
+            this.spriteElement.style.backgroundSize = '400% 200%'; // 4 列 2 行
+            this.spriteElement.style.backgroundPosition = '0% 0%'; // 显示第一帧
         } else {
             // 如果精灵图未加载，使用 emoji 占位
             this.spriteElement.innerHTML = `
@@ -147,13 +147,43 @@ class VirtualPet {
             `;
         }
         
-        // 添加投影效果
+        // 2. 添加投影效果
         const shadowElement = document.createElement('div');
         shadowElement.className = 'pet-shadow';
         
+        // 3. 创建状态指示器
+        const statusIndicators = document.createElement('div');
+        statusIndicators.className = 'pet-status-indicators';
+        statusIndicators.innerHTML = `
+            <div class="status-bar hunger-bar">
+                <div class="status-fill good" style="width: 30%"></div>
+            </div>
+            <div class="status-bar energy-bar">
+                <div class="status-fill good" style="width: 80%"></div>
+            </div>
+        `;
+        
+        // 4. 创建动作按钮
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'pet-actions';
+        actionsDiv.innerHTML = `
+            <button class="action-btn" title="喂食">🍖</button>
+            <button class="action-btn" title="抚摸">❤️</button>
+            <button class="action-btn" title="玩耍">🎾</button>
+        `;
+        
+        // 组装所有元素
         this.petElement.appendChild(this.spriteElement);
         this.petElement.appendChild(shadowElement);
+        this.petElement.appendChild(statusIndicators);
+        this.petElement.appendChild(actionsDiv);
         this.container.appendChild(this.petElement);
+        
+        // 绑定动作按钮事件
+        const actionBtns = this.petElement.querySelectorAll('.action-btn');
+        actionBtns[0].onclick = () => this.feed();
+        actionBtns[1].onclick = () => this.pet();
+        actionBtns[2].onclick = () => this.play();
     }
 
     /**
