@@ -538,25 +538,12 @@ class VirtualPet {
     }
 
     /**
-     * 更新心情显示
+     * 更新心情显示（简化版 - 不再改变 emoji）
      */
     updateMoodDisplay() {
-        const moods = {
-            happy: '😊',
-            normal: '😐',
-            sleepy: '😴',
-            sad: '😢'
-        };
-        
-        const petEmoji = this.petElement.querySelector('.pet-emoji');
-        const baseEmoji = petEmoji.textContent;
-        
-        // 临时显示心情表情
-        petEmoji.textContent = moods[this.state.mood];
-        
-        setTimeout(() => {
-            petEmoji.textContent = baseEmoji;
-        }, 2000);
+        // 不再临时改变 emoji，保持简洁
+        // 只在控制台记录心情变化
+        console.log(`💭 ${this.config.petName}的心情：${this.state.mood}`);
     }
 
     /**
@@ -698,25 +685,30 @@ class VirtualPet {
 }
 
 // 页面加载完成后初始化宠物（异步）
-document.addEventListener('DOMContentLoaded', async () => {
-    // 延迟 500ms 初始化，确保页面完全加载
-    setTimeout(async () => {
-        try {
-            // 创建全局实例
-            window.virtualPet = new VirtualPet({
-                petName: '汪汪',
-                petType: 'dog',
-                autoHideTimeout: 60000,
-                spritePath: '/static/img/pet_sprites/'
-            });
-            // 等待异步初始化完成
-            await window.virtualPet.init();
-            console.log('✅ 小宠物初始化成功');
-        } catch (error) {
-            console.error('❌ 小宠物初始化失败:', error);
-        }
-    }, 500);
-});
+// 使用单例模式防止重复初始化
+if (!window.virtualPetInitialized) {
+    window.virtualPetInitialized = true;
+    
+    document.addEventListener('DOMContentLoaded', async () => {
+        // 延迟 500ms 初始化，确保页面完全加载
+        setTimeout(async () => {
+            try {
+                // 创建全局实例
+                window.virtualPet = new VirtualPet({
+                    petName: '汪汪',
+                    petType: 'dog',
+                    autoHideTimeout: 60000,
+                    spritePath: '/static/img/pet_sprites/'
+                });
+                // 等待异步初始化完成
+                await window.virtualPet.init();
+                console.log('✅ 小宠物初始化成功');
+            } catch (error) {
+                console.error('❌ 小宠物初始化失败:', error);
+            }
+        }, 500);
+    });
+}
 
 // 导出类（供外部使用）
 if (typeof module !== 'undefined' && module.exports) {
