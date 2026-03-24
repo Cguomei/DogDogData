@@ -98,8 +98,8 @@ class VirtualPet {
             { name: 'eat_cycle', url: spritePath + 'eat_cycle.png' },
             { name: 'pet_cycle', url: spritePath + 'pet_cycle.png' },
             { name: 'eating_rotation', url: spritePath + 'eating_rotation.png' },
-            { name: 'petting_smooth', url: spritePath + 'petting_smooth.png' },
-            { name: 'idle', url: spritePath + 'idle.png' }
+            { name: 'petting_smooth', url: spritePath + 'petting_smooth.png' }
+            // 移除了 idle.png，使用 pet_cycle 代替
         ];
 
         const loadPromises = spritesToLoad.map(sprite => {
@@ -133,9 +133,12 @@ class VirtualPet {
         this.spriteElement = document.createElement('div');
         this.spriteElement.className = 'pet-sprite';
         
-        // 设置默认显示（待机状态）
-        if (this.animationFrames['idle']) {
-            this.spriteElement.style.backgroundImage = `url(${this.animationFrames['idle'].src})`;
+        // 设置默认显示（待机状态，使用 pet_cycle）
+        if (this.animationFrames['pet_cycle']) {
+            this.spriteElement.style.backgroundImage = `url(${this.animationFrames['pet_cycle'].src})`;
+            this.spriteElement.style.backgroundSize = 'contain';
+            this.spriteElement.style.backgroundRepeat = 'no-repeat';
+            this.spriteElement.style.backgroundPosition = 'center';
         } else {
             // 如果精灵图未加载，使用 emoji 占位
             this.spriteElement.innerHTML = `
@@ -567,18 +570,24 @@ class VirtualPet {
      * 更新 UI
      */
     updateUI() {
-        // 更新状态条
+        // 安全查找元素，避免 null 错误
+        if (!this.petElement) return;
+        
         const hungerBar = this.petElement.querySelector('.hunger-bar .status-fill');
         const energyBar = this.petElement.querySelector('.energy-bar .status-fill');
         
-        hungerBar.style.width = `${this.state.hunger}%`;
-        energyBar.style.width = `${this.state.energy}%`;
+        // 只在元素存在时更新
+        if (hungerBar) {
+            hungerBar.style.width = `${this.state.hunger}%`;
+            hungerBar.className = 'status-fill ' + 
+                (this.state.hunger > 70 ? 'critical' : this.state.hunger > 40 ? 'warning' : 'good');
+        }
         
-        // 根据状态改变颜色
-        hungerBar.className = 'status-fill ' + 
-            (this.state.hunger > 70 ? 'critical' : this.state.hunger > 40 ? 'warning' : 'good');
-        energyBar.className = 'status-fill ' + 
-            (this.state.energy < 30 ? 'critical' : this.state.energy < 60 ? 'warning' : 'good');
+        if (energyBar) {
+            energyBar.style.width = `${this.state.energy}%`;
+            energyBar.className = 'status-fill ' + 
+                (this.state.energy < 30 ? 'critical' : this.state.energy < 60 ? 'warning' : 'good');
+        }
     }
 
     /**
