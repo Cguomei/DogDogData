@@ -1,6 +1,6 @@
 # 🐕 狗狗数据分析系统（AI搭建）
 
-> 基于 Flask 的数据可视化平台 | 最新版本 v2.4.0
+> 基于 Flask 的数据可视化平台 | 最新版本 v2.5.1
 
 ![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)
 ![Flask](https://img.shields.io/badge/Flask-3.1.3-green.svg)
