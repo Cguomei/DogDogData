@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>🔄 清除缓存并重启</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .step {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .step-number {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background: #667eea;
+            color: white;
+            text-align: center;
+            line-height: 30px;
+            border-radius: 50%;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px 5px;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-success {
+            background: #28a745;
+        }
+        .btn-success:hover {
+            background: #218838;
+        }
+        .status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            display: none;
+        }
+        .status.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            display: block;
+        }
+        .status.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            display: block;
+        }
+        code {
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #e83e8c;
+        }
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+        .checklist li {
+            padding: 8px 0;
+            position: relative;
+            padding-left: 30px;
+        }
+        .checklist li:before {
+            content: "❌";
+            position: absolute;
+            left: 0;
+        }
+        .checklist li.checked:before {
+            content: "✅";
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 清除浏览器缓存指南</h1>
+        <p>如果遇到宠物无法显示或 MIME 类型错误，请按以下步骤操作：</p>
+        
+        <div class="step">
+            <span class="step-number">1</span>
+            <strong>完全关闭所有浏览器窗口</strong>
+            <p style="margin-top: 10px;">确保没有任何浏览器进程在运行。</p>
+        </div>
+        
+        <div class="step">
+            <span class="step-number">2</span>
+            <strong>点击下面的按钮重启 Flask 应用</strong>
+            <br>
+            <button class="btn btn-success" onclick="restartFlask()">
+                🔄 重启 Flask 应用
+            </button>
+            <div id="restart-status" class="status"></div>
+        </div>
+        
+        <div class="step">
+            <span class="step-number">3</span>
+            <strong>重新打开浏览器，访问以下页面：</strong>
+            <p style="margin-top: 10px;">
+                <a href="http://127.0.0.1:5000/test-pet" target="_blank" class="btn">
+                    🧪 打开测试页面
+                </a>
+            </p>
+        </div>
+        
+        <div class="step">
+            <span class="step-number">4</span>
+            <strong>按 <code>Ctrl + Shift + Delete</code> 清除缓存</strong>
+            <ul class="checklist" id="cache-checklist">
+                <li id="check1">按下 Ctrl + Shift + Delete</li>
+                <li id="check2">选择"时间范围"为"全部时间"</li>
+                <li id="check3">勾选"缓存的图片和文件"</li>
+                <li id="check4">点击"清除数据"</li>
+            </ul>
+        </div>
+        
+        <div class="step">
+            <span class="step-number">5</span>
+            <strong>验证是否成功</strong>
+            <p style="margin-top: 10px;">刷新测试页面，如果看到右下角有小狗，说明成功！🎉</p>
+        </div>
+        
+        <hr style="margin: 30px 0;">
+        
+        <h3>🔍 快速验证</h3>
+        <button class="btn" onclick="checkPet()">🔍 检查宠物状态</button>
+        <div id="pet-status" class="status"></div>
+        
+        <h3>💡 常见问题</h3>
+        <details style="padding: 10px; cursor: pointer;">
+            <summary style="font-weight: bold; color: #667eea;">为什么会出现 MIME 类型错误？</summary>
+            <p>浏览器缓存了旧版本的响应。即使代码已修复，缓存仍然保留错误的 Content-Type。</p>
+        </details>
+        
+        <details style="padding: 10px; cursor: pointer;">
+            <summary style="font-weight: bold; color: #667eea;">如何彻底避免缓存问题？</summary>
+            <p>在开发时添加版本号参数，如：<code>pet.js?v=2.5.1</code>，每次修改都改变版本号。</p>
+        </details>
+        
+        <details style="padding: 10px; cursor: pointer;">
+            <summary style="font-weight: bold; color: #667eea;">DataTables CDN 加载失败怎么办？</summary>
+            <p>这是正常的，因为某些 CDN 资源可能被防火墙拦截。不影响核心功能，可以忽略。</p>
+        </details>
+    </div>
+    
+    <script>
+        // 重启 Flask
+        function restartFlask() {
+            const statusDiv = document.getElementById('restart-status');
+            statusDiv.className = 'status';
+            statusDiv.innerHTML = '⏳ 正在重启...';
+            
+            fetch('/api/restart', {method: 'POST'})
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        statusDiv.className = 'status success';
+                        statusDiv.innerHTML = '✅ Flask 应用已重启！请等待 3 秒后继续。';
+                        setTimeout(() => {
+                            window.open('http://127.0.0.1:5000/test-pet', '_blank');
+                        }, 3000);
+                    } else {
+                        statusDiv.className = 'status error';
+                        statusDiv.innerHTML = '❌ 重启失败：' + data.message;
+                    }
+                })
+                .catch(err => {
+                    statusDiv.className = 'status error';
+                    statusDiv.innerHTML = '❌ 请求失败，请手动重启应用';
+                    console.error(err);
+                });
+        }
+        
+        // 检查宠物状态
+        function checkPet() {
+            const statusDiv = document.getElementById('pet-status');
+            statusDiv.className = 'status';
+            
+            fetch('/static/js/pet.js')
+                .then(r => {
+                    const contentType = r.headers.get('Content-Type');
+                    const isCorrect = contentType && contentType.includes('application/javascript');
+                    
+                    if (isCorrect) {
+                        statusDiv.className = 'status success';
+                        statusDiv.innerHTML = `✅ JS 文件 MIME 类型正确：<code>${contentType}</code>`;
+                    } else {
+                        statusDiv.className = 'status error';
+                        statusDiv.innerHTML = `❌ JS 文件 MIME 类型错误：<code>${contentType}</code><br>应该是：<code>application/javascript</code>`;
+                    }
+                })
+                .catch(err => {
+                    statusDiv.className = 'status error';
+                    statusDiv.innerHTML = '❌ 检查失败：' + err.message;
+                });
+        }
+        
+        // 自动检查步骤
+        let step = 0;
+        const interval = setInterval(() => {
+            step++;
+            if (step <= 4) {
+                document.getElementById(`check${step}`).classList.add('checked');
+            } else {
+                clearInterval(interval);
+            }
+        }, 2000);
+    </script>
+</body>
+</html>

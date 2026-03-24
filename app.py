@@ -65,22 +65,27 @@ def create_app(config_name=None):
     # 注册错误处理器
     register_error_handlers(app)
     
-    # 安全响应头
+    # 安全响应头和缓存控制
     @app.after_request
     def add_security_headers(response):
         response.headers['X-Frame-Options'] = 'SAMEORIGIN'
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['X-XSS-Protection'] = '1; mode=block'
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        
+        # 禁用所有页面的缓存（开发模式）
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
         return response
     
-    # 确保 JS 和 CSS 文件的 MIME 类型正确
+    # 确保 JS 和 CSS 文件的 MIME 类型正确（必须在最后执行）
     @app.after_request
     def ensure_correct_mime_type(response):
         if request.path.endswith('.js'):
-            response.headers['Content-Type'] = 'application/javascript'
+            response.headers['Content-Type'] = 'application/javascript; charset=utf-8'
         elif request.path.endswith('.css'):
-            response.headers['Content-Type'] = 'text/css'
+            response.headers['Content-Type'] = 'text/css; charset=utf-8'
         return response
     
     # 登录管理器配置
@@ -412,6 +417,27 @@ def register_routes(app):
     def test_pet_page():
         """2.5D 宠物功能测试页面"""
         return render_template('test_pet.html')
+    
+    @app.route('/clear-cache')
+    def clear_cache_page():
+        """清除缓存指南页面"""
+        return render_template('clear_cache.html')
+    
+    @app.route('/api/restart', methods=['POST'])
+    def api_restart():
+        """API: 重启应用（需要管理员权限）"""
+        import subprocess
+        import sys
+        try:
+            # 获取当前脚本路径
+            script_path = sys.argv[0]
+            # 启动新进程
+            subprocess.Popen([sys.executable, script_path])
+            # 当前进程退出
+            os._exit(0)
+            return jsonify({'success': True, 'message': '应用正在重启...'})
+        except Exception as e:
+            return jsonify({'success': False, 'message': str(e)}), 500
 
 
 def start_scheduler(app):
