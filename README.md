@@ -63,17 +63,6 @@ python init_db.py
 python app.py
 ```
 
-### 4. 访问系统
-浏览器打开：http://localhost:5000
-
-**默认账户**:
-- 管理员：`admin / admin123`
-- 测试用户：`test / test123`
-
-📖 **详细教程**: [QUICKSTART.md](QUICKSTART.md)
-
----
-
 ## 📁 项目结构
 
 ```
