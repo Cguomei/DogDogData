@@ -88,64 +88,27 @@ class VirtualPet {
     }
 
     /**
-     * 加载精灵图资源
+     * 加载精灵图资源（简化版 - 不再使用）
      */
     async loadSprites() {
-        const spritePath = this.config.spritePath;
-        
-        // 预加载所有精灵图
-        const spritesToLoad = [
-            { name: 'eat_cycle', url: spritePath + 'eat_cycle.png' },
-            { name: 'pet_cycle', url: spritePath + 'pet_cycle.png' },
-            { name: 'eating_rotation', url: spritePath + 'eating_rotation.png' },
-            { name: 'petting_smooth', url: spritePath + 'petting_smooth.png' }
-            // 移除了 idle.png，使用 pet_cycle 代替
-        ];
-
-        const loadPromises = spritesToLoad.map(sprite => {
-            return new Promise((resolve) => {
-                const img = new Image();
-                img.src = sprite.url;
-                img.onload = () => {
-                    this.animationFrames[sprite.name] = img;
-                    console.log(`✅ 加载精灵图：${sprite.name}`);
-                    resolve(img);
-                };
-                img.onerror = () => {
-                    console.warn(`⚠️ 精灵图加载失败：${sprite.url}`);
-                    resolve(null);
-                };
-            });
-        });
-
-        await Promise.all(loadPromises);
-        console.log('🎨 所有精灵图加载完成');
+        // 不再预加载精灵图，直接使用 CSS 显示
+        console.log('🎨 宠物显示模式：简洁版（无动画）');
     }
 
     /**
-     * 创建宠物元素（2.5D 版本）
+     * 创建宠物元素（简洁版 - 无背景图）
      */
     createPet() {
         this.petElement = document.createElement('div');
         this.petElement.className = 'virtual-pet'; // 使用完整样式类
         
-        // 1. 创建精灵图显示元素
+        // 1. 创建简单的宠物显示区域（使用 emoji）
         this.spriteElement = document.createElement('div');
-        this.spriteElement.className = 'pet-sprite';
-        
-        // 设置默认显示（待机状态，使用 pet_cycle 的第一帧）
-        if (this.animationFrames['pet_cycle']) {
-            // pet_cycle.png 是 1200x600，包含 4 帧，每帧 300px
-            this.spriteElement.style.backgroundImage = `url(${this.animationFrames['pet_cycle'].src})`;
-            this.spriteElement.style.backgroundSize = '400% 200%'; // 4 列 2 行
-            this.spriteElement.style.backgroundPosition = '0% 0%'; // 显示第一帧
-        } else {
-            // 如果精灵图未加载，使用 emoji 占位
-            this.spriteElement.innerHTML = `
-                <div class="pet-emoji">🐶</div>
-                <div class="pet-name">${this.config.petName}</div>
-            `;
-        }
+        this.spriteElement.className = 'pet-sprite-simple';
+        this.spriteElement.innerHTML = `
+            <div class="pet-emoji">🐶</div>
+            <div class="pet-name">${this.config.petName}</div>
+        `;
         
         // 2. 添加投影效果
         const shadowElement = document.createElement('div');
