@@ -697,12 +697,21 @@ class VirtualPet {
 
 // 页面加载完成后初始化宠物
 document.addEventListener('DOMContentLoaded', () => {
-    // 创建全局实例
-    window.virtualPet = new VirtualPet({
-        petName: '汪汪',
-        petType: 'dog',
-        autoHideTimeout: 60000
-    });
+    // 延迟 500ms 初始化，确保页面完全加载
+    setTimeout(() => {
+        try {
+            // 创建全局实例
+            window.virtualPet = new VirtualPet({
+                petName: '汪汪',
+                petType: 'dog',
+                autoHideTimeout: 60000,
+                spritePath: '/static/img/pet_sprites/'
+            });
+            console.log('✅ 小宠物初始化成功');
+        } catch (error) {
+            console.error('❌ 小宠物初始化失败:', error);
+        }
+    }, 500);
 });
 
 // 导出类（供外部使用）

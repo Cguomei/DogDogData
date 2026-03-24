@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2.5D 宠物测试</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/pet.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>🐶 2.5D 宠物功能测试</h1>
+        <p>如果宠物正常显示，你应该在右下角看到一只小狗</p>
+        
+        <div class="alert alert-info">
+            <strong>测试项目：</strong>
+            <ul>
+                <li>✅ 移动鼠标 → 宠物应该跟随旋转（2.5D 效果）</li>
+                <li>✅ 点击宠物 → 应该有涟漪特效和对话气泡</li>
+                <li>✅ 双击宠物 → 应该 360°旋转</li>
+            </ul>
+        </div>
+        
+        <button class="btn btn-primary" onclick="window.virtualPet.show()">召唤宠物</button>
+        <button class="btn btn-secondary" onclick="window.virtualPet.hide()">隐藏宠物</button>
+        <button class="btn btn-warning" onclick="window.virtualPet.feed()">喂食</button>
+        <button class="btn btn-success" onclick="window.virtualPet.play()">玩耍</button>
+    </div>
+    
+    <script src="/static/js/pet.js"></script>
+</body>
+</html>

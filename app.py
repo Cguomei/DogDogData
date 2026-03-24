@@ -393,6 +393,12 @@ def register_routes(app):
         from charts import get_dog_food_list
         food_list = get_dog_food_list()
         return jsonify(food_list)
+    
+    # ===== 测试页面 =====
+    @app.route('/test-pet')
+    def test_pet_page():
+        """2.5D 宠物功能测试页面"""
+        return render_template('test_pet.html')
 
 
 def start_scheduler(app):
