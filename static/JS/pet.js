@@ -646,8 +646,7 @@ class VirtualPet {
                 eye.setAttribute('ry', '2.8');
             });
         }
-    }
-
+        
         console.log(`💭 ${this.config.petName}的心情：${this.state.mood}`);
     }
 
