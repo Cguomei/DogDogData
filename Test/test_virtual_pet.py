@@ -1,7 +1,7 @@
 """
-网页小宠物功能自动化测试
+网页小宠物功能自动化测试 - v3.0.0 宠物小精灵可爱版
 使用 Playwright 进行端到端测试
-涵盖：UI 交互、状态管理、动画效果、持久化等
+涵盖：UI 交互、状态管理、动画效果、表情系统、持久化等
 """
 
 import pytest
@@ -15,9 +15,13 @@ class TestVirtualPet:
     
     @pytest.fixture(scope="function")
     def browser(self):
-        """浏览器 fixture"""
+        """浏览器 fixture - 使用 Edge（基于 Chromium）"""
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
+            # Edge 浏览器启动参数
+            browser = p.chromium.launch(
+                headless=True,
+                channel='msedge'  # 指定使用 Microsoft Edge
+            )
             yield browser
             browser.close()
     
@@ -40,30 +44,37 @@ class TestVirtualPet:
         return page
     
     def test_pet_initialization(self, pet_page):
-        """测试 1: 宠物初始化"""
+        """测试 1: 宠物初始化（v3.0.0 可爱版）"""
         # 检查宠物容器是否存在
         expect(pet_page.locator(".virtual-pet-container")).to_be_visible()
         
-        # 检查宠物身体是否存在
-        expect(pet_page.locator(".pet-body")).to_be_visible()
+        # 检查宠物小精灵身体是否存在（CSS 绘制的圆形）
+        expect(pet_page.locator(".pet-body-kawaii")).to_be_visible()
         
-        # 检查宠物 emoji 是否显示
-        pet_emoji = pet_page.locator(".pet-emoji")
-        expect(pet_emoji).to_be_visible()
+        # 检查名字标签是否显示
+        pet_name = pet_page.locator(".pet-name-tag")
+        expect(pet_name).to_be_visible()
         
-        # 验证默认宠物类型（狗狗）
-        emoji_text = pet_emoji.inner_text()
-        assert emoji_text == "🐶", f"期望显示🐶，实际显示：{emoji_text}"
+        # 验证默认宠物名字（团团）
+        name_text = pet_name.inner_text()
+        assert name_text == "团团", f"期望显示团团，实际显示：{name_text}"
         
-        # 检查状态条是否存在
-        expect(pet_page.locator(".status-bar")).to_have_count(2)
+        # 检查眼睛是否存在
+        expect(pet_page.locator(".pet-eye")).to_have_count(2)
         
-        print("✅ 测试 1 通过：宠物初始化成功")
+        # 检查小手和小脚是否存在
+        expect(pet_page.locator(".pet-hand")).to_have_count(2)
+        expect(pet_page.locator(".pet-foot")).to_have_count(2)
+        
+        # 检查动作按钮是否存在（3 个：喂食、抚摸、玩耍）
+        expect(pet_page.locator(".action-btn")).to_have_count(3)
+        
+        print("✅ 测试 1 通过：宠物小精灵初始化成功")
     
     def test_pet_click_interaction(self, pet_page):
-        """测试 2: 点击互动"""
-        # 点击宠物身体
-        pet_body = pet_page.locator(".pet-body")
+        """测试 2: 点击互动（v3.0.0 涟漪特效）"""
+        # 点击宠物身体（CSS 绘制的圆形）
+        pet_body = pet_page.locator(".pet-body-kawaii")
         pet_body.click()
         
         # 检查是否播放弹跳动画（通过检查 CSS 类）
@@ -83,7 +94,7 @@ class TestVirtualPet:
         print(f"✅ 测试 2 通过：点击互动成功，对话内容：{bubble_text}")
     
     def test_action_buttons_visibility(self, pet_page):
-        """测试 3: 动作按钮悬停显示"""
+        """测试 3: 动作按钮悬停显示（v3.0.0 粉色按钮）"""
         # 鼠标悬停在宠物上
         pet_element = pet_page.locator(".virtual-pet")
         pet_element.hover()
@@ -91,13 +102,13 @@ class TestVirtualPet:
         # 等待动作按钮显示
         time.sleep(0.5)
         
-        # 检查所有动作按钮
+        # 检查所有动作按钮（3 个：喂食、抚摸、玩耍）
         action_buttons = pet_page.locator(".action-btn")
-        expect(action_buttons).to_have_count(4)
+        expect(action_buttons).to_have_count(3)
         
         # 验证每个按钮的 emoji
         buttons = action_buttons.all()
-        expected_emojis = ["🍖", "🎾", "❤️", "💤"]
+        expected_emojis = ["🍖", "❤️", "🎾"]
         
         for i, button in enumerate(buttons):
             emoji = button.inner_text()
@@ -107,17 +118,13 @@ class TestVirtualPet:
         print("✅ 测试 3 通过：动作按钮显示正确")
     
     def test_feed_action(self, pet_page):
-        """测试 4: 喂食功能"""
-        # 获取初始饥饿度
-        hunger_bar = pet_page.locator(".hunger-bar .status-fill")
-        initial_width = hunger_bar.get_attribute("style")
-        
+        """测试 4: 喂食功能（v3.0.0）"""
         # 悬停显示按钮
         pet_page.locator(".virtual-pet").hover()
         time.sleep(0.3)
         
-        # 点击喂食按钮
-        feed_btn = pet_page.locator('.action-btn[data-action="feed"]')
+        # 点击第一个按钮（喂食）
+        feed_btn = pet_page.locator('.action-btn').first
         feed_btn.click()
         
         # 等待动画
@@ -129,20 +136,20 @@ class TestVirtualPet:
         
         # 验证对话内容包含吃的相关词汇
         bubble_text = bubble.inner_text()
-        feed_keywords = ["好吃", "美味", "嗷呜", "还要"]
+        feed_keywords = ["好吃", "美味", "嗷呜", "还要", "吃饱"]
         has_keyword = any(keyword in bubble_text for keyword in feed_keywords)
         assert has_keyword, f"喂食对话应包含吃的词汇，实际：{bubble_text}"
         
         print(f"✅ 测试 4 通过：喂食功能正常，对话：{bubble_text}")
     
     def test_play_action(self, pet_page):
-        """测试 5: 玩耍功能"""
+        """测试 5: 玩耍功能（v3.0.0）"""
         # 悬停显示按钮
         pet_page.locator(".virtual-pet").hover()
         time.sleep(0.3)
         
-        # 点击玩耍按钮
-        play_btn = pet_page.locator('.action-btn[data-action="play"]')
+        # 点击第三个按钮（玩耍）
+        play_btn = pet_page.locator('.action-btn').last
         play_btn.click()
         
         # 等待动画
@@ -154,20 +161,20 @@ class TestVirtualPet:
         
         # 验证对话内容
         bubble_text = bubble.inner_text()
-        play_keywords = ["开心", "好玩", "再来"]
+        play_keywords = ["开心", "好玩", "再来", "嘿嘿"]
         has_keyword = any(keyword in bubble_text for keyword in play_keywords)
         assert has_keyword, f"玩耍对话应包含玩的词汇，实际：{bubble_text}"
         
         print(f"✅ 测试 5 通过：玩耍功能正常，对话：{bubble_text}")
     
     def test_pet_action(self, pet_page):
-        """测试 6: 抚摸功能"""
+        """测试 6: 抚摸功能（v3.0.0）"""
         # 悬停显示按钮
         pet_page.locator(".virtual-pet").hover()
         time.sleep(0.3)
         
-        # 点击抚摸按钮
-        pet_btn = pet_page.locator('.action-btn[data-action="pet"]')
+        # 点击第二个按钮（抚摸）
+        pet_btn = pet_page.locator('.action-btn').nth(1)
         pet_btn.click()
         
         # 等待动画
@@ -185,31 +192,25 @@ class TestVirtualPet:
         
         print(f"✅ 测试 6 通过：抚摸功能正常，对话：{bubble_text}")
     
-    def test_sleep_toggle(self, pet_page):
-        """测试 7: 睡眠切换"""
-        # 悬停显示按钮
-        pet_page.locator(".virtual-pet").hover()
-        time.sleep(0.3)
+    def test_double_click_spin(self, pet_page):
+        """测试 7: 双击旋转（v3.0.0 新增）"""
+        # 双击宠物身体
+        pet_body = pet_page.locator(".pet-body-kawaii")
+        pet_body.dblclick()
         
-        # 点击睡觉按钮
-        sleep_btn = pet_page.locator('.action-btn[data-action="sleep"]')
-        sleep_btn.click()
+        # 等待旋转动画
+        time.sleep(1.5)
         
-        # 等待动画
-        time.sleep(1.2)
+        # 检查对话气泡是否显示
+        bubble = pet_page.locator(".pet-bubble.show")
+        expect(bubble).to_be_visible()
         
-        # 检查宠物是否进入睡眠状态
-        pet_element = pet_page.locator(".virtual-pet")
-        expect(pet_element).to_have_class("virtual-pet sleeping")
+        # 验证对话内容
+        bubble_text = bubble.inner_text()
+        assert "转圈" in bubble_text or "哇" in bubble_text, \
+            f"双击对话应包含转圈相关内容，实际：{bubble_text}"
         
-        # 再次点击唤醒
-        sleep_btn.click()
-        time.sleep(1.2)
-        
-        # 检查是否退出睡眠状态
-        expect(pet_element).not_to_have_class("virtual-pet sleeping")
-        
-        print("✅ 测试 7 通过：睡眠切换功能正常")
+        print(f"✅ 测试 7 通过：双击旋转功能正常，对话：{bubble_text}")
     
     def test_auto_hide(self, pet_page):
         """测试 8: 自动隐藏功能"""
@@ -261,15 +262,15 @@ class TestVirtualPet:
         print("✅ 测试 9 通过：召唤宠物功能正常")
     
     def test_state_persistence(self, browser):
-        """测试 10: 状态持久化"""
+        """测试 10: 状态持久化（v3.0.0）"""
         # 第一次访问
         context1 = browser.new_context(viewport={'width': 1920, 'height': 1080})
         page1 = context1.new_page()
         page1.goto("http://localhost:5000/", wait_until="networkidle")
         time.sleep(2)
         
-        # 与宠物互动
-        page1.locator(".pet-body").click()
+        # 与宠物互动（点击）
+        page1.locator(".pet-body-kawaii").click()
         time.sleep(1)
         
         # 检查 localStorage 是否保存
@@ -280,23 +281,29 @@ class TestVirtualPet:
         assert "hunger" in state_data, "状态应包含饥饿度"
         assert "energy" in state_data, "状态应包含活力值"
         assert "affection" in state_data, "状态应包含亲密度"
+        assert "mood" in state_data, "状态应包含心情"
         
         print(f"✅ 测试 10 通过：状态持久化正常，保存的数据：{state_data}")
         
         page1.close()
         context1.close()
     
-    def test_status_bar_colors(self, pet_page):
-        """测试 11: 状态条颜色变化"""
-        # 初始状态应该是绿色（good）
-        hunger_fill = pet_page.locator(".hunger-bar .status-fill")
+    def test_pet_appearance(self, pet_page):
+        """测试 11: 宠物外观检查（v3.0.0 新增）"""
+        # 检查宠物小精灵的配色（粉色渐变）
+        pet_body = pet_page.locator(".pet-body-kawaii")
         
-        # 检查是否有 good 类（绿色）
-        class_attr = hunger_fill.get_attribute("class")
-        assert "good" in class_attr or "warning" in class_attr or "critical" in class_attr, \
-            "状态条应该有颜色类"
+        # 获取背景样式
+        bg_style = pet_body.evaluate("el => window.getComputedStyle(el).background")
         
-        print("✅ 测试 11 通过：状态条颜色正常")
+        # 验证是否包含渐变色
+        assert "gradient" in bg_style.lower(), f"宠物身体应使用渐变背景，实际：{bg_style}"
+        
+        # 验证是否包含粉色系颜色
+        has_pink = any(color in bg_style for color in ["#FFB6C1", "#FF69B4", "#FF1493", "rgb(255, 182, 193)"])
+        assert has_pink, f"宠物身体应包含粉色，实际：{bg_style}"
+        
+        print(f"✅ 测试 11 通过：宠物外观正常，背景：{bg_style}")
     
     def test_mouse_enter_event(self, pet_page):
         """测试 12: 鼠标悬停事件"""

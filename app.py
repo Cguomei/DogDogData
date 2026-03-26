@@ -194,6 +194,36 @@ def register_routes(app):
         
         return render_template('login.html')
     
+    # ===== 宠物日志保存 API =====
+    @app.route('/api/save_pet_logs', methods=['POST'])
+    def save_pet_logs():
+        """保存宠物日志到 log 文件夹"""
+        try:
+            from datetime import datetime
+            import os
+            
+            # 确保 log 文件夹存在
+            log_dir = os.path.join(os.path.dirname(__file__), 'log')
+            os.makedirs(log_dir, exist_ok=True)
+            
+            # 解析日志内容
+            content = request.data.decode('utf-8')
+            lines = content.split('\n')
+            session = lines[0].replace('session=', '') if lines else 'unknown'
+            
+            # 生成文件名
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f'pet_log_{session}_{timestamp}.txt'
+            filepath = os.path.join(log_dir, filename)
+            
+            # 保存日志
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write(content)
+            
+            return jsonify({'success': True, 'filename': filename})
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 500
+    
     @app.route('/logout')
     @login_required
     def logout():

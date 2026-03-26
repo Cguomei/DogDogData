@@ -97,7 +97,96 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <!-- 网页小宠物脚本 -->
-    <script src="{{ url_for('static', filename='js/pet.js') }}"></script>
+    <!-- 先加载日志系统 -->
+    <script src="{{ url_for('static', filename='js/pet-logger.js', v='4.0.0') }}"></script>
+    <!-- 再加载宠物脚本 -->
+    <script src="{{ url_for('static', filename='js/pet.js', v='4.0.0') }}"></script>
+    
+    <!-- 初始化小宠物（确保只执行一次，延迟出现给惊喜） -->
+    <script>
+        // 使用日志系统记录所有初始化尝试
+        window.PetLogger.info('INIT', '========== 脚本开始执行 ==========');
+        window.PetLogger.info('INIT', 'window.petInitDone 状态', window.petInitDone);
+        
+        // 如果已经有虚拟宠物实例，直接跳过
+        if (window.virtualPet && window.virtualPet.container) {
+            window.PetLogger.warn('INIT', '虚拟宠物已经存在，跳过初始化');
+            console.log('⚠️ 虚拟宠物已经存在，跳过初始化');
+        } else if (!window.petInitDone) {
+            window.petInitDone = true;
+            window.PetLogger.info('INIT', '设置 petInitDone = true');
+            
+            // 页面完全加载后延迟初始化宠物（3 秒后出现，给惊喜）
+            window.addEventListener('load', async () => {
+                window.PetLogger.info('INIT', 'load 事件触发');
+                window.PetLogger.info('INIT', 'petInitializing 状态', window.petInitializing);
+                
+                // 使用初始化锁，防止重复执行
+                if (window.petInitializing) {
+                    window.PetLogger.warn('INIT', '宠物正在初始化中，跳过...');
+                    return;
+                }
+                window.petInitializing = true;
+                window.PetLogger.info('INIT', '设置 petInitializing = true');
+                
+                try {
+                    // 强制清理所有旧实例
+                    window.PetLogger.info('CLEANUP', '开始清理旧实例');
+                    
+                    if (window.virtualPet) {
+                        window.PetLogger.warn('CLEANUP', '发现旧实例，销毁中...');
+                        if (window.virtualPet.destroy) {
+                            window.virtualPet.destroy();
+                        }
+                    }
+                    
+                    // 清理容器
+                    const oldContainers = document.querySelectorAll('#virtual-pet-container');
+                    window.PetLogger.info('CLEANUP', '找到旧容器数量', oldContainers.length);
+                    oldContainers.forEach((el, index) => {
+                        window.PetLogger.info('CLEANUP', `删除容器 #${index}`);
+                        el.remove();
+                    });
+                    
+                    // 清理召唤按钮
+                    const summonBtn = document.getElementById('summon-pet-btn');
+                    if (summonBtn) {
+                        window.PetLogger.info('CLEANUP', '删除召唤按钮');
+                        summonBtn.remove();
+                    }
+                    
+                    // 延迟 3 秒出现（给惊喜）
+                    window.PetLogger.info('INIT', '设置 3 秒延迟');
+                    setTimeout(async () => {
+                        window.PetLogger.info('INIT', '3 秒延迟到期，开始初始化');
+                        try {
+                            window.PetLogger.info('CONSTRUCTOR', '创建 VirtualPet 实例');
+                            window.virtualPet = new VirtualPet({
+                                petName: '团团',
+                                petType: 'q-version',
+                                autoHideTimeout: 60000
+                            });
+                            window.PetLogger.info('INIT', 'VirtualPet 实例创建完成，开始 init()');
+                            await window.virtualPet.init();
+                            window.PetLogger.info('INIT', '✅ 2D Q 版团团已就位！');
+                        } catch (error) {
+                            window.PetLogger.error('INIT', '小宠物初始化失败', error);
+                        } finally {
+                            window.petInitializing = false;
+                            window.PetLogger.info('INIT', '释放锁 petInitializing = false');
+                        }
+                    }, 3000);  // 3 秒后出现
+                } catch (error) {
+                    window.PetLogger.error('INIT', '初始化过程出错', error);
+                    window.petInitializing = false;
+                }
+            });
+            
+            window.PetLogger.info('INIT', 'load 事件监听器注册完成');
+        } else {
+            window.PetLogger.warn('INIT', 'petInitDone 已为 true，跳过初始化');
+        }
+    </script>
     
     <!-- 召唤宠物按钮功能 -->
     <script>
