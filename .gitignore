@@ -31,6 +31,12 @@ ENV/
 # PyCharm
 .idea/
 
+# 内部测试文档（保密）
+Test/*.txt
+!Test/requirements-test.txt
+Test/reports/
+test_pet_report/
+
 *.md
 
 JMeter/
