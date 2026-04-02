@@ -193,8 +193,12 @@ async def test_pet_functionality():
 
 def save_test_report(results):
     """保存测试报告到文件"""
+    from pathlib import Path
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    report_file = f'test_pet_report_{timestamp}.txt'
+    # 使用绝对路径，保存到 Test/test_pet_report/ 目录
+    report_dir = Path(__file__).parent / 'Test' / 'test_pet_report'
+    report_dir.mkdir(parents=True, exist_ok=True)
+    report_file = report_dir / f'test_pet_report_{timestamp}.txt'
     
     with open(report_file, 'w', encoding='utf-8') as f:
         f.write("=" * 60 + "\n")

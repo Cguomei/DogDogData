@@ -48,8 +48,9 @@ class TestExecutionManager:
         self.results = []
         self.start_time = None
         self.end_time = None
-        self.report_dir = Path('Test/reports')
-        self.report_dir.mkdir(exist_ok=True)
+        # 使用绝对路径，避免从不同目录运行时出错
+        self.report_dir = Path(__file__).parent / 'reports'
+        self.report_dir.mkdir(parents=True, exist_ok=True)
     
     def start_test_run(self):
         self.start_time = datetime.now()
