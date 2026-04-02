@@ -1,14 +1,21 @@
 import os
 import pytest
 from dotenv import load_dotenv
-from app import app as flask_app
-from app import db as _db
-from models import User
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, scoped_session
 
 # 加载 .env 文件中的环境变量（用于数据库密码等）
 load_dotenv()
+
+try:
+    from app import app as flask_app
+    from app import db as _db
+    from models import User
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker, scoped_session
+except ImportError as e:
+    # 如果导入失败，提供更友好的错误信息
+    print(f"导入失败: {e}")
+    print("请确保已安装所有依赖: pip install -r requirements.txt")
+    raise
 
 @pytest.fixture(scope='session')
 def app():
@@ -99,7 +106,7 @@ def login_user(client):
 @pytest.fixture
 def logged_in_client(client, login_user):
     """返回一个已经以普通用户身份登录的客户端。"""
-    login_user('user', '123')
+    login_user('user', '123456')
     return client
 
 @pytest.fixture

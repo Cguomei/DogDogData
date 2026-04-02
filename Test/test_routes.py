@@ -78,7 +78,7 @@ def test_login_page_get(client):
 
 def test_login_success(client, login_user):
     """使用正确凭证登录应成功并重定向。"""
-    response = login_user('user', '123')
+    response = login_user('user', '123456')
     assert response.status_code == 200  # 因为 follow_redirects=True
     # assert b'登录成功' in response.data or b'index' in response.data
     assert '登录成功' in response.get_data(as_text=True) or 'admin_breeds' in response.get_data(as_text=True)

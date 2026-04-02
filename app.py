@@ -106,19 +106,28 @@ def create_app(config_name=None):
 
 def start_scheduler(app):
     """启动定时任务"""
-    with app.app_context():
-        scheduler.add_job(
-            id='update_summary',
-            func=lambda: update_dashboard_summary(),
-            trigger='interval',
-            hours=6,
-            replace_existing=True
-        )
-        scheduler.start()
+    try:
+        with app.app_context():
+            # 检查调度器是否已经在运行
+            if not scheduler.running:
+                scheduler.add_job(
+                    id='update_summary',
+                    func=lambda: update_dashboard_summary(),
+                    trigger='interval',
+                    hours=6,
+                    replace_existing=True
+                )
+                scheduler.start()
+    except Exception as e:
+        # 如果调度器启动失败，记录错误但不中断应用启动
+        print(f"调度器启动警告: {e}")
 
 
-# 创建应用实例
-app = create_app()
+# 创建应用实例（仅在非测试环境中自动创建）
+if not os.getenv('TESTING'):
+    app = create_app()
+else:
+    app = None
 
 
 if __name__ == '__main__':
