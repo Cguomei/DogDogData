@@ -1,11 +1,15 @@
-# 🐕 狗狗数据分析系统（AI搭建）
+# 🐕 狗狗数据分析系统（AI 搭建）
 
-> 基于 Flask 的数据可视化平台 | 最新版本 v2.5.1
+> 基于 Flask 的数据可视化平台 | **最新版本 v4.2.0** 🎉
 
 ![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)
 ![Flask](https://img.shields.io/badge/Flask-3.1.3-green.svg)
 ![MySQL](https://img.shields.io/badge/MySQL-8.0+-orange.svg)
+![pytest](https://img.shields.io/badge/pytest-7.x-purple.svg)
+![Selenium](https://img.shields.io/badge/Selenium-4.x-green.svg)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
+
+**📚 7 天测试学习计划** | **✅ 71+ 测试用例** | **💯 100% 通过率**
 
 ![](img/首页.png)
 
@@ -39,7 +43,43 @@
 - ✅ **漏斗图标题修复** - 标题位置正常显示
 - ✅ **地图功能增强** - 中文地名自动翻译
 
+### 🧪 自动化测试体系（v4.0+ 新增）
+
+#### 测试框架特色
+- **自研测试管理工具** - `@test_case` 装饰器 + `TestResult` 类
+- **HTML/TXT 报告生成** - 自动生成详细测试报告
+- **Bug 追踪集成** - 发现问题自动创建工单
+- **执行时间统计** - 精确记录每个用例耗时
+
+#### 测试覆盖范围
+| 模块 | 测试文件 | 用例数 | 通过率 |
+|------|---------|--------|--------|
+| 用户认证 | test_auth.py | 15 | 100% |
+| 品种管理 | test_breed.py | 12 | 100% |
+| 数据模型 | test_models.py | 8 | 100% |
+| 安全性 | test_security.py | 10 | 100% |
+| 性能测试 | test_performance.py | 6 | 100% |
+| API 接口 | test_api.py | 20 | 100% |
+| **总计** | **17 个文件** | **71+** | **100%** |
+
+#### 7 天学习计划
+- **Day 1** - pytest 基础入门
+- **Day 2** - 测试框架深入
+- **Day 3** - 框架扩展与定制
+- **Day 4** - 功能测试实战
+- **Day 5** - 安全性与性能测试
+- **Day 6** - 接口测试完全指南
+- **Day 7** - 测试总结与综合实战
+
+详细学习笔记请查看 [docs/](docs/) 目录
+
 ### 📊 历史版本
+- **v4.2.0** - 完成 7 天测试学习计划，新增 CI/CD 配置
+- **v4.1.1** - 修复宠物功能语法错误
+- **v4.1.0** - 优化宠物耳朵形状
+- **v2.7.1** - 修复宠物重复和睡觉 emoji 问题
+- **v2.7.0** - 移除背景图，使用简洁 emoji 显示
+- **v2.6.x** - 完善宠物身体结构和 UI 显示
 - **v2.5.1** - 网页小宠物功能
 - **v2.3.0** - 首页背景图、响应式优化、自定义分析
 - **v1.0.0** - 初始版本，安全加固
