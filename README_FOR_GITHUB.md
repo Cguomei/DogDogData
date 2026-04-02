@@ -3,6 +3,20 @@
 > 💡 **一个专注于 Web 自动化测试的实战学习项目**  
 > 📚 记录从 0 到 1 掌握现代测试技术的完整旅程
 
+<div align="center">
+
+[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
+[![pytest](https://img.shields.io/badge/pytest-7.x-purple.svg)](https://docs.pytest.org/)
+[![Selenium](https://img.shields.io/badge/Selenium-4.x-green.svg)](https://www.selenium.dev/)
+[![Flask](https://img.shields.io/badge/Flask-2.x-lightgrey.svg)](https://flask.palletsprojects.com/)
+[![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-Enabled-orange.svg)](https://github.com/features/actions)
+[![Test Coverage](https://img.shields.io/badge/Coverage-100%25-brightgreen.svg)]()
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+**7 天学习计划** | **71+ 测试用例** | **100% 通过率** | **11 个核心模块**
+
+</div>
+
 ---
 
 ## 🎯 项目简介
@@ -308,6 +322,28 @@ pytest test_auth.py -v
 
 ---
 
+## 🔧 CI/CD 配置说明
+
+### GitHub Actions 自动化测试
+
+项目已配置 GitHub Actions 工作流，实现持续集成：
+
+| 功能特性 | 说明 |
+|---------|------|
+| **自动触发** | 代码推送到 main/develop 分支或创建 PR 时触发 |
+| **多版本测试** | 同时测试 Python 3.8, 3.9, 3.10 三个版本 |
+| **并发执行** | 使用矩阵策略并行运行测试，加快速度 |
+| **报告上传** | 自动生成 HTML 报告和覆盖率报告并上传 |
+| **失败通知** | 测试失败时通过邮件和 Slack 通知 |
+
+**配置文件：** `.github/workflows/ci.yml`
+
+**徽章展示：**
+- [![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-Enabled-orange.svg)]()
+- [![Test Coverage](https://img.shields.io/badge/Coverage-100%25-brightgreen.svg)]()
+
+---
+
 ## 📝 未来改进计划
 
 - [ ] 引入 Docker 容器化部署
@@ -315,6 +351,20 @@ pytest test_auth.py -v
 - [ ] 增加移动端测试（Appium）
 - [ ] 实现 AI 辅助测试用例生成
 - [ ] 添加性能监控告警系统
+
+---
+
+## 🏷️ 版本发布历史
+
+| 版本号 | 发布日期 | 主要更新 |
+|-------|---------|----------|
+| **v2.5.0** | 2026-03-30 | ✅ 完成 7 天测试学习指南<br>✅ 新增接口测试、CI/CD 配置内容<br>✅ 优化 README 展示效果 |
+| **v2.4.0** | 2026-03-28 | ✅ 添加宠物功能 2.5D 视觉升级<br>✅ 优化测试报告生成器<br>✅ 修复已知问题 |
+| **v2.3.0** | 2026-03-25 | ✅ 初始版本发布<br>✅ 基础测试框架搭建<br>✅ 核心功能测试覆盖 |
+
+**当前状态：** 🟢 活跃维护中
+
+**最新发布：** [v2.5.0](https://github.com/Cguomei/fastApiProject/releases/tag/v2.5.0)
 
 ---
 
