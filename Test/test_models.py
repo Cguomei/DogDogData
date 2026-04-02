@@ -13,11 +13,14 @@ def test_user_password_hashing(session):
 
 def test_user_unique_username(session):
     """测试用户名唯一约束。"""
+    import time
+    unique_name = f'uniqueuser_{int(time.time())}'  # 使用时间戳确保唯一性
+    
     # noinspection PyArgumentList
-    user1 = User(username='uniqueuser')
+    user1 = User(username=unique_name)
     user1.set_password('password1')  # 设置密码
     # noinspection PyArgumentList
-    user2 = User(username='uniqueuser')
+    user2 = User(username=unique_name)
     user2.set_password('password2')  # 设置密码
     session.add(user1)
     session.commit()
@@ -30,6 +33,7 @@ def test_user_unique_username(session):
 def test_dog_breed_creation(session):
     """测试创建 DogBreed 记录。"""
     import time
+    from decimal import Decimal
     unique_name = f'拉布拉多_{int(time.time())}'  # 使用时间戳确保唯一性
     
     breed = DogBreed(
@@ -43,7 +47,7 @@ def test_dog_breed_creation(session):
 
     saved = session.query(DogBreed).filter_by(breed_name=unique_name).first()
     assert saved is not None
-    # 允许一定范围的浮点数误差
-    assert abs(saved.avg_life_years - 12.5) < 0.1
+    # 允许一定范围的浮点数误差（Decimal 转 float）
+    assert abs(float(saved.avg_life_years) - 12.5) < 0.1
     assert saved.size_category == '大型'
     assert saved.popularity == 100

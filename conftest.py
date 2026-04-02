@@ -39,8 +39,8 @@ def db(app):
     with app.app_context():
         _db.create_all()  # 创建表（如果使用测试库）
     yield _db
-    with app.app_context():
-        _db.drop_all()    # 清理测试库
+    # 不再 drop_all，避免外键约束问题
+    # 测试数据通过 session fixture 的事务回滚自动清理
 
 @pytest.fixture(scope='function')
 def session(db, request):
@@ -70,13 +70,13 @@ def runner(app):
 
 @pytest.fixture(scope='session', autouse=True)
 def create_test_users(app, db):
-    """在测试会话开始前创建两个测试用户：普通用户 user/123，管理员 admin/123456。"""
+    """在测试会话开始前创建两个测试用户：普通用户 user/123456，管理员 admin/123456。"""
     with app.app_context():
         # 如果用户已存在则跳过（适用于多次运行测试）
         if not User.query.filter_by(username='user').first():
             # noinspection PyArgumentList
             user = User(username='user')
-            user.set_password('123')
+            user.set_password('123456')  # 至少 6 位
             db.session.add(user)
         if not User.query.filter_by(username='admin').first():
             # noinspection PyArgumentList
