@@ -47,17 +47,19 @@ def session(db, request):
     """为每个测试函数创建一个独立的事务，测试结束后回滚，保证数据隔离。"""
     connection = db.engine.connect()
     transaction = connection.begin()
-    options = dict(bind=connection, binds={})
-    session = db.create_scoped_session(options=options)
-
+    
+    # 使用 Flask-SQLAlchemy 3.x 的兼容方式
+    options = dict(bind=connection)
+    session = db._make_scoped_session(options=options)
+    
     # 用 session 替换全局 db.session
     db.session = session
-
+    
     def teardown():
         transaction.rollback()
         connection.close()
         session.remove()
-
+    
     request.addfinalizer(teardown)
     return session
 
