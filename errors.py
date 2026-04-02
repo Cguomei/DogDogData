@@ -2,7 +2,7 @@
 统一错误处理模块
 提供友好的错误响应，避免泄露敏感信息
 """
-from flask import jsonify, render_template
+from flask import jsonify, render_template, request, url_for, flash, redirect
 from werkzeug.exceptions import HTTPException
 
 
@@ -20,7 +20,7 @@ def register_error_handlers(app):
         if request.is_json:
             return jsonify({'error': '未授权', 'message': '请先登录'}), 401
         flash('请先登录', 'warning')
-        return redirect(url_for('login'))
+        return redirect(url_for('auth.login'))
     
     @app.errorhandler(403)
     def forbidden(error):
@@ -69,7 +69,3 @@ def register_error_handlers(app):
             raise error
         
         return render_template('error.html', error=error), 500
-
-
-# 导入时需要的依赖
-from flask import request, url_for, flash, redirect

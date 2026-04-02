@@ -56,15 +56,15 @@
                             {{ current_user.username }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="{{ url_for('logout') }}">登出</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">登出</a></li>
                             {% if current_user.is_admin() %}
-                            <li><a class="dropdown-item" href="{{ url_for('admin_breeds') }}">品种管理</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.admin_breeds') }}">品种管理</a></li>
                             {% endif %}
                         </ul>
                     </li>
                 {% else %}
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('login') }}">登录</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('register') }}">注册</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}">登录</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.register') }}">注册</a></li>
                 {% endif %}
             </ul>
             </div>
