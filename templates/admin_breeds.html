@@ -36,7 +36,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">新增品种</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
             </div>
             <div class="modal-body">
                 <form id="addForm">
@@ -78,7 +78,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">编辑品种</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
             </div>
             <div class="modal-body">
                 <form id="editForm">
@@ -116,6 +116,11 @@
 </div>
 
 <script>
+// 获取CSRF令牌
+function getCSRFToken() {
+    return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+}
+
 // 加载数据并渲染表格
 function loadBreeds() {
     fetch('/api/breeds')
@@ -150,33 +155,78 @@ document.getElementById('saveAddBtn').addEventListener('click', () => {
         size_category: document.getElementById('size_category').value || null,
         popularity: parseInt(document.getElementById('popularity').value) || 0
     };
+    console.log('发送的数据:', data);
+    console.log('CSRF令牌:', getCSRFToken());
     fetch('/api/breeds', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        },
         body: JSON.stringify(data)
     })
-    .then(res => res.json())
     .then(res => {
+        console.log('响应状态码:', res.status);
+        return res.json();
+    })
+    .then(res => {
+        console.log('响应内容:', res);
         if (res.id) {
-            $('#addModal').modal('hide');
+            console.log('添加成功，关闭模态框');
+            // 使用Bootstrap 5的原生方法关闭模态框
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addModal'));
+            if (modal) {
+                modal.hide();
+            } else {
+                console.log('模态框实例不存在');
+            }
             loadBreeds();  // 重新加载表格
             // 清空表单
             document.getElementById('addForm').reset();
         } else {
-            alert('添加失败');
+            alert(res.error || '添加失败');
         }
+    })
+    .catch(error => {
+        console.error('请求失败:', error);
+        alert('请求失败，请稍后重试');
     });
 });
 
 // 删除品种（需要后端实现 DELETE 接口）
 function deleteBreed(id) {
-    if (!confirm('确定要删除该品种吗？')) return;
-    fetch(`/api/breeds/${id}`, { method: 'DELETE' })
-        .then(res => res.json())
-        .then(res => {
-            if (res.message) loadBreeds();
-            else alert('删除失败');
-        });
+    console.log('删除按钮被点击，ID:', id);
+    // 先显示确认对话框
+    const confirmed = confirm('确定要删除该品种吗？');
+    console.log('用户确认:', confirmed);
+    if (!confirmed) {
+        console.log('用户取消删除，不执行任何操作');
+        return;
+    }
+    console.log('开始发送删除请求...');
+    fetch(`/api/breeds/${id}`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(res => {
+        console.log('删除请求响应状态:', res.status);
+        return res.json();
+    })
+    .then(res => {
+        console.log('删除请求响应内容:', res);
+        if (res.message) {
+            console.log('删除成功，重新加载表格');
+            loadBreeds();
+        } else {
+            alert(res.error || '删除失败');
+        }
+    })
+    .catch(error => {
+        console.error('删除请求失败:', error);
+        alert('删除请求失败，请稍后重试');
+    });
 }
 
 // 编辑：打开模态框并加载数据
@@ -205,7 +255,10 @@ document.getElementById('saveEditBtn').addEventListener('click', () => {
     };
     fetch(`/api/breeds/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        },
         body: JSON.stringify(data)
     })
     .then(res => res.json())
@@ -214,7 +267,7 @@ document.getElementById('saveEditBtn').addEventListener('click', () => {
             $('#editModal').modal('hide');
             loadBreeds();
         } else {
-            alert('修改失败');
+            alert(res.error || '更新失败');
         }
     });
 });

@@ -6,9 +6,13 @@ Flask-Login==0.6.3
 Flask-SQLAlchemy==3.1.1
 Flask-WTF==1.2.2
 
+# 生产服务器
+gunicorn==21.2.0
+
 # 数据库
 PyMySQL==1.1.2
 SQLAlchemy==2.0.48
+psycopg2-binary==2.9.9  # PostgreSQL 驱动（Railway/Render 需要）
 
 # 数据处理
 pandas==2.3.3

@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, render_template
-from flask_login import login_required
+from flask_login import login_required, current_user
 from models import DogBreed, db
 from sqlalchemy.exc import IntegrityError
 import os
@@ -129,6 +129,11 @@ def get_breed(id):
 @api_bp.route('/api/breeds', methods=['POST'])
 @login_required
 def add_breed():
+    """添加新的狗狗品种（需要管理员权限）"""
+    # 检查管理员权限
+    if not current_user.is_admin():
+        return jsonify({'error': '权限不足，需要管理员权限'}), 403
+    
     data = request.get_json()
     if not data:
         return jsonify({"error": "请求数据不能为空"}), 400
@@ -154,7 +159,7 @@ def add_breed():
         return jsonify({'message': '添加成功', 'id': breed.id}), 201
     except IntegrityError:
         db.session.rollback()
-        return jsonify({"error": "该品种已存在"}), 400
+        return jsonify({"error": "添加失败，可能是品种名称重复"}), 400
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": f"添加失败：{str(e)}"}), 500
@@ -162,6 +167,11 @@ def add_breed():
 @api_bp.route('/api/breeds/<int:id>', methods=['PUT'])
 @login_required
 def update_breed(id):
+    """更新狗狗品种信息（需要管理员权限）"""
+    # 检查管理员权限
+    if not current_user.is_admin():
+        return jsonify({'error': '权限不足，需要管理员权限'}), 403
+    
     breed = DogBreed.query.get_or_404(id)
     data = request.get_json()
     
@@ -195,10 +205,18 @@ def update_breed(id):
     except IntegrityError:
         db.session.rollback()
         return jsonify({"error": "更新失败"}), 500
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"更新失败：{str(e)}"}), 500
 
 @api_bp.route('/api/breeds/<int:id>', methods=['DELETE'])
 @login_required
 def delete_breed(id):
+    """删除狗狗品种（需要管理员权限）"""
+    # 检查管理员权限
+    if not current_user.is_admin():
+        return jsonify({'error': '权限不足，需要管理员权限'}), 403
+    
     breed = DogBreed.query.get_or_404(id)
     
     try:

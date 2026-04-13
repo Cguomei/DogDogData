@@ -59,6 +59,11 @@ def register():
             db.session.commit()
             flash('注册成功，请登录', 'success')
             return redirect(url_for('auth.login'))
+        except ValueError as e:
+            # 密码验证失败
+            db.session.rollback()
+            flash(f'密码格式错误：{str(e)}', 'danger')
+            return render_template('register.html')
         except Exception as e:
             db.session.rollback()
             flash(f'注册失败：{str(e)}', 'danger')

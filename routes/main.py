@@ -1,4 +1,5 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, flash, redirect, url_for
+from flask_login import login_required, current_user
 from charts import get_dashboard_stats_from_summary
 from charts import get_price_scatter, get_weight_line, get_level_bar, get_shop_top10_hist, get_price_funnel, get_world_map
 
@@ -18,19 +19,21 @@ def charts_list():
 
 # ===== 品种管理页面 =====
 @main_bp.route('/admin/breeds')
+@login_required
 def admin_breeds():
     """品种管理页面（仅管理员可访问）"""
-    from flask_login import login_required, current_user
-    from flask import flash, redirect, url_for
-    
-    @login_required
-    def admin_breeds_protected():
-        if not current_user.is_admin():
-            flash('您没有权限访问此页面', 'danger')
-            return redirect(url_for('main.index'))
-        return render_template('admin_breeds.html')
-    
-    return admin_breeds_protected()
+    if not current_user.is_admin():
+        flash('您没有权限访问此页面', 'danger')
+        return redirect(url_for('main.index'))
+    return render_template('admin_breeds.html')
+
+# ===== 狗粮数据页面 =====
+@main_bp.route('/food')
+def food_dashboard():
+    """狗粮数据看板页面"""
+    from charts import get_dog_food_stats
+    stats = get_dog_food_stats()
+    return render_template('food.html', stats=stats)
 
 # ===== 图表页面 =====
 @main_bp.route('/map')
@@ -65,11 +68,6 @@ def funnel():
 
 @main_bp.route('/chart/map')
 def world_map():
-    from flask_caching import cache
-    
-    @cache.cached(timeout=3600)
-    def cached_world_map():
-        chart_html = get_world_map()
-        return render_template('chart_page.html', chart_html=chart_html, chart_title='世界地图（狗狗家乡分布）')
-    
-    return cached_world_map()
+    """世界地图页面"""
+    chart_html = get_world_map()
+    return render_template('chart_page.html', chart_html=chart_html, chart_title='世界地图（狗狗家乡分布）')

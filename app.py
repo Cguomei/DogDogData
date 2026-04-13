@@ -29,11 +29,17 @@ login_manager = LoginManager()
 cache = Cache()
 scheduler = APScheduler()
 
+# 标记调度器是否已启动
+_scheduler_started = False
+
 
 def create_app(config_name=None):
     """
     应用工厂函数
     支持多环境配置和测试隔离
+    
+    参数:
+        config_name: 配置名称 ('development', 'production', 'testing', 'demo')
     """
     app = Flask(__name__)
     
@@ -44,7 +50,21 @@ def create_app(config_name=None):
     # 加载配置
     if config_name is None:
         config_name = os.getenv('FLASK_ENV', 'development')
-    app.config.from_object(get_config())
+    
+    # 特殊处理演示模式
+    if config_name == 'demo':
+        try:
+            from config_demo import DemoConfig
+        except ImportError:
+            # 如果 config_demo 在 scripts 目录中
+            import sys
+            scripts_dir = os.path.join(os.path.dirname(__file__), 'scripts')
+            if scripts_dir not in sys.path:
+                sys.path.insert(0, scripts_dir)
+            from config_demo import DemoConfig
+        app.config.from_object(DemoConfig)
+    else:
+        app.config.from_object(get_config())
     
     # 初始化扩展
     db.init_app(app)
@@ -98,6 +118,9 @@ def create_app(config_name=None):
     app.register_blueprint(auth_bp)
     app.register_blueprint(api_bp)
     
+    # 为API路由添加CSRF豁免
+    csrf.exempt(api_bp)
+    
     # 启动定时任务
     start_scheduler(app)
     
@@ -106,6 +129,12 @@ def create_app(config_name=None):
 
 def start_scheduler(app):
     """启动定时任务"""
+    global _scheduler_started
+    
+    # 如果调度器已经启动，跳过
+    if _scheduler_started:
+        return
+    
     try:
         with app.app_context():
             # 检查调度器是否已经在运行
@@ -118,6 +147,7 @@ def start_scheduler(app):
                     replace_existing=True
                 )
                 scheduler.start()
+                _scheduler_started = True
     except Exception as e:
         # 如果调度器启动失败，记录错误但不中断应用启动
         print(f"调度器启动警告: {e}")

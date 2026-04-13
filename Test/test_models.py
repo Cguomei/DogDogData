@@ -7,8 +7,8 @@ def test_user_password_hashing(session):
     """测试用户密码哈希和验证。"""
     # noinspection PyArgumentList
     user = User(username='testuser')
-    user.set_password('secret')
-    assert user.check_password('secret') is True
+    user.set_password('123456')  # 修改为 6 位数字密码
+    assert user.check_password('123456') is True
     assert user.check_password('wrong') is False
 
 def test_user_unique_username(session):
@@ -18,10 +18,10 @@ def test_user_unique_username(session):
     
     # noinspection PyArgumentList
     user1 = User(username=unique_name)
-    user1.set_password('password1')  # 设置密码
+    user1.set_password('123456')  # 修改为 6 位数字密码
     # noinspection PyArgumentList
     user2 = User(username=unique_name)
-    user2.set_password('password2')  # 设置密码
+    user2.set_password('654321')  # 修改为 6 位数字密码
     session.add(user1)
     session.commit()
 

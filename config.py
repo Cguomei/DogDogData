@@ -81,6 +81,14 @@ class ProductionConfig(Config):
     SESSION_COOKIE_SECURE = True
     LOG_LEVEL = 'WARNING'
     
+    # 从环境变量读取数据库 URL（Railway/Render 等云平台提供）
+    DATABASE_URL = os.getenv('DATABASE_URL')
+    if DATABASE_URL:
+        # Railway/Heroku 使用 postgres:// 前缀，需要替换为 postgresql://
+        if DATABASE_URL.startswith('postgres://'):
+            DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+        SQLALCHEMY_DATABASE_URI = DATABASE_URL
+    
 
 class TestingConfig(Config):
     """测试环境配置"""

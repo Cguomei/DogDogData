@@ -2,6 +2,9 @@
 import json
 
 import pytest
+from urllib3.contrib.emscripten import response
+
+from routes import api
 
 
 def test_get_breeds(client):
@@ -12,6 +15,7 @@ def test_get_breeds(client):
     assert isinstance(data, list)
     if data:
         assert 'breed_name' in data[0]
+
 
 def test_post_breed_requires_auth(client):
     """未登录时 POST /api/breeds 应返回 400 或 401/403。"""

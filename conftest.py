@@ -27,6 +27,7 @@ def app():
         'TESTING': True,
         'SQLALCHEMY_DATABASE_URI': f"mysql+pymysql://{os.getenv('DB_USER', 'root')}:{os.getenv('DB_PASSWORD', '123456')}@{os.getenv('DB_HOST', 'localhost')}/{test_db_name}",
         'SQLALCHEMY_TRACK_MODIFICATIONS': False,
+        'WTF_CSRF_ENABLED': False,  # 禁用 CSRF 保护以便测试
         # 如果你不想新建库，可以注释掉上面两行，使用原库但依赖事务回滚
     })
     yield flask_app

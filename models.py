@@ -13,9 +13,15 @@ class User(UserMixin, db.Model):
     role = db.Column(db.String(20), default='user')  # 'admin' 或 'user'
 
     def set_password(self, password):
-        # 密码强度验证
+        """设置密码，并进行强度验证
+        
+        要求：
+        - 至少 6 位
+        """
+        # 检查长度
         if len(password) < 6:
             raise ValueError("密码长度至少 6 位")
+        
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):

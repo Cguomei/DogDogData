@@ -59,16 +59,11 @@ def test_admin_breeds_with_user(logged_in_client):
         assert response.location == '/' or 'index' in response.location
 
 def test_admin_breeds_with_admin(admin_client):
-    """管理员访问 /admin/breeds 应返回 200。普通用户访问 /admin/breeds 应被拒绝（403 或重定向）。"""
+    """管理员访问 /admin/breeds 应返回 200。"""
     response = admin_client.get('/admin/breeds')
     assert response.status_code == 200
-    # assert b'品种管理' in response.data or b'admin_breeds' in response.data
+    # 检查页面内容
     assert '品种管理' in response.get_data(as_text=True) or 'admin_breeds' in response.get_data(as_text=True)
-
-    # 根据你的实现，可能是 302 重定向到首页，或者 403
-    assert response.status_code in (302, 403)
-    if response.status_code == 302:
-        assert response.location == '/' or 'index' in response.location
 
 def test_login_page_get(client):
     """GET /login 应返回登录表单。"""
@@ -92,4 +87,4 @@ def test_logout(logged_in_client):
     """登出后应重定向到首页。"""
     response = logged_in_client.get('/logout', follow_redirects=True)
     assert response.status_code == 200
-    assert '已登出' in response.get_data(as_text=True)
+    assert '已退出登录' in response.get_data(as_text=True)

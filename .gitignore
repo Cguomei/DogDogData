@@ -3,7 +3,7 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-*.db
+# demo.db  # 演示模式 SQLite 数据库（学习项目，可以上传）
 *.sqlite3
 
 # Virtual environment
@@ -17,8 +17,10 @@ ENV/
 *.swp
 *.swo
 
-# Environment variables
+# Environment variables（敏感文件，严禁上传）
 .env
+.env.local
+.env.production
 
 # Data files
 *.json
@@ -27,6 +29,7 @@ ENV/
 
 # Logs
 *.log
+log/
 
 # PyCharm
 .idea/
@@ -38,11 +41,18 @@ Test/reports/
 test_pet_report/
 Test/docs/
 Test/test_tools/
-log/
+
+# 临时脚本和工具（不干扰项目结构）
+scripts/
 
 # 临时文件和报告
 *.tmp
 *.bak
 *.orig
 
+# JMeter
 JMeter/
+
+# OS
+.DS_Store
+Thumbs.db
