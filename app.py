@@ -53,15 +53,7 @@ def create_app(config_name=None):
     
     # 特殊处理演示模式
     if config_name == 'demo':
-        try:
-            from config_demo import DemoConfig
-        except ImportError:
-            # 如果 config_demo 在 scripts 目录中
-            import sys
-            scripts_dir = os.path.join(os.path.dirname(__file__), 'scripts')
-            if scripts_dir not in sys.path:
-                sys.path.insert(0, scripts_dir)
-            from config_demo import DemoConfig
+        from config_demo import DemoConfig
         app.config.from_object(DemoConfig)
     else:
         app.config.from_object(get_config())
@@ -154,7 +146,7 @@ def start_scheduler(app):
 
 
 # 创建应用实例（仅在非测试环境中自动创建）
-if not os.getenv('TESTING'):
+if not os.getenv('TESTING') and not os.getenv('FLASK_ENV') == 'demo':
     app = create_app()
 else:
     app = None
