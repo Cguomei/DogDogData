@@ -79,27 +79,103 @@ def generate_chart():
     """API: 根据用户配置生成图表"""
     try:
         data = request.get_json()
-        chart_type = data.get('chart_type')
+        chart_type = data.get('chart_type')  # scatter, line, bar, pie
         x_column = data.get('x_column')
         y_column = data.get('y_column')
         title = data.get('title', '自定义图表')
+        upload_data = data.get('data', [])  # 前端传递的表格数据
         
         if not all([chart_type, x_column, y_column]):
             return jsonify({'error': '缺少必要参数'}), 400
         
-        # 这里可以根据需要实现不同的图表生成逻辑
-        # 目前返回成功响应，前端已经可以处理
+        if not upload_data or len(upload_data) == 0:
+            return jsonify({'error': '没有数据可生成图表'}), 400
+        
+        # 将数据转换为DataFrame
+        df = pd.DataFrame(upload_data)
+        
+        # 验证列是否存在
+        if x_column not in df.columns or y_column not in df.columns:
+            return jsonify({'error': f'列名不存在: {x_column} 或 {y_column}'}), 400
+        
+        # 提取数据
+        x_data = df[x_column].tolist()
+        y_data = df[y_column].tolist()
+        
+        # 过滤无效数据
+        valid_pairs = [(x, y) for x, y in zip(x_data, y_data) 
+                      if pd.notna(x) and pd.notna(y)]
+        
+        if len(valid_pairs) == 0:
+            return jsonify({'error': '没有有效数据对'}), 400
+        
+        x_valid, y_valid = zip(*valid_pairs)
+        
+        # 根据图表类型生成 PyECharts 配置
+        from pyecharts.charts import Scatter, Line, Bar, Pie
+        from pyecharts import options as opts
+        
+        if chart_type == 'scatter':
+            chart = (
+                Scatter()
+                .add_xaxis(list(x_valid))
+                .add_yaxis(title, list(y_valid))
+                .set_global_opts(
+                    title_opts=opts.TitleOpts(title=title),
+                    xaxis_opts=opts.AxisOpts(name=x_column),
+                    yaxis_opts=opts.AxisOpts(name=y_column)
+                )
+            )
+        
+        elif chart_type == 'line':
+            chart = (
+                Line()
+                .add_xaxis(list(x_valid))
+                .add_yaxis(title, list(y_valid))
+                .set_global_opts(
+                    title_opts=opts.TitleOpts(title=title),
+                    xaxis_opts=opts.AxisOpts(name=x_column),
+                    yaxis_opts=opts.AxisOpts(name=y_column)
+                )
+            )
+        
+        elif chart_type == 'bar':
+            chart = (
+                Bar()
+                .add_xaxis([str(x) for x in x_valid])
+                .add_yaxis(title, list(y_valid))
+                .set_global_opts(
+                    title_opts=opts.TitleOpts(title=title),
+                    xaxis_opts=opts.AxisOpts(name=x_column),
+                    yaxis_opts=opts.AxisOpts(name=y_column)
+                )
+            )
+        
+        elif chart_type == 'pie':
+            # 饼图需要特殊处理
+            pie_data = [[str(x), float(y)] for x, y in valid_pairs]
+            chart = (
+                Pie()
+                .add(title, pie_data)
+                .set_global_opts(title_opts=opts.TitleOpts(title=title))
+            )
+        
+        else:
+            return jsonify({'error': f'不支持的图表类型: {chart_type}'}), 400
+        
+        # 渲染为 HTML
+        chart_html = chart.render_embed()
+        
         return jsonify({
             'success': True,
+            'chart_html': chart_html,
             'message': f'图表已生成：{title}',
-            'chart_type': chart_type,
-            'config': {
-                'x_column': x_column,
-                'y_column': y_column,
-                'title': title
-            }
+            'data_points': len(valid_pairs)
         })
+    
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': f'生成图表失败：{str(e)}'}), 500
 
 # ===== 狗狗品种 API =====
