@@ -4,6 +4,7 @@
 """
 import pytest
 import time
+import io
 from statistics import mean, median, stdev
 from Test.bug_tracker import report_bug
 
@@ -152,6 +153,197 @@ class TestAPIPerformance:
                 steps_to_reproduce=["访问 /food"],
                 expected_result="响应时间 < 3000ms",
                 actual_result=f"平均响应时间：{results['avg']*1000:.2f}ms"
+            )
+
+
+class TestP0FeaturesPerformance:
+    """P0功能性能测试 - v4.5.0"""
+    
+    def test_cache_strategy_performance(self, client, perf_tester):
+        """测试缓存策略性能提升"""
+        # 第一次请求（无缓存）
+        start1 = time.time()
+        response1 = client.get('/api/breeds')
+        time1 = time.time() - start1
+        
+        assert response1.status_code == 200
+        
+        # 第二次请求（应该有缓存）
+        start2 = time.time()
+        response2 = client.get('/api/breeds')
+        time2 = time.time() - start2
+        
+        assert response2.status_code == 200
+        
+        improvement = ((time1 - time2) / time1 * 100) if time1 > 0 else 0
+        
+        print(f"\n缓存策略性能:")
+        print(f"  首次请求: {time1*1000:.2f}ms")
+        print(f"  缓存命中: {time2*1000:.2f}ms")
+        print(f"  性能提升: {improvement:.1f}%")
+        
+        # 验证有性能提升（至少20%）
+        if improvement < 20:
+            report_bug(
+                title="缓存策略效果不明显",
+                description=f"性能仅提升{improvement:.1f}%，期望>20%",
+                severity="Minor",
+                priority="Low",
+                module="性能-缓存",
+                steps_to_reproduce=["连续两次访问/api/breeds"],
+                expected_result="性能提升>20%",
+                actual_result=f"性能提升{improvement:.1f}%"
+            )
+    
+    def test_chart_generation_performance(self, logged_in_client, perf_tester):
+        """测试图表生成性能"""
+        test_data = [{'x': i, 'y': i*2} for i in range(100)]
+        
+        chart_configs = [
+            ('scatter', '散点图'),
+            ('line', '折线图'),
+            ('bar', '柱状图'),
+            ('pie', '饼图')
+        ]
+        
+        for chart_type, name in chart_configs:
+            def generate():
+                response = logged_in_client.post(
+                    '/api/generate-chart',
+                    json={
+                        'chart_type': chart_type,
+                        'x_column': 'x',
+                        'y_column': 'y',
+                        'title': f'测试{name}',
+                        'data': test_data
+                    },
+                    content_type='application/json'
+                )
+                assert response.status_code == 200
+            
+            results = perf_tester.measure_response_time(generate, iterations=3)
+            
+            print(f"\n{name}生成性能 (100数据点):")
+            print(f"  平均: {results['avg']*1000:.2f}ms")
+            print(f"  最大: {results['max']*1000:.2f}ms")
+            
+            # 图表生成应该在2秒内完成
+            if results['avg'] > 2.0:
+                report_bug(
+                    title=f"{name}生成过慢",
+                    description=f"平均耗时{results['avg']*1000:.2f}ms，超过2000ms",
+                    severity="Major",
+                    priority="Medium",
+                    module="性能-图表生成",
+                    steps_to_reproduce=[f"生成{name}(100数据点)"],
+                    expected_result="<2000ms",
+                    actual_result=f"{results['avg']*1000:.2f}ms"
+                )
+    
+    def test_data_export_performance(self, logged_in_client, perf_tester):
+        """测试数据导出性能"""
+        test_data = [
+            {'品种': f'狗狗{i}', '年龄': i%10+1, '价格': (i%10+1)*1000}
+            for i in range(100)
+        ]
+        
+        for export_format in ['excel', 'csv']:
+            def export():
+                response = logged_in_client.post(
+                    '/api/export-data',
+                    json={
+                        'format': export_format,
+                        'filename': 'test',
+                        'data': test_data
+                    },
+                    content_type='application/json'
+                )
+                assert response.status_code == 200
+            
+            results = perf_tester.measure_response_time(export, iterations=3)
+            
+            print(f"\n{export_format.upper()}导出性能 (100行):")
+            print(f"  平均: {results['avg']*1000:.2f}ms")
+            
+            # 导出应该在1秒内完成
+            if results['avg'] > 1.0:
+                report_bug(
+                    title=f"{export_format.upper()}导出过慢",
+                    description=f"平均耗时{results['avg']*1000:.2f}ms",
+                    severity="Minor",
+                    priority="Low",
+                    module="性能-导出",
+                    steps_to_reproduce=[f"导出100行{export_format}"],
+                    expected_result="<1000ms",
+                    actual_result=f"{results['avg']*1000:.2f}ms"
+                )
+    
+    def test_data_quality_validation_performance(self, logged_in_client, perf_tester):
+        """测试数据质量校验性能"""
+        # 创建含问题的CSV（1000行）
+        csv_lines = ['name,age,price']
+        for i in range(1000):
+            if i % 10 == 0:
+                csv_lines.append(f'dog{i},,{i*10}')  # 空值
+            elif i % 20 == 0:
+                csv_lines.append(f'dog{i},-{i},{i*10}')  # 负数
+            else:
+                csv_lines.append(f'dog{i},{i%15+1},{i*10}')
+        
+        csv_content = '\n'.join(csv_lines).encode('utf-8')
+        
+        def upload_and_validate():
+            data = {'file': (io.BytesIO(csv_content), 'large_test.csv')}
+            response = logged_in_client.post(
+                '/api/upload-data',
+                data=data,
+                content_type='multipart/form-data'
+            )
+            assert response.status_code == 200
+            json_data = response.get_json()
+            assert 'quality_report' in json_data
+        
+        results = perf_tester.measure_response_time(upload_and_validate, iterations=3)
+        
+        print(f"\n数据质量校验性能 (1000行):")
+        print(f"  平均: {results['avg']*1000:.2f}ms")
+        print(f"  最大: {results['max']*1000:.2f}ms")
+        
+        # 1000行数据校验应该在3秒内完成
+        if results['avg'] > 3.0:
+            report_bug(
+                title="数据质量校验过慢",
+                description=f"1000行数据校验平均{results['avg']*1000:.2f}ms",
+                severity="Major",
+                priority="Medium",
+                module="性能-质量校验",
+                steps_to_reproduce=["上传1000行CSV进行质量校验"],
+                expected_result="<3000ms",
+                actual_result=f"{results['avg']*1000:.2f}ms"
+            )
+    
+    def test_custom_analysis_page_load(self, client, perf_tester):
+        """测试自定义分析页面加载性能"""
+        def load_page():
+            response = client.get('/custom-analysis')
+            assert response.status_code == 200
+        
+        results = perf_tester.measure_response_time(load_page, iterations=5)
+        
+        print(f"\n自定义分析页面加载:")
+        print(f"  平均: {results['avg']*1000:.2f}ms")
+        
+        # 页面加载应该<1秒
+        if results['avg'] > 1.0:
+            report_bug(
+                title="自定义分析页面加载慢",
+                description=f"平均{results['avg']*1000:.2f}ms",
+                severity="Minor",
+                priority="Low",
+                module="性能-前端",
+                steps_to_reproduce=["访问/custom-analysis"],
+                expected_result="<1000ms",
+                actual_result=f"{results['avg']*1000:.2f}ms"
             )
 
 
