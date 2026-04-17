@@ -6,7 +6,7 @@ import pytest
 import os
 import json
 from pathlib import Path
-from test_framework import test_case, test_manager, TestResult
+from Test.test_framework import test_case, test_manager, TestResult
 
 
 class TestTestProjectConfiguration:

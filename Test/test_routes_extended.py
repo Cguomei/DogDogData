@@ -3,7 +3,7 @@
 覆盖所有页面路由和重定向逻辑
 """
 import pytest
-from test_framework import test_case, test_manager, TestResult
+from Test.test_framework import test_case, test_manager, TestResult
 
 
 class TestPageRoutes:
@@ -18,7 +18,9 @@ class TestPageRoutes:
         try:
             response = client.get('/')
             assert response.status_code == 200
-            assert b'数据看板' in response.data or b'首页' in response.data
+            # 使用 decode 处理 bytes 以避免中文字符问题
+            html_content = response.data.decode('utf-8', errors='ignore')
+            assert '数据看板' in html_content or '首页' in html_content
             
             result.status = 'PASS'
             result.actual_result = "首页访问正常"
@@ -39,7 +41,8 @@ class TestPageRoutes:
         try:
             response = client.get('/charts')
             assert response.status_code == 200
-            assert b'图表' in response.data
+            html_content = response.data.decode('utf-8', errors='ignore')
+            assert '图表' in html_content
             
             result.status = 'PASS'
             result.actual_result = "图表列表页访问正常"
@@ -60,9 +63,10 @@ class TestPageRoutes:
         try:
             response = client.get('/login')
             assert response.status_code == 200
-            assert b'登录' in response.data
-            assert b'用户名' in response.data
-            assert b'密码' in response.data
+            html_content = response.data.decode('utf-8', errors='ignore')
+            assert '登录' in html_content
+            assert '用户名' in html_content
+            assert '密码' in html_content
             
             result.status = 'PASS'
             result.actual_result = "登录页访问正常"
@@ -83,7 +87,8 @@ class TestPageRoutes:
         try:
             response = client.get('/register')
             assert response.status_code == 200
-            assert b'注册' in response.data
+            html_content = response.data.decode('utf-8', errors='ignore')
+            assert '注册' in html_content
             
             result.status = 'PASS'
             result.actual_result = "注册页访问正常"
@@ -124,7 +129,8 @@ class TestPageRoutes:
         try:
             response = client.get('/chart/scatter')
             assert response.status_code == 200
-            assert b'价格散点图' in response.data
+            html_content = response.data.decode('utf-8', errors='ignore')
+            assert '价格散点图' in html_content
             
             result.status = 'PASS'
             result.actual_result = "散点图页面访问正常"
@@ -145,7 +151,8 @@ class TestPageRoutes:
         try:
             response = client.get('/chart/line')
             assert response.status_code == 200
-            assert b'体重折线图' in response.data
+            html_content = response.data.decode('utf-8', errors='ignore')
+            assert '体重折线图' in html_content
             
             result.status = 'PASS'
             result.actual_result = "折线图页面访问正常"
@@ -166,7 +173,8 @@ class TestPageRoutes:
         try:
             response = client.get('/chart/bar')
             assert response.status_code == 200
-            assert b'级别柱状图' in response.data
+            html_content = response.data.decode('utf-8', errors='ignore')
+            assert '级别柱状图' in html_content
             
             result.status = 'PASS'
             result.actual_result = "柱状图页面访问正常"
@@ -187,7 +195,8 @@ class TestPageRoutes:
         try:
             response = client.get('/chart/hist')
             assert response.status_code == 200
-            assert b'TOP10' in response.data or b'直方图' in response.data
+            html_content = response.data.decode('utf-8', errors='ignore')
+            assert 'TOP10' in html_content or '直方图' in html_content
             
             result.status = 'PASS'
             result.actual_result = "直方图页面访问正常"
@@ -208,7 +217,8 @@ class TestPageRoutes:
         try:
             response = client.get('/chart/funnel')
             assert response.status_code == 200
-            assert b'漏斗图' in response.data
+            html_content = response.data.decode('utf-8', errors='ignore')
+            assert '漏斗图' in html_content
             
             result.status = 'PASS'
             result.actual_result = "漏斗图页面访问正常"
@@ -229,7 +239,8 @@ class TestPageRoutes:
         try:
             response = client.get('/chart/map')
             assert response.status_code == 200
-            assert b'地图' in response.data or b'Map' in response.data
+            html_content = response.data.decode('utf-8', errors='ignore')
+            assert '地图' in html_content or 'Map' in html_content
             
             result.status = 'PASS'
             result.actual_result = "地图页面访问正常"
@@ -270,7 +281,8 @@ class TestPageRoutes:
         try:
             response = client.get('/clear-cache')
             assert response.status_code == 200
-            assert b'缓存' in response.data
+            html_content = response.data.decode('utf-8', errors='ignore')
+            assert '缓存' in html_content
             
             result.status = 'PASS'
             result.actual_result = "清除缓存页面访问正常"

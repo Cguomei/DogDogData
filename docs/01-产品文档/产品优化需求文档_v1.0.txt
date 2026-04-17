@@ -1,0 +1,694 @@
+================================================================================
+狗狗数据分析系统 - 产品优化需求文档 (PRD)
+版本: v1.0
+日期: 2026-04-17
+优先级: P0 (立即执行)
+================================================================================
+
+一、项目背景
+--------------------------------------------------------------------------------
+当前系统已实现基础的数据分析和可视化功能，但存在以下核心问题：
+1. 缓存策略不合理，导致性能低下
+2. 自定义分析功能未完成，影响核心卖点
+3. 缺少数据导出功能，用户体验不完整
+4. 数据质量控制缺失，可能产生错误图表
+
+二、本次迭代目标
+--------------------------------------------------------------------------------
+【核心目标】提升系统稳定性和用户体验，完成核心功能闭环
+
+【关键指标】
+- 页面加载时间从 >3s 降低到 <1s
+- API响应时间从 >1s 降低到 <500ms
+- 自定义分析功能可用率达到 100%
+- 用户可成功导出图表和数据
+
+三、需求清单（按优先级排序）
+================================================================================
+
+【P0-1】修复缓存策略
+--------------------------------------------------------------------------------
+需求描述:
+  当前所有页面都禁用了缓存，导致每次访问都重新查询数据库和加载静态资源，
+  严重影响性能和用户体验。
+
+当前问题:
+  - app.py 第82行强制禁用所有缓存
+  - 静态资源(CSS/JS)每次都重新下载
+  - 图表数据每次都重新计算
+  - 大数据量时页面加载超过3秒
+
+解决方案:
+  实施分层缓存策略：
+  1. 静态资源：长期缓存（1小时）
+  2. API数据：短期缓存（5分钟）
+  3. HTML页面：不缓存（确保实时性）
+  4. 图表HTML：中等缓存（10分钟）
+
+技术实现:
+  文件: app.py
+  
+  修改位置: 第74-94行
+  
+  替换代码:
+  ```python
+  @app.after_request
+  def add_security_and_cache_headers(response):
+      """添加安全响应头和智能缓存控制"""
+      # 安全头
+      response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+      response.headers['X-Content-Type-Options'] = 'nosniff'
+      response.headers['X-XSS-Protection'] = '1; mode=block'
+      response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+      
+      # 智能缓存策略
+      path = request.path
+      
+      # 1. 静态资源缓存1小时（带版本号，可长期缓存）
+      if path.startswith('/static/'):
+          response.headers['Cache-Control'] = 'public, max-age=3600, immutable'
+          response.headers['Expires'] = (datetime.utcnow() + timedelta(hours=1)).strftime('%a, %d %b %Y %H:%M:%S GMT')
+      
+      # 2. API数据缓存5分钟
+      elif path.startswith('/api/') and request.method == 'GET':
+          response.headers['Cache-Control'] = 'public, max-age=300'
+          response.headers['Vary'] = 'Accept-Encoding'
+      
+      # 3. 图表页面缓存10分钟
+      elif path.startswith('/chart/'):
+          response.headers['Cache-Control'] = 'public, max-age=600'
+      
+      # 4. HTML页面不缓存（确保登录状态等实时性）
+      else:
+          response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+          response.headers['Pragma'] = 'no-cache'
+          response.headers['Expires'] = '0'
+      
+      return response
+  ```
+  
+  需要导入:
+  ```python
+  from datetime import datetime, timedelta
+  ```
+
+验收标准:
+  □ 刷新页面后，静态资源从浏览器缓存加载（查看Network面板，status为200或304）
+  □ 连续访问同一API，第二次响应时间明显降低
+  □ 清除缓存后能正常获取最新数据
+  □ Lighthouse性能评分提升至90+
+
+预计工时: 2小时
+负责人: 后端开发
+
+
+【P0-2】完成自定义分析功能
+--------------------------------------------------------------------------------
+需求描述:
+  用户可以上传CSV/Excel文件，选择列和图表类型，系统自动生成可视化图表。
+  目前 /api/generate-chart 接口只返回成功消息，未真正生成图表。
+
+当前问题:
+  - routes/api.py 第77-103行，generate_chart函数未实现真正的图表生成
+  - 前端已实现UI，但后端返回空数据
+  - 用户上传数据后无法看到实际图表
+
+功能流程:
+  1. 用户上传CSV/Excel文件 → /api/upload-data
+  2. 系统解析文件，返回列名和前100行数据
+  3. 用户在前端选择X轴、Y轴、图表类型
+  4. 调用 /api/generate-chart 生成图表
+  5. 前端展示生成的图表
+
+技术实现:
+  文件: routes/api.py
+  
+  修改位置: 第77-103行
+  
+  完整实现代码:
+  ```python
+  @api_bp.route('/api/generate-chart', methods=['POST'])
+  def generate_chart():
+      """API: 根据用户配置生成图表"""
+      try:
+          data = request.get_json()
+          chart_type = data.get('chart_type')  # scatter, line, bar, pie
+          x_column = data.get('x_column')
+          y_column = data.get('y_column')
+          title = data.get('title', '自定义图表')
+          upload_data = data.get('data', [])  # 前端传递的表格数据
+          
+          if not all([chart_type, x_column, y_column]):
+              return jsonify({'error': '缺少必要参数'}), 400
+          
+          if not upload_data or len(upload_data) == 0:
+              return jsonify({'error': '没有数据可生成图表'}), 400
+          
+          # 将数据转换为DataFrame
+          df = pd.DataFrame(upload_data)
+          
+          # 验证列是否存在
+          if x_column not in df.columns or y_column not in df.columns:
+              return jsonify({'error': f'列名不存在: {x_column} 或 {y_column}'}), 400
+          
+          # 提取数据
+          x_data = df[x_column].tolist()
+          y_data = df[y_column].tolist()
+          
+          # 过滤无效数据
+          valid_pairs = [(x, y) for x, y in zip(x_data, y_data) 
+                        if pd.notna(x) and pd.notna(y)]
+          
+          if len(valid_pairs) == 0:
+              return jsonify({'error': '没有有效数据对'}), 400
+          
+          x_valid, y_valid = zip(*valid_pairs)
+          
+          # 根据图表类型生成PyECharts配置
+          from pyecharts.charts import Scatter, Line, Bar, Pie
+          from pyecharts import options as opts
+          
+          if chart_type == 'scatter':
+              chart = (
+                  Scatter()
+                  .add_xaxis(list(x_valid))
+                  .add_yaxis(title, list(y_valid))
+                  .set_global_opts(
+                      title_opts=opts.TitleOpts(title=title),
+                      xaxis_opts=opts.AxisOpts(name=x_column),
+                      yaxis_opts=opts.AxisOpts(name=y_column)
+                  )
+              )
+          
+          elif chart_type == 'line':
+              chart = (
+                  Line()
+                  .add_xaxis(list(x_valid))
+                  .add_yaxis(title, list(y_valid))
+                  .set_global_opts(
+                      title_opts=opts.TitleOpts(title=title),
+                      xaxis_opts=opts.AxisOpts(name=x_column),
+                      yaxis_opts=opts.AxisOpts(name=y_column)
+                  )
+              )
+          
+          elif chart_type == 'bar':
+              chart = (
+                  Bar()
+                  .add_xaxis([str(x) for x in x_valid])
+                  .add_yaxis(title, list(y_valid))
+                  .set_global_opts(
+                      title_opts=opts.TitleOpts(title=title),
+                      xaxis_opts=opts.AxisOpts(name=x_column),
+                      yaxis_opts=opts.AxisOpts(name=y_column)
+                  )
+              )
+          
+          elif chart_type == 'pie':
+              # 饼图需要特殊处理
+              pie_data = [[str(x), float(y)] for x, y in valid_pairs]
+              chart = (
+                  Pie()
+                  .add(title, pie_data)
+                  .set_global_opts(title_opts=opts.TitleOpts(title=title))
+              )
+          
+          else:
+              return jsonify({'error': f'不支持的图表类型: {chart_type}'}), 400
+          
+          # 渲染为HTML
+          chart_html = chart.render_embed()
+          
+          return jsonify({
+              'success': True,
+              'chart_html': chart_html,
+              'message': f'图表已生成：{title}',
+              'data_points': len(valid_pairs)
+          })
+      
+      except Exception as e:
+          import traceback
+          traceback.print_exc()
+          return jsonify({'error': f'生成图表失败：{str(e)}'}), 500
+  ```
+
+验收标准:
+  □ 上传CSV文件后能正确显示列名
+  □ 选择不同图表类型能生成对应图表
+  □ 散点图、折线图、柱状图、饼图都能正常工作
+  □ 异常数据（空值、非数字）能被正确过滤
+  □ 图表标题和坐标轴标签显示正确
+
+预计工时: 8小时
+负责人: 后端开发 + 前端开发配合
+
+
+【P0-3】添加数据导出功能
+--------------------------------------------------------------------------------
+需求描述:
+  用户可以将图表导出为PNG图片，或将数据导出为Excel/CSV文件。
+
+功能需求:
+  1. 图表导出: PNG格式，分辨率至少1920x1080
+  2. 数据导出: Excel(.xlsx)和CSV两种格式
+  3. 导出按钮位置: 每个图表右上角
+
+技术实现:
+  
+  A. 后端API - routes/api.py
+  
+  新增接口1: 导出图表为PNG
+  ```python
+  @api_bp.route('/api/export-chart', methods=['POST'])
+  def export_chart():
+      """导出图表为PNG图片"""
+      try:
+          data = request.get_json()
+          chart_html = data.get('chart_html')
+          filename = data.get('filename', 'chart')
+          
+          if not chart_html:
+              return jsonify({'error': '缺少图表数据'}), 400
+          
+          # 使用pyecharts的snapshot功能
+          from pyecharts.render import make_snapshot
+          from snapshot_selenium import snapshot as driver
+          
+          # 临时HTML文件
+          import tempfile
+          import os
+          
+          with tempfile.NamedTemporaryFile(mode='w', suffix='.html', delete=False) as f:
+              f.write(chart_html)
+              temp_html = f.name
+          
+          # 生成PNG
+          output_png = f"{filename}.png"
+          make_snapshot(driver, temp_html, output_png)
+          
+          # 清理临时文件
+          os.unlink(temp_html)
+          
+          # 返回文件路径（或直接提供下载）
+          from flask import send_file
+          return send_file(output_png, mimetype='image/png', as_attachment=True)
+      
+      except Exception as e:
+          return jsonify({'error': f'导出失败：{str(e)}'}), 500
+  ```
+  
+  新增接口2: 导出数据为Excel
+  ```python
+  @api_bp.route('/api/export-data', methods=['POST'])
+  def export_data():
+      """导出数据为Excel或CSV"""
+      try:
+          data = request.get_json()
+          export_format = data.get('format', 'excel')  # excel 或 csv
+          table_data = data.get('data', [])
+          filename = data.get('filename', 'data')
+          
+          if not table_data:
+              return jsonify({'error': '没有数据可导出'}), 400
+          
+          df = pd.DataFrame(table_data)
+          
+          import io
+          from flask import send_file
+          
+          if export_format == 'csv':
+              # 导出CSV
+              csv_buffer = io.StringIO()
+              df.to_csv(csv_buffer, index=False, encoding='utf-8-sig')
+              csv_buffer.seek(0)
+              
+              return send_file(
+                  io.BytesIO(csv_buffer.getvalue().encode('utf-8-sig')),
+                  mimetype='text/csv',
+                  as_attachment=True,
+                  download_name=f'{filename}.csv'
+              )
+          
+          else:  # excel
+              # 导出Excel
+              excel_buffer = io.BytesIO()
+              with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
+                  df.to_excel(writer, index=False, sheet_name='Data')
+              excel_buffer.seek(0)
+              
+              return send_file(
+                  excel_buffer,
+                  mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                  as_attachment=True,
+                  download_name=f'{filename}.xlsx'
+              )
+      
+      except Exception as e:
+          return jsonify({'error': f'导出失败：{str(e)}'}), 500
+  ```
+  
+  B. 前端实现 - templates/chart_page.html
+  
+  在图表容器中添加导出按钮:
+  ```html
+  <div class="chart-container">
+      <div class="chart-header">
+          <h3>{{ chart_title }}</h3>
+          <div class="chart-actions">
+              <button onclick="exportChartAsPNG()" class="btn btn-sm btn-outline-primary">
+                  <i class="bi bi-image"></i> 导出图片
+              </button>
+              <button onclick="exportDataAsExcel()" class="btn btn-sm btn-outline-success">
+                  <i class="bi bi-file-earmark-excel"></i> 导出Excel
+              </button>
+          </div>
+      </div>
+      <div id="chart">{{ chart_html|safe }}</div>
+  </div>
+  
+  <script>
+  function exportChartAsPNG() {
+      // 获取图表HTML
+      const chartDiv = document.getElementById('chart');
+      const chartHtml = chartDiv.innerHTML;
+      
+      fetch('/api/export-chart', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+              chart_html: chartHtml,
+              filename: '{{ chart_title }}'
+          })
+      })
+      .then(response => response.blob())
+      .then(blob => {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = '{{ chart_title }}.png';
+          a.click();
+          window.URL.revokeObjectURL(url);
+      })
+      .catch(error => alert('导出失败: ' + error));
+  }
+  
+  function exportDataAsExcel() {
+      // 需要从后端获取原始数据，这里简化处理
+      alert('数据导出功能开发中...');
+  }
+  </script>
+  ```
+
+验收标准:
+  □ 点击"导出图片"按钮能下载PNG文件
+  □ 导出的PNG清晰度高，文字可读
+  □ 点击"导出Excel"能下载.xlsx文件
+  □ 导出的Excel包含正确的表头和数据
+  □ CSV导出功能正常
+  □ 大数量数据（10000+行）也能正常导出
+
+预计工时: 6小时（后端4h + 前端2h）
+负责人: 全栈开发
+
+
+【P0-4】添加数据质量校验
+--------------------------------------------------------------------------------
+需求描述:
+  用户上传数据时，系统自动检测并提示数据质量问题，避免生成错误图表。
+
+校验规则:
+  1. 空值检测: 标记空值比例超过30%的列
+  2. 数据类型检测: 数值列中出现非数字字符
+  3. 异常值检测: 超出合理范围的值（如年龄>100，价格<0）
+  4. 重复值检测: 标记完全重复的行
+
+技术实现:
+  文件: routes/api.py
+  
+  修改 /api/upload-data 接口，增加数据校验:
+  ```python
+  @api_bp.route('/api/upload-data', methods=['POST'])
+  def upload_data():
+      """API: 接收用户上传的 CSV/Excel 数据（含质量校验）"""
+      try:
+          if 'file' not in request.files:
+              return jsonify({'error': '没有上传文件'}), 400
+          
+          file = request.files['file']
+          if file.filename == '':
+              return jsonify({'error': '文件名为空'}), 400
+          
+          # 读取上传的文件
+          if file.filename.endswith('.csv'):
+              df = pd.read_csv(file, encoding='utf-8')
+          elif file.filename.endswith(('.xlsx', '.xls')):
+              df = pd.read_excel(file)
+          else:
+              return jsonify({'error': '不支持的文件格式'}), 400
+          
+          # ===== 数据质量校验 =====
+          quality_report = {
+              'total_rows': len(df),
+              'total_columns': len(df.columns),
+              'issues': []
+          }
+          
+          # 1. 空值检测
+          null_counts = df.isnull().sum()
+          for col, null_count in null_counts.items():
+              null_ratio = null_count / len(df) * 100
+              if null_ratio > 30:
+                  quality_report['issues'].append({
+                      'type': 'high_null_ratio',
+                      'column': col,
+                      'message': f'列 "{col}" 空值比例过高: {null_ratio:.1f}%',
+                      'severity': 'warning'
+                  })
+          
+          # 2. 数据类型检测
+          for col in df.columns:
+              if df[col].dtype in ['int64', 'float64']:
+                  # 检查是否有非数字值
+                  non_numeric = df[col][pd.to_numeric(df[col], errors='coerce').isna()].count()
+                  if non_numeric > 0:
+                      quality_report['issues'].append({
+                          'type': 'non_numeric_in_numeric_column',
+                          'column': col,
+                          'message': f'数值列 "{col}" 中有 {non_numeric} 个非数字值',
+                          'severity': 'error'
+                      })
+          
+          # 3. 异常值检测（示例：检测负数）
+          for col in df.select_dtypes(include=['number']).columns:
+              negative_count = (df[col] < 0).sum()
+              if negative_count > 0:
+                  quality_report['issues'].append({
+                      'type': 'negative_values',
+                      'column': col,
+                      'message': f'列 "{col}" 中有 {negative_count} 个负数值',
+                      'severity': 'warning'
+                  })
+          
+          # 4. 重复值检测
+          duplicate_count = df.duplicated().sum()
+          if duplicate_count > 0:
+              quality_report['issues'].append({
+                  'type': 'duplicate_rows',
+                  'message': f'发现 {duplicate_count} 行完全重复的数据',
+                  'severity': 'info'
+              })
+          
+          # 返回前100行数据和校验报告
+          columns = df.columns.tolist()
+          data_sample = df.head(100).to_dict('records')
+          
+          return jsonify({
+              'success': True,
+              'columns': columns,
+              'row_count': len(df),
+              'data': data_sample,
+              'quality_report': quality_report
+          })
+      
+      except Exception as e:
+          return jsonify({'error': f'解析文件失败：{str(e)}'}), 500
+  ```
+  
+  前端展示校验报告 - templates/custom_analysis.html
+  
+  在数据预览区域添加质量报告展示:
+  ```javascript
+  function displayQualityReport(report) {
+      const reportDiv = document.getElementById('quality-report');
+      
+      if (report.issues.length === 0) {
+          reportDiv.innerHTML = '<div class="alert alert-success">✅ 数据质量良好，无发现问题</div>';
+          return;
+      }
+      
+      let html = '<div class="alert alert-warning"><strong>⚠️ 数据质量报告</strong><ul>';
+      
+      report.issues.forEach(issue => {
+          const icon = issue.severity === 'error' ? '❌' : 
+                      issue.severity === 'warning' ? '⚠️' : 'ℹ️';
+          html += `<li>${icon} ${issue.message}</li>`;
+      });
+      
+      html += '</ul></div>';
+      reportDiv.innerHTML = html;
+  }
+  ```
+
+验收标准:
+  □ 上传含空值的文件能正确提示空值比例
+  □ 数值列中的文本能被检测出来
+  □ 负数、异常大值能被标记
+  □ 重复行能被检测并提示
+  □ 校验报告清晰易懂，有明确的严重程度标识
+
+预计工时: 6小时
+负责人: 后端开发 + 前端开发配合
+
+
+四、技术要求
+================================================================================
+
+1. 依赖包安装
+--------------------------------------------------------------------------------
+需要安装以下Python包（如未安装）:
+
+```bash
+pip install openpyxl        # Excel文件读写
+pip install snapshot-selenium  # 图表截图
+pip install selenium        # 浏览器自动化（用于截图）
+```
+
+2. 数据库变更
+--------------------------------------------------------------------------------
+本次迭代无需数据库变更
+
+3. 兼容性要求
+--------------------------------------------------------------------------------
+- Python版本: >= 3.8
+- Flask版本: >= 2.0
+- 浏览器兼容: Chrome 90+, Firefox 88+, Safari 14+
+- 移动端: 响应式设计，支持手机浏览
+
+4. 性能要求
+--------------------------------------------------------------------------------
+- 首页加载时间: < 1秒
+- API响应时间: < 500毫秒（P95）
+- 图表生成时间: < 2秒
+- 并发支持: 至少50个同时在线用户
+
+五、测试要求
+================================================================================
+
+1. 单元测试
+--------------------------------------------------------------------------------
+□ 缓存策略测试: 验证不同类型资源的缓存头设置正确
+□ 自定义分析测试: 测试各种图表类型的生成功能
+□ 数据导出测试: 验证PNG、Excel、CSV导出功能
+□ 数据校验测试: 测试各种数据质量问题的检测
+
+2. 集成测试
+--------------------------------------------------------------------------------
+□ 完整流程测试: 上传 → 校验 → 选择 → 生成 → 导出
+□ 异常场景测试: 空文件、损坏文件、超大文件
+□ 权限测试: 未登录用户不能访问管理功能
+
+3. 性能测试
+--------------------------------------------------------------------------------
+□ 压力测试: 100并发用户访问首页
+□ 大数据测试: 上传10万行数据的CSV文件
+□ 内存泄漏测试: 长时间运行观察内存使用
+
+六、上线计划
+================================================================================
+
+阶段1: 开发（3天）
+--------------------------------------------------------------------------------
+Day 1: 
+  - 上午: 修复缓存策略（2h）
+  - 下午: 开始自定义分析功能（4h）
+
+Day 2:
+  - 全天: 完成自定义分析功能（8h）
+
+Day 3:
+  - 上午: 数据导出功能（4h）
+  - 下午: 数据质量校验（4h）
+
+阶段2: 测试（2天）
+--------------------------------------------------------------------------------
+Day 4:
+  - 单元测试编写和执行
+  - 集成测试
+
+Day 5:
+  - 性能测试
+  - Bug修复
+
+阶段3: 部署（1天）
+--------------------------------------------------------------------------------
+Day 6:
+  - 代码审查
+  - 生产环境部署
+  - 监控和日志配置
+
+七、风险评估
+================================================================================
+
+风险1: snapshot-selenium安装复杂
+  概率: 中
+  影响: 高
+  应对: 准备备用方案（使用pyecharts内置导出或前端canvas转图片）
+
+风险2: 大文件上传导致内存溢出
+  概率: 低
+  影响: 高
+  应对: 限制文件大小（最大10MB），流式处理
+
+风险3: 缓存导致数据不一致
+  概率: 中
+  影响: 中
+  应对: 提供"强制刷新"按钮，管理员可清除缓存
+
+八、成功标准
+================================================================================
+
+功能层面:
+  □ 所有P0功能100%完成并通过测试
+  □ 无Critical和High级别Bug
+  □ 用户手册和API文档更新完成
+
+性能层面:
+  □ 页面加载时间 < 1秒
+  □ API响应时间 < 500ms
+  □ Lighthouse评分 > 90
+
+业务层面:
+  □ 自定义分析功能使用率 > 30%
+  □ 数据导出功能使用率 > 20%
+  □ 用户满意度评分 > 4.5/5
+
+九、附录
+================================================================================
+
+A. 相关文档
+  - 技术架构文档: docs/02-技术文档/系统架构.md
+  - API文档: docs/02-技术文档/API接口文档.md
+  - 测试文档: Test/docs/测试用例.md
+
+B. 联系方式
+  - 产品经理: [待填写]
+  - 技术负责人: [待填写]
+  - 开发团队: [待填写]
+
+C. 版本历史
+  v1.0 (2026-04-17): 初始版本，定义P0优先级需求
+
+================================================================================
+文档结束
+贡献者: AI助手 (Lingma) - 产品经理 & 自动化测试工程师
+================================================================================

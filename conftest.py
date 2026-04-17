@@ -64,6 +64,24 @@ def session(db, request):
     db.session = session
     
     def teardown():
+        # 清理带有TEST_前缀的测试数据
+        try:
+            from models import User, DogBreed
+            # 删除测试用户
+            test_users = User.query.filter(User.username.like('TEST_%')).all()
+            for user in test_users:
+                session.delete(user)
+            
+            # 删除测试品种
+            test_breeds = DogBreed.query.filter(DogBreed.breed_name.like('TEST_%')).all()
+            for breed in test_breeds:
+                session.delete(breed)
+            
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            print(f"⚠️ 清理测试数据时出错: {e}")
+        
         transaction.rollback()
         connection.close()
         session.remove()
@@ -80,18 +98,29 @@ def runner(app):
 def create_test_users(app, db):
     """在测试会话开始前创建两个测试用户：普通用户 user/123456，管理员 admin/123456。"""
     with app.app_context():
-        # 如果用户已存在则跳过（适用于多次运行测试）
-        if not User.query.filter_by(username='user').first():
-            # noinspection PyArgumentList
-            user = User(username='user')
-            user.set_password('123456')  # 至少 6 位
-            db.session.add(user)
-        if not User.query.filter_by(username='admin').first():
-            # noinspection PyArgumentList
-            # 编辑器忽略此行检查
-            admin = User(username='admin', role='admin')
-            admin.set_password('123456')
-            db.session.add(admin)
+        # 先尝试删除旧的测试用户（如果存在）
+        old_user = User.query.filter_by(username='user').first()
+        if old_user:
+            db.session.delete(old_user)
+        
+        old_admin = User.query.filter_by(username='admin').first()
+        if old_admin:
+            db.session.delete(old_admin)
+        
+        db.session.commit()
+        
+        # 创建新的测试用户
+        # noinspection PyArgumentList
+        user = User(username='user')
+        user.set_password('123456')  # 至少 6 位
+        db.session.add(user)
+        
+        # noinspection PyArgumentList
+        # 编辑器忽略此行检查
+        admin = User(username='admin', role='admin')
+        admin.set_password('123456')
+        db.session.add(admin)
+        
         db.session.commit()
 
 @pytest.fixture

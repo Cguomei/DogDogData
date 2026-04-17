@@ -3,8 +3,13 @@
 覆盖登录、注册、登出、权限控制等场景
 """
 import pytest
+import time
 from .test_framework import test_case, test_manager, TestResult
 from models import User
+
+# 生成唯一的时间戳后缀
+TIMESTAMP = int(time.time())
+TEST_PREFIX = "TEST_"
 
 
 class TestUserAuthentication:
@@ -52,15 +57,16 @@ class TestUserAuthentication:
         result.expected_result = '拒绝重复用户名'
         
         try:
-            # 先创建一个用户
-            user = User(username='duplicate_user')
+            # 先创建一个用户（使用时间戳保证唯一性）
+            unique_username = f'{TEST_PREFIX}duplicate_user_{TIMESTAMP}'
+            user = User(username=unique_username)
             user.set_password('password123')
             db.session.add(user)
             db.session.commit()
             
             # 尝试注册同名用户
             response = client.post('/register', data={
-                'username': 'duplicate_user',
+                'username': unique_username,
                 'password': 'AnotherPass456'
             }, follow_redirects=True)
             
@@ -86,15 +92,16 @@ class TestUserAuthentication:
         result.expected_result = '登录成功'
         
         try:
-            # 创建测试用户
-            user = User(username='login_test_user')
+            # 创建测试用户（使用时间戳保证唯一性）
+            unique_username = f'{TEST_PREFIX}login_test_user_{TIMESTAMP}'
+            user = User(username=unique_username)
             user.set_password('correct_password')
             db.session.add(user)
             db.session.commit()
             
             # 执行登录
             response = client.post('/login', data={
-                'username': 'login_test_user',
+                'username': unique_username,
                 'password': 'correct_password'
             }, follow_redirects=True)
             
@@ -121,15 +128,16 @@ class TestUserAuthentication:
         result.expected_result = '登录失败'
         
         try:
-            # 创建测试用户
-            user = User(username='password_test_user')
+            # 创建测试用户（使用时间戳保证唯一性）
+            unique_username = f'{TEST_PREFIX}password_test_user_{TIMESTAMP}'
+            user = User(username=unique_username)
             user.set_password('correct_password')
             db.session.add(user)
             db.session.commit()
             
             # 使用错误密码登录
             response = client.post('/login', data={
-                'username': 'password_test_user',
+                'username': unique_username,
                 'password': 'wrong_password'
             }, follow_redirects=True)
             
@@ -204,8 +212,9 @@ class TestUserAuthentication:
         result.expected_result = 'SQL 注入攻击被阻止'
         
         try:
-            # 创建测试用户
-            user = User(username='admin')
+            # 创建测试用户（使用时间戳保证唯一性）
+            unique_username = f'{TEST_PREFIX}admin_{TIMESTAMP}'
+            user = User(username=unique_username)
             user.set_password('admin123')
             db.session.add(user)
             db.session.commit()
@@ -213,7 +222,7 @@ class TestUserAuthentication:
             # SQL 注入 payload
             payloads = [
                 "' OR '1'='1",
-                "admin' --",
+                f"{unique_username}' --",
                 "' OR 1=1 --"
             ]
             

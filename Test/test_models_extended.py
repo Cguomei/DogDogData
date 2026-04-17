@@ -3,7 +3,7 @@
 测试数据库模型的完整性约束、验证逻辑等
 """
 import pytest
-from test_framework import test_case, test_manager, TestResult
+from Test.test_framework import test_case, test_manager, TestResult
 from models import User, DogBreed
 
 

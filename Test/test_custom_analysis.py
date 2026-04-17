@@ -4,7 +4,7 @@
 """
 import pytest
 import io
-from test_framework import test_case, test_manager, TestResult
+from Test.test_framework import test_case, test_manager, TestResult
 
 
 class TestCustomAnalysis:
@@ -18,10 +18,10 @@ class TestCustomAnalysis:
         
         try:
             # 创建测试 CSV 文件
-            csv_content = b"""品种，数量，价格
-哈士奇，50,3000
-泰迪，80,2500
-金毛，60,3500"""
+            csv_content = b"""breed,count,price
+Husky,50,3000
+Teddy,80,2500
+Golden,60,3500"""
             
             data = {'file': (io.BytesIO(csv_content), 'test_data.csv')}
             response = logged_in_client.post(
@@ -138,7 +138,8 @@ class TestCustomAnalysis:
         try:
             response = client.get('/custom-analysis')
             assert response.status_code == 200
-            assert b'自定义数据分析' in response.data or b'上传数据' in response.data
+            html_content = response.data.decode('utf-8', errors='ignore')
+            assert '自定义数据分析' in html_content or '上传数据' in html_content
             
             result.status = 'PASS'
             result.actual_result = "页面访问正常"

@@ -3,8 +3,13 @@
 覆盖 CRUD 操作、权限控制、数据验证等场景
 """
 import pytest
+import time
 from .test_framework import test_case, test_manager, TestResult
 from models import DogBreed
+
+# 生成唯一的时间戳后缀
+TIMESTAMP = int(time.time())
+TEST_PREFIX = "TEST_"
 
 
 class TestBreedManagement:
@@ -17,8 +22,10 @@ class TestBreedManagement:
         result.expected_result = '成功添加新品种'
         
         try:
+            # 使用时间戳保证唯一性
+            unique_breed_name = f'{TEST_PREFIX}哈士奇_{TIMESTAMP}'
             breed_data = {
-                'breed_name': '哈士奇',
+                'breed_name': unique_breed_name,
                 'avg_life_years': 12.5,
                 'size_category': '大型',
                 'popularity': 85
@@ -34,7 +41,7 @@ class TestBreedManagement:
             # 验证数据库
             breed = DogBreed.query.get(data['id'])
             assert breed is not None
-            assert breed.breed_name == '哈士奇'
+            assert breed.breed_name == unique_breed_name
             assert float(breed.avg_life_years) == 12.5
             
             result.status = 'PASS'
@@ -54,14 +61,15 @@ class TestBreedManagement:
         result.expected_result = '拒绝重复的品种名'
         
         try:
-            # 先创建一个品种
-            breed = DogBreed(breed_name='金毛', avg_life_years=12, size_category='大型', popularity=90)
+            # 先创建一个品种（使用时间戳保证唯一性）
+            unique_breed_name = f'{TEST_PREFIX}金毛_{TIMESTAMP}'
+            breed = DogBreed(breed_name=unique_breed_name, avg_life_years=12, size_category='大型', popularity=90)
             db.session.add(breed)
             db.session.commit()
             
             # 尝试添加同名品种
             response = admin_client.post('/api/breeds', json={
-                'breed_name': '金毛',
+                'breed_name': unique_breed_name,
                 'avg_life_years': 13,
                 'size_category': '中型',
                 'popularity': 80
@@ -114,11 +122,11 @@ class TestBreedManagement:
         result.expected_result = '返回 JSON 格式的品种列表'
         
         try:
-            # 添加测试数据
+            # 添加测试数据（使用时间戳保证唯一性）
             breeds = [
-                DogBreed(breed_name='品种 A', avg_life_years=10, size_category='小型', popularity=50),
-                DogBreed(breed_name='品种 B', avg_life_years=12, size_category='中型', popularity=60),
-                DogBreed(breed_name='品种 C', avg_life_years=14, size_category='大型', popularity=70)
+                DogBreed(breed_name=f'{TEST_PREFIX}品种A_{TIMESTAMP}', avg_life_years=10, size_category='小型', popularity=50),
+                DogBreed(breed_name=f'{TEST_PREFIX}品种B_{TIMESTAMP}', avg_life_years=12, size_category='中型', popularity=60),
+                DogBreed(breed_name=f'{TEST_PREFIX}品种C_{TIMESTAMP}', avg_life_years=14, size_category='大型', popularity=70)
             ]
             for b in breeds:
                 db.session.add(b)
@@ -155,15 +163,16 @@ class TestBreedManagement:
         result.expected_result = '更新成功'
         
         try:
-            # 创建测试品种
-            breed = DogBreed(breed_name='泰迪', avg_life_years=15, size_category='小型', popularity=70)
+            # 创建测试品种（使用时间戳保证唯一性）
+            unique_breed_name = f'{TEST_PREFIX}泰迪_{TIMESTAMP}'
+            breed = DogBreed(breed_name=unique_breed_name, avg_life_years=15, size_category='小型', popularity=70)
             db.session.add(breed)
             db.session.commit()
             breed_id = breed.id
             
             # 更新
             response = admin_client.put(f'/api/breeds/{breed_id}', json={
-                'breed_name': '泰迪',
+                'breed_name': unique_breed_name,
                 'avg_life_years': 16,
                 'size_category': '小型',
                 'popularity': 75

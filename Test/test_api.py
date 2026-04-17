@@ -2,7 +2,6 @@
 import json
 
 import pytest
-from urllib3.contrib.emscripten import response
 
 from routes import api
 
