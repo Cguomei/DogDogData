@@ -43,7 +43,7 @@ def custom_analysis():
 
 @api_bp.route('/api/upload-data', methods=['POST'])
 def upload_data():
-    """API: 接收用户上传的 CSV/Excel 数据"""
+    """API: 接收用户上传的 CSV/Excel 数据（含质量校验）"""
     try:
         if 'file' not in request.files:
             return jsonify({'error': '没有上传文件'}), 400
@@ -60,16 +60,68 @@ def upload_data():
         else:
             return jsonify({'error': '不支持的文件格式，请上传 CSV 或 Excel 文件'}), 400
         
-        # 返回前 100 行数据和列名
+        # ===== 数据质量校验 =====
+        quality_report = {
+            'total_rows': len(df),
+            'total_columns': len(df.columns),
+            'issues': []
+        }
+        
+        # 1. 空值检测
+        null_counts = df.isnull().sum()
+        for col, null_count in null_counts.items():
+            null_ratio = null_count / len(df) * 100
+            if null_ratio > 30:
+                quality_report['issues'].append({
+                    'type': 'high_null_ratio',
+                    'column': col,
+                    'message': f'列 "{col}" 空值比例过高: {null_ratio:.1f}%',
+                    'severity': 'warning'
+                })
+        
+        # 2. 数据类型检测
+        for col in df.columns:
+            if df[col].dtype in ['int64', 'float64']:
+                # 检查是否有非数字值
+                non_numeric = df[col][pd.to_numeric(df[col], errors='coerce').isna()].count()
+                if non_numeric > 0:
+                    quality_report['issues'].append({
+                        'type': 'non_numeric_in_numeric_column',
+                        'column': col,
+                        'message': f'数值列 "{col}" 中有 {non_numeric} 个非数字值',
+                        'severity': 'error'
+                    })
+        
+        # 3. 异常值检测（示例：检测负数）
+        for col in df.select_dtypes(include=['number']).columns:
+            negative_count = (df[col] < 0).sum()
+            if negative_count > 0:
+                quality_report['issues'].append({
+                    'type': 'negative_values',
+                    'column': col,
+                    'message': f'列 "{col}" 中有 {negative_count} 个负数值',
+                    'severity': 'warning'
+                })
+        
+        # 4. 重复值检测
+        duplicate_count = df.duplicated().sum()
+        if duplicate_count > 0:
+            quality_report['issues'].append({
+                'type': 'duplicate_rows',
+                'message': f'发现 {duplicate_count} 行完全重复的数据',
+                'severity': 'info'
+            })
+        
+        # 返回前 100 行数据和校验报告
         columns = df.columns.tolist()
         data_sample = df.head(100).to_dict('records')
         
-        # 将数据转换为 JSON 格式
         return jsonify({
             'success': True,
             'columns': columns,
             'row_count': len(df),
-            'data': data_sample
+            'data': data_sample,
+            'quality_report': quality_report
         })
     except Exception as e:
         return jsonify({'error': f'解析文件失败：{str(e)}'}), 500
@@ -310,6 +362,54 @@ def get_food():
     from charts import get_dog_food_list
     food_list = get_dog_food_list()
     return jsonify(food_list)
+
+# ===== 数据导出 API =====
+@api_bp.route('/api/export-data', methods=['POST'])
+def export_data():
+    """导出数据为 Excel 或 CSV"""
+    try:
+        data = request.get_json()
+        export_format = data.get('format', 'excel')  # excel 或 csv
+        table_data = data.get('data', [])
+        filename = data.get('filename', 'data')
+        
+        if not table_data:
+            return jsonify({'error': '没有数据可导出'}), 400
+        
+        df = pd.DataFrame(table_data)
+        
+        import io
+        from flask import send_file
+        
+        if export_format == 'csv':
+            # 导出 CSV
+            csv_buffer = io.StringIO()
+            df.to_csv(csv_buffer, index=False, encoding='utf-8-sig')
+            csv_buffer.seek(0)
+            
+            return send_file(
+                io.BytesIO(csv_buffer.getvalue().encode('utf-8-sig')),
+                mimetype='text/csv',
+                as_attachment=True,
+                download_name=f'{filename}.csv'
+            )
+        
+        else:  # excel
+            # 导出 Excel
+            excel_buffer = io.BytesIO()
+            with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
+                df.to_excel(writer, index=False, sheet_name='Data')
+            excel_buffer.seek(0)
+            
+            return send_file(
+                excel_buffer,
+                mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                as_attachment=True,
+                download_name=f'{filename}.xlsx'
+            )
+    
+    except Exception as e:
+        return jsonify({'error': f'导出失败：{str(e)}'}), 500
 
 # ===== 测试页面 =====
 @api_bp.route('/test-pet')
