@@ -13,9 +13,14 @@
                         <h2 class="mb-0 fw-bold" style="font-size: 1.5rem;">
                             <i class="bi bi-graph-up"></i> {{ chart_title }}
                         </h2>
-                        <a href="/" class="btn btn-light btn-sm" style="border-radius: 8px; padding: 0.5rem 1.5rem; font-weight: 600;">
-                            <i class="bi bi-arrow-left"></i> 返回首页
-                        </a>
+                        <div>
+                            <button class="btn btn-light btn-sm me-2" onclick="exportChartData()" style="border-radius: 8px; padding: 0.5rem 1rem; font-weight: 600;">
+                                <i class="bi bi-file-earmark-excel"></i> 导出数据
+                            </button>
+                            <a href="/" class="btn btn-light btn-sm" style="border-radius: 8px; padding: 0.5rem 1.5rem; font-weight: 600;">
+                                <i class="bi bi-arrow-left"></i> 返回首页
+                            </a>
+                        </div>
                     </div>
                 </div>
                 <div class="card-body p-4 bg-white">
@@ -62,4 +67,72 @@
     to { opacity: 1; }
 }
 </style>
+
+<script>
+// 导出图表数据
+async function exportChartData() {
+    try {
+        // 根据当前页面获取对应的数据API
+        const path = window.location.pathname;
+        let apiUrl = '';
+        
+        if (path.includes('/chart/scatter')) {
+            apiUrl = '/api/breeds';  // 散点图使用品种数据
+        } else if (path.includes('/chart/line')) {
+            apiUrl = '/api/breeds';  // 折线图使用品种数据
+        } else if (path.includes('/chart/bar')) {
+            apiUrl = '/api/breeds';  // 柱状图使用品种数据
+        } else if (path.includes('/chart/hist')) {
+            apiUrl = '/api/food';    // 直方图使用狗粮数据
+        } else if (path.includes('/chart/funnel')) {
+            apiUrl = '/api/breeds';  // 漏斗图使用品种数据
+        } else if (path.includes('/chart/map')) {
+            apiUrl = '/api/breeds';  // 地图使用品种数据
+        }
+        
+        if (!apiUrl) {
+            alert('无法确定数据来源');
+            return;
+        }
+        
+        // 获取数据
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+        
+        if (!data || data.length === 0) {
+            alert('没有数据可导出');
+            return;
+        }
+        
+        // 调用导出API
+        const exportResponse = await fetch('/api/export-data', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                format: 'excel',
+                filename: '{{ chart_title }}',
+                data: data
+            })
+        });
+        
+        if (!exportResponse.ok) {
+            throw new Error('导出失败');
+        }
+        
+        // 触发下载
+        const blob = await exportResponse.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = '{{ chart_title }}.xlsx';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+    } catch (error) {
+        alert('导出失败: ' + error.message);
+    }
+}
+</script>
 {% endblock %}
