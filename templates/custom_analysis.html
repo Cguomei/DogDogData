@@ -47,6 +47,9 @@
                         </div>
                     </div>
                     
+                    <!-- 数据质量报告 -->
+                    <div id="qualityReport" class="collapse mt-3"></div>
+                    
                     <div class="d-grid gap-2">
                         <button class="btn btn-primary btn-lg" onclick="uploadFile()" id="uploadBtn" disabled>
                             <i class="bi bi-upload"></i> 上传并解析数据
@@ -109,9 +112,17 @@
             <div class="card border-0" style="border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08);">
                 <div class="card-header py-3 d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none; font-weight: 600;">
                     <span><i class="bi bi-graph-up"></i> <span id="resultChartTitle">分析结果</span></span>
-                    <button class="btn btn-sm btn-light" onclick="downloadChart()">
-                        <i class="bi bi-download"></i> 下载图表
-                    </button>
+                    <div>
+                        <button class="btn btn-sm btn-light me-2" onclick="exportData('excel')">
+                            <i class="bi bi-file-earmark-excel"></i> 导出 Excel
+                        </button>
+                        <button class="btn btn-sm btn-light me-2" onclick="exportData('csv')">
+                            <i class="bi bi-filetype-csv"></i> 导出 CSV
+                        </button>
+                        <button class="btn btn-sm btn-light" onclick="downloadChart()">
+                            <i class="bi bi-download"></i> 下载图表
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body p-4">
                     <div id="resultChart" style="width: 100%; height: 500px;"></div>
@@ -188,6 +199,11 @@ async function uploadFile() {
             document.getElementById('fileDetails').textContent = 
                 `共 ${result.row_count} 行数据，${columns.length} 个字段`;
             document.getElementById('fileInfo').classList.remove('collapse');
+            
+            // 显示数据质量报告
+            if (result.quality_report) {
+                displayQualityReport(result.quality_report);
+            }
             
             // 填充列选择器
             populateColumnSelects(columns);
@@ -408,6 +424,69 @@ function downloadChart() {
         link.download = '自定义图表.png';
         link.href = canvas.toDataURL('image/png');
         link.click();
+    }
+}
+
+// 显示数据质量报告
+function displayQualityReport(report) {
+    const reportDiv = document.getElementById('qualityReport');
+    
+    if (!report.issues || report.issues.length === 0) {
+        reportDiv.innerHTML = '<div class="alert alert-success"><i class="bi bi-check-circle-fill me-2"></i><strong>✅ 数据质量良好</strong>，无发现问题</div>';
+        reportDiv.classList.remove('collapse');
+        return;
+    }
+    
+    let html = '<div class="alert alert-warning"><strong><i class="bi bi-exclamation-triangle-fill me-2"></i>⚠️ 数据质量报告</strong><ul class="mb-0 mt-2">';
+    
+    report.issues.forEach(issue => {
+        const icon = issue.severity === 'error' ? '❌' : 
+                    issue.severity === 'warning' ? '⚠️' : 'ℹ️';
+        const color = issue.severity === 'error' ? 'text-danger' : 
+                     issue.severity === 'warning' ? 'text-warning' : 'text-info';
+        html += `<li class="${color}">${icon} ${issue.message}</li>`;
+    });
+    
+    html += '</ul></div>';
+    reportDiv.innerHTML = html;
+    reportDiv.classList.remove('collapse');
+}
+
+// 导出数据
+async function exportData(format) {
+    if (!uploadedData || uploadedData.length === 0) {
+        alert('没有数据可导出');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/export-data', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                format: format,
+                filename: '自定义分析数据',
+                data: uploadedData
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('导出失败');
+        }
+        
+        // 触发下载
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `自定义分析数据.${format === 'excel' ? 'xlsx' : 'csv'}`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+    } catch (error) {
+        alert('导出失败: ' + error.message);
     }
 }
 </script>
