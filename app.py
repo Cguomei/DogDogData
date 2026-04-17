@@ -9,6 +9,7 @@ from flask_login import LoginManager
 from flask_apscheduler import APScheduler
 from flask_wtf.csrf import CSRFProtect
 from dotenv import load_dotenv
+from datetime import datetime, timedelta
 
 # 导入本地模块
 from config import get_config
@@ -70,18 +71,39 @@ def create_app(config_name=None):
     # 注册错误处理器
     register_error_handlers(app)
     
-    # 安全响应头和缓存控制
+    # 安全响应头和智能缓存控制
     @app.after_request
-    def add_security_headers(response):
+    def add_security_and_cache_headers(response):
+        """添加安全响应头和智能缓存控制"""
+        # 安全头
         response.headers['X-Frame-Options'] = 'SAMEORIGIN'
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['X-XSS-Protection'] = '1; mode=block'
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
         
-        # 禁用所有页面的缓存（开发模式）
-        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-        response.headers['Pragma'] = 'no-cache'
-        response.headers['Expires'] = '0'
+        # 智能缓存策略
+        path = request.path
+        
+        # 1. 静态资源缓存1小时（带版本号，可长期缓存）
+        if path.startswith('/static/'):
+            response.headers['Cache-Control'] = 'public, max-age=3600, immutable'
+            response.headers['Expires'] = (datetime.utcnow() + timedelta(hours=1)).strftime('%a, %d %b %Y %H:%M:%S GMT')
+        
+        # 2. API数据缓存5分钟
+        elif path.startswith('/api/') and request.method == 'GET':
+            response.headers['Cache-Control'] = 'public, max-age=300'
+            response.headers['Vary'] = 'Accept-Encoding'
+        
+        # 3. 图表页面缓存10分钟
+        elif path.startswith('/chart/'):
+            response.headers['Cache-Control'] = 'public, max-age=600'
+        
+        # 4. HTML页面不缓存（确保登录状态等实时性）
+        else:
+            response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
+        
         return response
     
     # 确保 JS 和 CSS 文件的 MIME 类型正确（必须在最后执行）
