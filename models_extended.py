@@ -181,6 +181,165 @@ class UserActivityLog(db.Model):
         }
 
 
+class Feedback(db.Model):
+    """用户反馈表"""
+    __tablename__ = 'feedbacks'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    
+    # 反馈内容
+    feedback_type = db.Column(
+        db.Enum('bug', 'feature', 'improvement', 'other'),
+        default='other',
+        nullable=False
+    )  # 反馈类型
+    title = db.Column(db.String(200))  # 标题
+    content = db.Column(db.Text, nullable=False)  # 详细内容
+    
+    # 附件
+    screenshot_url = db.Column(db.String(500))  # 截图 URL
+    attachment_url = db.Column(db.String(500))  # 附件 URL
+    
+    # 联系信息
+    contact_email = db.Column(db.String(120))  # 联系邮箱
+    contact_phone = db.Column(db.String(20))  # 联系电话
+    
+    # 状态
+    status = db.Column(
+        db.Enum('pending', 'processing', 'resolved', 'closed'),
+        default='pending',
+        nullable=False
+    )  # 处理状态
+    
+    # 管理员回复
+    admin_reply = db.Column(db.Text)  # 管理员回复
+    replied_by = db.Column(db.Integer, db.ForeignKey('users.id'))  # 回复人 ID
+    replied_at = db.Column(db.DateTime)  # 回复时间
+    
+    # 优先级
+    priority = db.Column(
+        db.Enum('low', 'medium', 'high', 'critical'),
+        default='medium'
+    )  # 优先级
+    
+    # 时间戳
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
+    
+    # 索引
+    __table_args__ = (
+        db.Index('idx_user_feedback', 'user_id', 'created_at'),
+        db.Index('idx_status', 'status'),
+        db.Index('idx_type', 'feedback_type'),
+    )
+    
+    # 关联
+    user = db.relationship('User', foreign_keys=[user_id], backref=db.backref('feedbacks_submitted', lazy='dynamic'))
+    replier = db.relationship('User', foreign_keys=[replied_by], backref=db.backref('feedbacks_replied', lazy='dynamic'))
+    
+    def to_dict(self, include_user=False):
+        """转换为字典"""
+        data = {
+            'id': self.id,
+            'user_id': self.user_id,
+            'feedback_type': self.feedback_type,
+            'title': self.title,
+            'content': self.content,
+            'screenshot_url': self.screenshot_url,
+            'attachment_url': self.attachment_url,
+            'contact_email': self.contact_email,
+            'contact_phone': self.contact_phone,
+            'status': self.status,
+            'admin_reply': self.admin_reply,
+            'priority': self.priority,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
+            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None,
+            'replied_at': self.replied_at.strftime('%Y-%m-%d %H:%M:%S') if self.replied_at else None,
+        }
+        
+        if include_user and self.user:
+            data['username'] = self.user.username
+        
+        if self.replier:
+            data['replied_by_name'] = self.replier.username
+        
+        return data
+
+
+class UserEvent(db.Model):
+    """用户事件埋点表"""
+    __tablename__ = 'user_events'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))  # 可为空（未登录用户）
+    
+    # 事件信息
+    event_name = db.Column(db.String(100), nullable=False, index=True)  # 事件名称
+    event_category = db.Column(db.String(50), index=True)  # 事件分类：page_view, click, api_call, error
+    event_label = db.Column(db.String(200))  # 事件标签（额外描述）
+    
+    # 页面信息
+    page_url = db.Column(db.String(500))  # 页面 URL
+    page_title = db.Column(db.String(200))  # 页面标题
+    referrer = db.Column(db.String(500))  # 来源页面
+    
+    # 设备信息
+    device_type = db.Column(db.String(20))  # desktop, mobile, tablet
+    browser = db.Column(db.String(50))  # Chrome, Firefox, Safari
+    os = db.Column(db.String(50))  # Windows, macOS, iOS, Android
+    screen_resolution = db.Column(db.String(20))  # 1920x1080
+    
+    # 位置信息
+    ip_address = db.Column(db.String(45))  # IP 地址
+    country = db.Column(db.String(50))  # 国家
+    city = db.Column(db.String(100))  # 城市
+    
+    # 会话信息
+    session_id = db.Column(db.String(100), index=True)  # 会话 ID
+    
+    # 自定义属性（JSON 格式）
+    properties = db.Column(db.Text)  # JSON 字符串，存储额外属性
+    
+    # 时间戳
+    created_at = db.Column(db.DateTime, server_default=db.func.now(), index=True)
+    
+    # 索引
+    __table_args__ = (
+        db.Index('idx_event_name_time', 'event_name', 'created_at'),
+        db.Index('idx_user_session', 'user_id', 'session_id'),
+        db.Index('idx_category', 'event_category'),
+    )
+    
+    # 关联
+    user = db.relationship('User', backref=db.backref('events', lazy='dynamic'))
+    
+    def to_dict(self):
+        """转换为字典"""
+        import json
+        
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'event_name': self.event_name,
+            'event_category': self.event_category,
+            'event_label': self.event_label,
+            'page_url': self.page_url,
+            'page_title': self.page_title,
+            'referrer': self.referrer,
+            'device_type': self.device_type,
+            'browser': self.browser,
+            'os': self.os,
+            'screen_resolution': self.screen_resolution,
+            'ip_address': self.ip_address,
+            'country': self.country,
+            'city': self.city,
+            'session_id': self.session_id,
+            'properties': json.loads(self.properties) if self.properties else {},
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None
+        }
+
+
 # 辅助函数
 def get_user_profile(user_id):
     """获取用户资料"""

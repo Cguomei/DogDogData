@@ -8,6 +8,7 @@ from flask_caching import Cache
 from flask_login import LoginManager
 from flask_apscheduler import APScheduler
 from flask_wtf.csrf import CSRFProtect
+from flask_babel import Babel
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 
@@ -21,6 +22,8 @@ from charts import update_dashboard_summary
 from routes.main import main_bp
 from routes.auth import auth_bp
 from routes.api import api_bp
+from routes.feedback import feedback_bp
+from routes.analytics import analytics_bp
 
 # 加载环境变量
 load_dotenv()
@@ -29,6 +32,7 @@ load_dotenv()
 login_manager = LoginManager()
 cache = Cache()
 scheduler = APScheduler()
+babel = Babel()
 
 # 标记调度器是否已启动
 _scheduler_started = False
@@ -64,6 +68,26 @@ def create_app(config_name=None):
     login_manager.init_app(app)
     cache.init_app(app)
     scheduler.init_app(app)
+    
+    # 设置 localeselector (Flask-Babel 4.0+ 使用新 API)
+    def get_locale():
+        # 1. 从 URL 参数获取
+        lang = request.args.get('lang')
+        if lang in app.config.get('BABEL_SUPPORTED_LOCALES', []):
+            return lang
+        
+        # 2. 从 Session 获取
+        from flask import session
+        lang = session.get('language')
+        if lang in app.config.get('BABEL_SUPPORTED_LOCALES', []):
+            return lang
+        
+        # 3. 从请求头获取
+        return request.accept_languages.best_match(
+            app.config.get('BABEL_SUPPORTED_LOCALES', ['zh_CN'])
+        ) or app.config['BABEL_DEFAULT_LOCALE']
+    
+    babel.init_app(app, locale_selector=get_locale)
     
     # CSRF 保护（API 路由可禁用）
     csrf = CSRFProtect(app)
@@ -131,9 +155,13 @@ def create_app(config_name=None):
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(api_bp)
+    app.register_blueprint(feedback_bp)
+    app.register_blueprint(analytics_bp)
     
     # 为API路由添加CSRF豁免
     csrf.exempt(api_bp)
+    csrf.exempt(feedback_bp)
+    csrf.exempt(analytics_bp)
     
     # 启动定时任务
     start_scheduler(app)

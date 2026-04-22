@@ -14,9 +14,9 @@ class TestDataUpload:
         """测试 1: 上传 CSV 文件"""
         # 创建测试 CSV 数据
         csv_data = """年龄,体重,品种
-3,15.5,金毛
-5,20.3,哈士奇
-2,8.7,柯基"""
+                    3,15.5,金毛
+                    5,20.3,哈士奇
+                    2,8.7,柯基"""
         
         data = {
             'file': (io.BytesIO(csv_data.encode('utf-8')), 'test_data.csv')

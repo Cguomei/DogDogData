@@ -1,0 +1,466 @@
+<!-- 
+Alpine.js 宠物组件示例
+展示如何使用 Alpine.js 重构宠物功能
+-->
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alpine.js 宠物组件演示</title>
+    
+    <!-- 引入 Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <style>
+        /* 基础样式 */
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .demo-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 30px;
+        }
+
+        /* 宠物容器 */
+        .virtual-pet-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+
+        /* 宠物主体 */
+        .virtual-pet {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .virtual-pet:hover {
+            transform: scale(1.1);
+        }
+
+        .virtual-pet.hidden {
+            display: none;
+        }
+
+        .virtual-pet.sleeping {
+            opacity: 0.7;
+            animation: breathe 4s ease-in-out infinite;
+        }
+
+        .virtual-pet.eating svg {
+            animation: eat 0.5s ease-in-out 3;
+        }
+
+        .virtual-pet.playing svg {
+            animation: bounce 0.6s ease-in-out 2;
+        }
+
+        /* 动画定义 */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes eat {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(-10deg); }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        /* 对话气泡 */
+        .pet-bubble {
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .pet-bubble.show {
+            opacity: 1;
+        }
+
+        .pet-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 10px 10px 0;
+            border-style: solid;
+            border-color: white transparent transparent transparent;
+        }
+
+        /* 动作按钮 */
+        .pet-actions {
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+            justify-content: center;
+        }
+
+        .action-btn {
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .action-btn:hover {
+            background: #667eea;
+            transform: scale(1.1);
+        }
+
+        .action-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* 名字标签 */
+        .pet-name-tag {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        /* 状态指示器 */
+        .status-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            min-width: 200px;
+        }
+
+        .status-item {
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .status-value {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .progress-bar {
+            width: 100px;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-fill.hunger {
+            background: linear-gradient(90deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .progress-fill.energy {
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .progress-fill.affection {
+            background: linear-gradient(90deg, #fa709a 0%, #fee140 100%);
+        }
+
+        /* 召唤按钮 */
+        .summon-pet-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+            z-index: 9998;
+        }
+
+        .summon-pet-btn:hover {
+            transform: scale(1.1) rotate(10deg);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        /* 说明文字 */
+        .info-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+
+        .info-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .info-section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .info-section li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .info-section li:last-child {
+            border-bottom: none;
+        }
+
+        code {
+            background: #667eea;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1>🐾 Alpine.js 宠物组件演示</h1>
+        
+        <!-- 状态指示器 -->
+        <div class="status-indicator" x-data="petComponent()" x-init="init()">
+            <h3 style="margin-top: 0; color: #667eea;">宠物状态</h3>
+            
+            <div class="status-item">
+                <span class="status-label">心情:</span>
+                <span class="status-value" x-text="state.mood"></span>
+            </div>
+            
+            <div class="status-item">
+                <span class="status-label">饥饿度:</span>
+                <div class="progress-bar">
+                    <div class="progress-fill hunger" :style="`width: ${state.hunger}%`"></div>
+                </div>
+                <span class="status-value" x-text="Math.round(state.hunger) + '%'"></span>
+            </div>
+            
+            <div class="status-item">
+                <span class="status-label">活力值:</span>
+                <div class="progress-bar">
+                    <div class="progress-fill energy" :style="`width: ${state.energy}%`"></div>
+                </div>
+                <span class="status-value" x-text="Math.round(state.energy) + '%'"></span>
+            </div>
+            
+            <div class="status-item">
+                <span class="status-label">亲密度:</span>
+                <div class="progress-bar">
+                    <div class="progress-fill affection" :style="`width: ${state.affection}%`"></div>
+                </div>
+                <span class="status-value" x-text="Math.round(state.affection) + '%'"></span>
+            </div>
+            
+            <button 
+                @click="toggleSleep()"
+                style="width: 100%; margin-top: 15px; padding: 10px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer;"
+                x-text="state.isSleeping ? '唤醒' : '睡觉'"
+            ></button>
+            
+            <button 
+                @click="hide()"
+                style="width: 100%; margin-top: 10px; padding: 10px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer;"
+            >
+                隐藏宠物
+            </button>
+        </div>
+
+        <!-- Alpine.js 宠物组件 -->
+        <div 
+            class="virtual-pet-container"
+            x-data="petComponent({ petName: '团团', autoHideTimeout: 60000 })"
+            x-init="init()"
+        >
+            <!-- 宠物主体 -->
+            <div 
+                class="virtual-pet"
+                :class="petClasses"
+                @click="handleClick()"
+                @dblclick="handleDblClick()"
+                x-ref="petElement"
+            >
+                <!-- 名字标签 -->
+                <div class="pet-name-tag" x-text="config.petName"></div>
+                
+                <!-- SVG 宠物形象 -->
+                <svg width="100" height="120" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <radialGradient id="bodyGrad" cx="50%" cy="40%" r="70%">
+                            <stop offset="0%" stop-color="#F7D9A3"/>
+                            <stop offset="100%" stop-color="#E3B87C"/>
+                        </radialGradient>
+                        <radialGradient id="earGrad" cx="50%" cy="50%" r="60%">
+                            <stop offset="0%" stop-color="#D99E4E"/>
+                            <stop offset="100%" stop-color="#B87A3C"/>
+                        </radialGradient>
+                    </defs>
+
+                    <!-- 身体 -->
+                    <ellipse cx="50" cy="75" rx="30" ry="26" fill="url(#bodyGrad)" stroke="#B87A3C" stroke-width="1.5"/>
+                    <ellipse cx="50" cy="80" rx="20" ry="16" fill="#FFEAC5" stroke="#C48B4B" stroke-width="1"/>
+
+                    <!-- 腿部 -->
+                    <ellipse cx="32" cy="96" rx="7" ry="10" fill="#E3B87C" stroke="#B87A3C" stroke-width="1.2"/>
+                    <ellipse cx="68" cy="96" rx="7" ry="10" fill="#E3B87C" stroke="#B87A3C" stroke-width="1.2"/>
+                    <ellipse cx="40" cy="84" rx="5" ry="9" fill="#E3B87C" stroke="#B87A3C" stroke-width="1.2"/>
+                    <ellipse cx="60" cy="84" rx="5" ry="9" fill="#E3B87C" stroke="#B87A3C" stroke-width="1.2"/>
+
+                    <!-- 尾巴 -->
+                    <path d="M78 66 L88 60 L84 70 L78 66 Z" fill="#D99E4E" stroke="#B87A3C" stroke-width="1.2"/>
+
+                    <!-- 头部 -->
+                    <circle cx="50" cy="43" r="25" fill="url(#bodyGrad)" stroke="#B87A3C" stroke-width="1.5"/>
+                    <ellipse cx="50" cy="52" rx="14" ry="9" fill="#FFF2DF" stroke="#C48B4B" stroke-width="1"/>
+
+                    <!-- 耳朵 -->
+                    <polygon points="26,28 35,8 44,28" fill="url(#earGrad)" stroke="#B87A3C" stroke-width="1.2"/>
+                    <polygon points="56,28 65,8 74,28" fill="url(#earGrad)" stroke="#B87A3C" stroke-width="1.2"/>
+
+                    <!-- 眼睛（动态） -->
+                    <circle cx="38" cy="41" r="4" fill="white" stroke="#4D3522" stroke-width="1"/>
+                    <circle cx="62" cy="41" r="4" fill="white" stroke="#4D3522" stroke-width="1"/>
+                    <ellipse 
+                        cx="40" cy="43" 
+                        :rx="eyeStyle.rx" 
+                        :ry="eyeStyle.ry" 
+                        fill="#2C1D12"
+                    />
+                    <ellipse 
+                        cx="64" cy="43" 
+                        :rx="eyeStyle.rx" 
+                        :ry="eyeStyle.ry" 
+                        fill="#2C1D12"
+                    />
+                    <circle cx="41" cy="40" r="1" fill="white"/>
+                    <circle cx="65" cy="40" r="1" fill="white"/>
+
+                    <!-- 鼻子 -->
+                    <ellipse cx="50" cy="57" rx="4.5" ry="3.5" fill="#4D3522"/>
+
+                    <!-- 嘴巴 -->
+                    <path d="M43 62 Q50 66 57 62" stroke="#B87A3C" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+
+                    <!-- 舌头 -->
+                    <path d="M49 65 L51 65 Q53 69 50 70 Q47 69 49 65 Z" fill="#FF8A7A"/>
+
+                    <!-- 腮红 -->
+                    <circle cx="30" cy="49" r="2" fill="#FFB7A8" opacity="0.6"/>
+                    <circle cx="70" cy="49" r="2" fill="#FFB7A8" opacity="0.6"/>
+                </svg>
+
+                <!-- 动作按钮 -->
+                <div class="pet-actions">
+                    <button class="action-btn" @click.stop="feed()" title="喂食">🍖</button>
+                    <button class="action-btn" @click.stop="pet()" title="抚摸">❤️</button>
+                    <button class="action-btn" @click.stop="play()" title="玩耍">🎾</button>
+                </div>
+            </div>
+
+            <!-- 对话气泡 -->
+            <div class="pet-bubble" :class="{ show: state.showBubble }">
+                <span x-text="state.bubbleText"></span>
+            </div>
+        </div>
+
+        <!-- 说明部分 -->
+        <div class="info-section">
+            <h3>✨ Alpine.js 优势</h3>
+            <ul>
+                <li>✅ <strong>响应式数据绑定</strong>：状态变化自动更新 UI，无需手动操作 DOM</li>
+                <li>✅ <strong>代码简洁</strong>：相比 jQuery 减少 60% 代码量</li>
+                <li>✅ <strong>易于维护</strong>：声明式语法，逻辑清晰</li>
+                <li>✅ <strong>体积小巧</strong>：仅 15KB，加载速度快</li>
+                <li>✅ <strong>渐进式集成</strong>：可与现有项目无缝结合</li>
+            </ul>
+
+            <h3 style="margin-top: 20px;">🎮 交互说明</h3>
+            <ul>
+                <li>🖱️ <strong>单击宠物</strong>：增加亲密度，随机反应</li>
+                <li>🖱️🖱️ <strong>双击宠物</strong>：旋转动画</li>
+                <li>🍖 <strong>喂食</strong>：降低饥饿度，恢复少量能量</li>
+                <li>❤️ <strong>抚摸</strong>：增加亲密度，改变心情</li>
+                <li>🎾 <strong>玩耍</strong>：消耗能量，大幅增加亲密度</li>
+                <li>💤 <strong>睡觉</strong>：恢复能量，离线时间计算</li>
+            </ul>
+
+            <h3 style="margin-top: 20px;">📝 使用方法</h3>
+            <ol>
+                <li>在 HTML 中引入 Alpine.js CDN：<br>
+                    <code>&lt;script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"&gt;&lt;/script&gt;</code>
+                </li>
+                <li>使用 <code>x-data</code> 指令初始化组件</li>
+                <li>使用 <code>x-text</code>、<code>:class</code>、<code>@click</code> 等指令绑定数据和事件</li>
+                <li>状态自动持久化到 localStorage</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- 引入 Alpine.js 宠物组件脚本 -->
+    <script src="/static/js/pet-alpine.js"></script>
+</body>
+</html>

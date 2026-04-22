@@ -1,0 +1,247 @@
+# Chinese (Simplified) translations for PROJECT.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-04-22 15:00+0800\n"
+"PO-Revision-Date: 2026-04-22 15:00+0800\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: zh_CN\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+# ===== 导航栏 =====
+msgid "狗狗数据看板"
+msgstr "狗狗数据看板"
+
+msgid "首页"
+msgstr "首页"
+
+msgid "自定义分析"
+msgstr "自定义分析"
+
+msgid "品种管理"
+msgstr "品种管理"
+
+msgid "图表列表"
+msgstr "图表列表"
+
+msgid "小宠物"
+msgstr "小宠物"
+
+msgid "登录"
+msgstr "登录"
+
+msgid "注册"
+msgstr "注册"
+
+msgid "登出"
+msgstr "登出"
+
+# ===== 首页统计 =====
+msgid "狗狗数据全景看板"
+msgstr "狗狗数据全景看板"
+
+msgid "数据最后更新"
+msgstr "数据最后更新"
+
+msgid "狗狗总数"
+msgstr "狗狗总数"
+
+msgid "平均价格"
+msgstr "平均价格"
+
+msgid "店铺总数"
+msgstr "店铺总数"
+
+msgid "品种总数"
+msgstr "品种总数"
+
+msgid "热门狗狗品种 TOP5"
+msgstr "热门狗狗品种 TOP5"
+
+msgid "热门店铺 TOP5"
+msgstr "热门店铺 TOP5"
+
+msgid "价格区间分布"
+msgstr "价格区间分布"
+
+msgid "等级分布比例"
+msgstr "等级分布比例"
+
+msgid "宠物级"
+msgstr "宠物级"
+
+msgid "血统级"
+msgstr "血统级"
+
+msgid "赛级"
+msgstr "赛级"
+
+msgid "条记录"
+msgstr "条记录"
+
+msgid "家店铺"
+msgstr "家店铺"
+
+msgid "种狗狗"
+msgstr "种狗狗"
+
+msgid "所有狗狗均价"
+msgstr "所有狗狗均价"
+
+# ===== 宠物交互 =====
+msgid "你好呀！我是你的小宠物~"
+msgstr "你好呀！我是你的小宠物~"
+
+msgid "想要和我玩吗？"
+msgstr "想要和我玩吗？"
+
+msgid "好开心！"
+msgstr "好开心！"
+
+msgid "再来一次！"
+msgstr "再来一次！"
+
+msgid "嘿嘿嘿~"
+msgstr "嘿嘿嘿~"
+
+msgid "最喜欢你了！"
+msgstr "最喜欢你了！"
+
+msgid "咕噜~"
+msgstr "咕噜~"
+
+msgid "好吃的！"
+msgstr "好吃的！"
+
+msgid "美味！"
+msgstr "美味！"
+
+msgid "嗷呜~"
+msgstr "嗷呜~"
+
+msgid "还要吃！"
+msgstr "还要吃！"
+
+msgid "已经吃饱啦！"
+msgstr "已经吃饱啦！"
+
+msgid "好累...不想动..."
+msgstr "好累...不想动..."
+
+msgid "真好玩！"
+msgstr "真好玩！"
+
+msgid "好舒服~"
+msgstr "好舒服~"
+
+msgid "喜欢主人！"
+msgstr "喜欢主人！"
+
+msgid "咕噜咕噜~"
+msgstr "咕噜咕噜~"
+
+msgid "蹭蹭~"
+msgstr "蹭蹭~"
+
+msgid "哇！转圈圈！"
+msgstr "哇！转圈圈！"
+
+msgid "晚安~ zzz"
+msgstr "晚安~ zzz"
+
+msgid "睡醒啦！精神满满！"
+msgstr "睡醒啦！精神满满！"
+
+msgid "正在睡觉中..."
+msgstr "正在睡觉中..."
+
+msgid "别吵我睡觉..."
+msgstr "别吵我睡觉..."
+
+# ===== 按钮和操作 =====
+msgid "喂食"
+msgstr "喂食"
+
+msgid "抚摸"
+msgstr "抚摸"
+
+msgid "玩耍"
+msgstr "玩耍"
+
+msgid "休息"
+msgstr "休息"
+
+msgid "召唤小宠物"
+msgstr "召唤小宠物"
+
+# ===== 通用消息 =====
+msgid "欢迎回来"
+msgstr "欢迎回来"
+
+msgid "登录成功"
+msgstr "登录成功"
+
+msgid "请先登录"
+msgstr "请先登录"
+
+msgid "感谢反馈！我们会尽快处理"
+msgstr "感谢反馈！我们会尽快处理"
+
+msgid "提交反馈"
+msgstr "提交反馈"
+
+msgid "反馈类型"
+msgstr "反馈类型"
+
+msgid "Bug 报告"
+msgstr "Bug 报告"
+
+msgid "功能建议"
+msgstr "功能建议"
+
+msgid "体验优化"
+msgstr "体验优化"
+
+msgid "其他"
+msgstr "其他"
+
+msgid "详细描述"
+msgstr "详细描述"
+
+msgid "请详细描述您遇到的问题或建议..."
+msgstr "请详细描述您遇到的问题或建议..."
+
+msgid "提交"
+msgstr "提交"
+
+# ===== 健康检查 =====
+msgid "系统状态"
+msgstr "系统状态"
+
+msgid "健康"
+msgstr "健康"
+
+msgid "异常"
+msgstr "异常"
+
+msgid "数据库连接"
+msgstr "数据库连接"
+
+msgid "缓存服务"
+msgstr "缓存服务"
+
+msgid "正常"
+msgstr "正常"
+
+msgid "错误"
+msgstr "错误"

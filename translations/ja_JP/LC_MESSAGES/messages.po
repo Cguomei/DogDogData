@@ -1,0 +1,247 @@
+# Japanese translations for PROJECT.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-04-22 15:00+0800\n"
+"PO-Revision-Date: 2026-04-22 15:00+0800\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ja_JP\n"
+"Language-Team: ja_JP <LL@li.org>\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+# ===== ナビゲーション =====
+msgid "狗狗数据看板"
+msgstr "犬データダッシュボード"
+
+msgid "首页"
+msgstr "ホーム"
+
+msgid "自定义分析"
+msgstr "カスタム分析"
+
+msgid "品种管理"
+msgstr "品種管理"
+
+msgid "图表列表"
+msgstr "チャート一覧"
+
+msgid "小宠物"
+msgstr "ペット"
+
+msgid "登录"
+msgstr "ログイン"
+
+msgid "注册"
+msgstr "登録"
+
+msgid "登出"
+msgstr "ログアウト"
+
+# ===== ホームページ統計 =====
+msgid "狗狗数据全景看板"
+msgstr "犬データ概要ダッシュボード"
+
+msgid "数据最后更新"
+msgstr "最終更新"
+
+msgid "狗狗总数"
+msgstr "犬の総数"
+
+msgid "平均价格"
+msgstr "平均価格"
+
+msgid "店铺总数"
+msgstr "ショップ総数"
+
+msgid "品种总数"
+msgstr "品種総数"
+
+msgid "热门狗狗品种 TOP5"
+msgstr "人気犬種 TOP5"
+
+msgid "热门店铺 TOP5"
+msgstr "人気ショップ TOP5"
+
+msgid "价格区间分布"
+msgstr "価格帯分布"
+
+msgid "等级分布比例"
+msgstr "レベル分布"
+
+msgid "宠物级"
+msgstr "ペットレベル"
+
+msgid "血统级"
+msgstr "血統レベル"
+
+msgid "赛级"
+msgstr "ショーレベル"
+
+msgid "条记录"
+msgstr "件"
+
+msgid "家店铺"
+msgstr "ショップ"
+
+msgid "种狗狗"
+msgstr "品種"
+
+msgid "所有狗狗均价"
+msgstr "全犬種の平均価格"
+
+# ===== ペットインタラクション =====
+msgid "你好呀！我是你的小宠物~"
+msgstr "こんにちは！私はあなたの小さなペットです〜"
+
+msgid "想要和我玩吗？"
+msgstr "一緒に遊びたいですか？"
+
+msgid "好开心！"
+msgstr "嬉しい！"
+
+msgid "再来一次！"
+msgstr "もう一度！"
+
+msgid "嘿嘿嘿~"
+msgstr "へへへ〜"
+
+msgid "最喜欢你了！"
+msgstr "あなたが大好き！"
+
+msgid "咕噜~"
+msgstr "ゴロゴロ〜"
+
+msgid "好吃的！"
+msgstr "美味しい！"
+
+msgid "美味！"
+msgstr "おいしい！"
+
+msgid "嗷呜~"
+msgstr "もぐもぐ〜"
+
+msgid "还要吃！"
+msgstr "もっと食べたい！"
+
+msgid "已经吃饱啦！"
+msgstr "もうお腹いっぱい！"
+
+msgid "好累...不想动..."
+msgstr "疲れた...動きたくない..."
+
+msgid "真好玩！"
+msgstr "楽しい！"
+
+msgid "好舒服~"
+msgstr "気持ちいい〜"
+
+msgid "喜欢主人！"
+msgstr "飼い主さんが好き！"
+
+msgid "咕噜咕噜~"
+msgstr "ゴロゴロ〜"
+
+msgid "蹭蹭~"
+msgstr "すりすり〜"
+
+msgid "哇！转圈圈！"
+msgstr "わあ！ぐるぐる！"
+
+msgid "晚安~ zzz"
+msgstr "おやすみ〜 zzz"
+
+msgid "睡醒啦！精神满满！"
+msgstr "起きたよ！元気いっぱい！"
+
+msgid "正在睡觉中..."
+msgstr "寝ています..."
+
+msgid "别吵我睡觉..."
+msgstr "寝ているのを邪魔しないで..."
+
+# ===== ボタンとアクション =====
+msgid "喂食"
+msgstr "餌をあげる"
+
+msgid "抚摸"
+msgstr "なでなで"
+
+msgid "玩耍"
+msgstr "遊ぶ"
+
+msgid "休息"
+msgstr "休む"
+
+msgid "召唤小宠物"
+msgstr "ペットを召喚"
+
+# ===== 一般的なメッセージ =====
+msgid "欢迎回来"
+msgstr "おかえりなさい"
+
+msgid "登录成功"
+msgstr "ログイン成功"
+
+msgid "请先登录"
+msgstr "まずログインしてください"
+
+msgid "感谢反馈！我们会尽快处理"
+msgstr "フィードバックありがとうございます！すぐに対応します"
+
+msgid "提交反馈"
+msgstr "フィードバックを送信"
+
+msgid "反馈类型"
+msgstr "フィードバックタイプ"
+
+msgid "Bug 报告"
+msgstr "バグ報告"
+
+msgid "功能建议"
+msgstr "機能提案"
+
+msgid "体验优化"
+msgstr "体験改善"
+
+msgid "其他"
+msgstr "その他"
+
+msgid "详细描述"
+msgstr "詳細説明"
+
+msgid "请详细描述您遇到的问题或建议..."
+msgstr "問題や提案の詳細を記入してください..."
+
+msgid "提交"
+msgstr "送信"
+
+# ===== ヘルスチェック =====
+msgid "系统状态"
+msgstr "システム状態"
+
+msgid "健康"
+msgstr "正常"
+
+msgid "异常"
+msgstr "異常"
+
+msgid "数据库连接"
+msgstr "データベース接続"
+
+msgid "缓存服务"
+msgstr "キャッシュサービス"
+
+msgid "正常"
+msgstr "OK"
+
+msgid "错误"
+msgstr "エラー"

@@ -1,0 +1,247 @@
+# English translations for PROJECT.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-04-22 15:00+0800\n"
+"PO-Revision-Date: 2026-04-22 15:00+0800\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en_US\n"
+"Language-Team: en_US <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+# ===== Navigation =====
+msgid "狗狗数据看板"
+msgstr "Dog Data Dashboard"
+
+msgid "首页"
+msgstr "Home"
+
+msgid "自定义分析"
+msgstr "Custom Analysis"
+
+msgid "品种管理"
+msgstr "Breed Management"
+
+msgid "图表列表"
+msgstr "Chart List"
+
+msgid "小宠物"
+msgstr "Pet"
+
+msgid "登录"
+msgstr "Login"
+
+msgid "注册"
+msgstr "Register"
+
+msgid "登出"
+msgstr "Logout"
+
+# ===== Homepage Stats =====
+msgid "狗狗数据全景看板"
+msgstr "Dog Data Overview Dashboard"
+
+msgid "数据最后更新"
+msgstr "Last Updated"
+
+msgid "狗狗总数"
+msgstr "Total Dogs"
+
+msgid "平均价格"
+msgstr "Average Price"
+
+msgid "店铺总数"
+msgstr "Total Shops"
+
+msgid "品种总数"
+msgstr "Total Breeds"
+
+msgid "热门狗狗品种 TOP5"
+msgstr "Top 5 Popular Dog Breeds"
+
+msgid "热门店铺 TOP5"
+msgstr "Top 5 Popular Shops"
+
+msgid "价格区间分布"
+msgstr "Price Range Distribution"
+
+msgid "等级分布比例"
+msgstr "Level Distribution"
+
+msgid "宠物级"
+msgstr "Pet Level"
+
+msgid "血统级"
+msgstr "Pedigree Level"
+
+msgid "赛级"
+msgstr "Show Level"
+
+msgid "条记录"
+msgstr "records"
+
+msgid "家店铺"
+msgstr "shops"
+
+msgid "种狗狗"
+msgstr "breeds"
+
+msgid "所有狗狗均价"
+msgstr "Average price of all dogs"
+
+# ===== Pet Interaction =====
+msgid "你好呀！我是你的小宠物~"
+msgstr "Hello! I'm your little pet~"
+
+msgid "想要和我玩吗？"
+msgstr "Want to play with me?"
+
+msgid "好开心！"
+msgstr "So happy!"
+
+msgid "再来一次！"
+msgstr "One more time!"
+
+msgid "嘿嘿嘿~"
+msgstr "Hehehe~"
+
+msgid "最喜欢你了！"
+msgstr "I love you the most!"
+
+msgid "咕噜~"
+msgstr "Purr~"
+
+msgid "好吃的！"
+msgstr "Yummy!"
+
+msgid "美味！"
+msgstr "Delicious!"
+
+msgid "嗷呜~"
+msgstr "Nom nom~"
+
+msgid "还要吃！"
+msgstr "More please!"
+
+msgid "已经吃饱啦！"
+msgstr "I'm already full!"
+
+msgid "好累...不想动..."
+msgstr "So tired... don't want to move..."
+
+msgid "真好玩！"
+msgstr "So much fun!"
+
+msgid "好舒服~"
+msgstr "So comfortable~"
+
+msgid "喜欢主人！"
+msgstr "I love my owner!"
+
+msgid "咕噜咕噜~"
+msgstr "Purr purr~"
+
+msgid "蹭蹭~"
+msgstr "Rub rub~"
+
+msgid "哇！转圈圈！"
+msgstr "Wow! Spinning!"
+
+msgid "晚安~ zzz"
+msgstr "Good night~ zzz"
+
+msgid "睡醒啦！精神满满！"
+msgstr "Wake up! Full of energy!"
+
+msgid "正在睡觉中..."
+msgstr "Sleeping..."
+
+msgid "别吵我睡觉..."
+msgstr "Don't disturb my sleep..."
+
+# ===== Buttons and Actions =====
+msgid "喂食"
+msgstr "Feed"
+
+msgid "抚摸"
+msgstr "Pet"
+
+msgid "玩耍"
+msgstr "Play"
+
+msgid "休息"
+msgstr "Rest"
+
+msgid "召唤小宠物"
+msgstr "Summon Pet"
+
+# ===== General Messages =====
+msgid "欢迎回来"
+msgstr "Welcome Back"
+
+msgid "登录成功"
+msgstr "Login Successful"
+
+msgid "请先登录"
+msgstr "Please login first"
+
+msgid "感谢反馈！我们会尽快处理"
+msgstr "Thank you for your feedback! We'll handle it soon"
+
+msgid "提交反馈"
+msgstr "Submit Feedback"
+
+msgid "反馈类型"
+msgstr "Feedback Type"
+
+msgid "Bug 报告"
+msgstr "Bug Report"
+
+msgid "功能建议"
+msgstr "Feature Suggestion"
+
+msgid "体验优化"
+msgstr "Experience Improvement"
+
+msgid "其他"
+msgstr "Other"
+
+msgid "详细描述"
+msgstr "Detailed Description"
+
+msgid "请详细描述您遇到的问题或建议..."
+msgstr "Please describe your issue or suggestion in detail..."
+
+msgid "提交"
+msgstr "Submit"
+
+# ===== Health Check =====
+msgid "系统状态"
+msgstr "System Status"
+
+msgid "健康"
+msgstr "Healthy"
+
+msgid "异常"
+msgstr "Unhealthy"
+
+msgid "数据库连接"
+msgstr "Database Connection"
+
+msgid "缓存服务"
+msgstr "Cache Service"
+
+msgid "正常"
+msgstr "OK"
+
+msgid "错误"
+msgstr "Error"

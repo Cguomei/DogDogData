@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 import os
 from datetime import datetime
 import pandas as pd
+from sqlalchemy import text
 
 api_bp = Blueprint('api', __name__)
 
@@ -422,6 +423,11 @@ def clear_cache_page():
     """清除缓存指南页面"""
     return render_template('clear_cache.html')
 
+@api_bp.route('/test-pet-alpine')
+def test_pet_alpine_page():
+    """Alpine.js 宠物组件测试页面"""
+    return render_template('test_pet_alpine.html')
+
 @api_bp.route('/api/restart', methods=['POST'])
 def api_restart():
     """API: 重启应用（需要管理员权限）"""
@@ -443,3 +449,63 @@ def api_restart():
         return jsonify({'success': True, 'message': '应用正在重启...'})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+
+# ===== 健康检查 API =====
+@api_bp.route('/api/health')
+def health_check():
+    """健康检查接口（供监控系统调用）"""
+    try:
+        # 检查数据库连接
+        db.session.execute(text('SELECT 1'))
+        db_status = 'ok'
+    except Exception as e:
+        db_status = f'error: {str(e)}'
+    
+    # 构建响应
+    health_data = {
+        'status': 'healthy' if db_status == 'ok' else 'unhealthy',
+        'timestamp': datetime.utcnow().isoformat(),
+        'version': 'v4.5.3',
+        'checks': {
+            'database': db_status,
+            'cache': 'ok'  # 简化版本，后续可扩展
+        }
+    }
+    
+    status_code = 200 if health_data['status'] == 'healthy' else 503
+    return jsonify(health_data), status_code
+
+# ===== 国际化 API =====
+@api_bp.route('/api/set-language', methods=['POST'])
+def set_language():
+    """设置用户语言偏好"""
+    from flask import session
+    
+    data = request.get_json()
+    lang = data.get('language', 'zh_CN')
+    
+    # 验证语言代码
+    supported_languages = ['zh_CN', 'en_US', 'ja_JP']
+    if lang not in supported_languages:
+        return jsonify({'error': f'不支持的语言: {lang}'}), 400
+    
+    # 保存到 Session
+    session['language'] = lang
+    
+    return jsonify({
+        'success': True,
+        'message': f'语言已切换为 {lang}',
+        'language': lang
+    }), 200
+
+@api_bp.route('/api/get-language')
+def get_language():
+    """获取当前语言设置"""
+    from flask import session
+    
+    current_lang = session.get('language', 'zh_CN')
+    
+    return jsonify({
+        'language': current_lang,
+        'supported_languages': ['zh_CN', 'en_US', 'ja_JP']
+    }), 200

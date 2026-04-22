@@ -56,6 +56,11 @@ class Config:
     JWT_ACCESS_TOKEN_EXPIRES = 3600  # 1 小时
     JWT_REFRESH_TOKEN_EXPIRES = 86400 * 7  # 7 天
     
+    # 国际化配置 (Flask-Babel)
+    BABEL_DEFAULT_LOCALE = 'zh_CN'
+    BABEL_DEFAULT_TIMEZONE = 'Asia/Shanghai'
+    BABEL_SUPPORTED_LOCALES = ['zh_CN', 'en_US', 'ja_JP']
+    
     # 安全配置
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SECURE = False  # HTTPS 环境下设为 True
