@@ -23,6 +23,9 @@
 
     <!-- 网页小宠物样式 -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pet.css') }}">
+    
+    <!-- 移动端响应式优化样式 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive-mobile.css') }}">
 
 <!--    <style>-->
 <!--        body { padding-top: 60px; background-color: #f8f9fa; }-->
@@ -104,6 +107,12 @@
     <script src="{{ url_for('static', filename='js/pet-logger.js', v='4.0.0') }}"></script>
     <!-- 再加载宠物脚本 -->
     <script src="{{ url_for('static', filename='js/pet.js', v='4.0.0') }}"></script>
+    
+    <!-- Alpine.js 通用组件库 -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="{{ url_for('static', filename='js/alpine-components.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/skeleton-loader.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/responsive-utils.js') }}"></script>
     
     <!-- 初始化小宠物（确保只执行一次，延迟出现给惊喜） -->
     <script>
