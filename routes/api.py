@@ -520,3 +520,73 @@ def get_dashboard_stats():
         return jsonify(stats), 200
     except Exception as e:
         return jsonify({'error': f'获取统计数据失败: {str(e)}'}), 500
+
+@api_bp.route('/api/chart/<chart_type>/data')
+def get_chart_data(chart_type):
+    """获取图表数据（用于 Alpine.js 动态渲染）"""
+    try:
+        # 这里应该根据 chart_type 返回对应的数据
+        # 示例实现
+        chart_data_map = {
+            'scatter': {'x_data': [1, 2, 3], 'y_data': [4, 5, 6]},
+            'line': {'x_data': [1, 2, 3], 'y_data': [4, 5, 6]},
+            'bar': {'x_data': ['A', 'B', 'C'], 'y_data': [10, 20, 30]},
+        }
+        
+        data = chart_data_map.get(chart_type, {'x_data': [], 'y_data': []})
+        return jsonify(data), 200
+    except Exception as e:
+        return jsonify({'error': f'获取图表数据失败: {str(e)}'}), 500
+
+@api_bp.route('/api/charts/list')
+def get_charts_list():
+    """获取图表列表（用于图表列表页面）"""
+    try:
+        charts = [
+            {
+                'id': 'scatter',
+                'title': '价格散点图',
+                'description': '展示狗狗价格分布情况',
+                'category': 'basic',
+                'icon': '📈'
+            },
+            {
+                'id': 'line',
+                'title': '体重折线图',
+                'description': '展示狗狗体重趋势',
+                'category': 'basic',
+                'icon': '📉'
+            },
+            {
+                'id': 'bar',
+                'title': '级别柱状图',
+                'description': '展示不同级别的狗狗数量',
+                'category': 'basic',
+                'icon': '📊'
+            },
+            {
+                'id': 'hist',
+                'title': 'TOP10 直方图',
+                'description': '热门狗狗品种和店铺排行',
+                'category': 'advanced',
+                'icon': '🏆'
+            },
+            {
+                'id': 'funnel',
+                'title': '价格漏斗图',
+                'description': '价格区间转化分析',
+                'category': 'advanced',
+                'icon': '🔍'
+            },
+            {
+                'id': 'map',
+                'title': '世界地图',
+                'description': '狗狗家乡分布地图',
+                'category': 'map',
+                'icon': '🗺️'
+            }
+        ]
+        
+        return jsonify(charts), 200
+    except Exception as e:
+        return jsonify({'error': f'获取图表列表失败: {str(e)}'}), 500
