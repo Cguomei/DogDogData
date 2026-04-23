@@ -590,3 +590,44 @@ def get_charts_list():
         return jsonify(charts), 200
     except Exception as e:
         return jsonify({'error': f'获取图表列表失败: {str(e)}'}), 500
+
+@api_bp.route('/api/health')
+def health_check():
+    """健康检查接口（供监控系统调用）"""
+    import sys
+    import psutil
+    
+    try:
+        # 检查数据库连接
+        db.session.execute(text('SELECT 1'))
+        db_status = 'ok'
+    except Exception as e:
+        db_status = f'error: {str(e)}'
+    
+    # 检查系统资源
+    try:
+        memory = psutil.virtual_memory()
+        cpu_percent = psutil.cpu_percent(interval=0.1)
+        
+        system_info = {
+            'memory_usage_percent': memory.percent,
+            'cpu_usage_percent': cpu_percent,
+            'available_memory_mb': memory.available / (1024 * 1024)
+        }
+    except Exception:
+        system_info = {'status': 'unavailable'}
+    
+    # 判断整体状态
+    is_healthy = db_status == 'ok'
+    status_code = 200 if is_healthy else 503
+    
+    return jsonify({
+        'status': 'healthy' if is_healthy else 'unhealthy',
+        'timestamp': datetime.utcnow().isoformat(),
+        'version': 'v4.6.6',
+        'python_version': sys.version,
+        'checks': {
+            'database': db_status,
+            'system': system_info
+        }
+    }), status_code

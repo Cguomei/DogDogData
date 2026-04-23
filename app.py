@@ -9,6 +9,7 @@ from flask_login import LoginManager
 from flask_apscheduler import APScheduler
 from flask_wtf.csrf import CSRFProtect
 from flask_babel import Babel
+from prometheus_flask_exporter import PrometheusMetrics
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 
@@ -33,6 +34,7 @@ login_manager = LoginManager()
 cache = Cache()
 scheduler = APScheduler()
 babel = Babel()
+metrics = PrometheusMetrics(app=None)  # 稍后在 create_app 中初始化
 
 # 标记调度器是否已启动
 _scheduler_started = False
@@ -88,6 +90,9 @@ def create_app(config_name=None):
         ) or app.config['BABEL_DEFAULT_LOCALE']
     
     babel.init_app(app, locale_selector=get_locale)
+    
+    # 初始化 Prometheus 监控
+    metrics.init_app(app)
     
     # CSRF 保护（API 路由可禁用）
     csrf = CSRFProtect(app)
