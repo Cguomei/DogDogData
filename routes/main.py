@@ -71,3 +71,8 @@ def world_map():
     """世界地图页面"""
     chart_html = get_world_map()
     return render_template('chart_page.html', chart_html=chart_html, chart_title='世界地图（狗狗家乡分布）')
+
+@main_bp.route('/alpine-demo')
+def alpine_demo_page():
+    """Alpine.js 组件演示页面"""
+    return render_template('alpine_demo.html')
