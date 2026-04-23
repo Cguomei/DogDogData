@@ -2,82 +2,99 @@
 
 {% block title %}图表列表{% endblock %}
 
+{% block extra_head %}
+<style>
+    /* 隐藏宠物容器在图表列表页面 */
+    #virtual-pet-container {
+        display: none !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
+<div class="container mt-4" x-data="chartList()">
     <h1 class="mb-4">📊 图表列表</h1>
     
-    <div class="row g-4">
-        <!-- 价格散点图 -->
-        <div class="col-md-6 col-lg-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body text-center">
-                    <i class="bi bi-scatter-chart" style="font-size: 3rem; color: #667eea;"></i>
-                    <h5 class="card-title mt-3">价格散点图</h5>
-                    <p class="card-text">展示狗狗价格分布情况</p>
-                    <a href="/chart/scatter" class="btn btn-primary">查看图表</a>
-                </div>
-            </div>
+    <!-- 搜索和筛选 -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <input 
+                type="text" 
+                x-model="searchQuery"
+                class="form-control" 
+                placeholder="🔍 搜索图表..."
+            >
         </div>
-        
-        <!-- 体重折线图 -->
-        <div class="col-md-6 col-lg-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body text-center">
-                    <i class="bi bi-graph-up" style="font-size: 3rem; color: #43e97b;"></i>
-                    <h5 class="card-title mt-3">体重折线图</h5>
-                    <p class="card-text">展示狗狗体重变化趋势</p>
-                    <a href="/chart/line" class="btn btn-success">查看图表</a>
-                </div>
-            </div>
-        </div>
-        
-        <!-- 级别柱状图 -->
-        <div class="col-md-6 col-lg-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body text-center">
-                    <i class="bi bi-bar-chart-fill" style="font-size: 3rem; color: #fa709a;"></i>
-                    <h5 class="card-title mt-3">级别柱状图</h5>
-                    <p class="card-text">展示狗狗级别分布</p>
-                    <a href="/chart/bar" class="btn btn-danger">查看图表</a>
-                </div>
-            </div>
-        </div>
-        
-        <!-- 直方图 -->
-        <div class="col-md-6 col-lg-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body text-center">
-                    <i class="bi bi-bar-chart-line" style="font-size: 3rem; color: #fee140;"></i>
-                    <h5 class="card-title mt-3">狗狗 + 店铺 TOP10</h5>
-                    <p class="card-text">展示热门品种和店铺</p>
-                    <a href="/chart/hist" class="btn btn-warning">查看图表</a>
-                </div>
-            </div>
-        </div>
-        
-        <!-- 漏斗图 -->
-        <div class="col-md-6 col-lg-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body text-center">
-                    <i class="bi bi-funnel" style="font-size: 3rem; color: #4facfe;"></i>
-                    <h5 class="card-title mt-3">价格段漏斗图</h5>
-                    <p class="card-text">展示不同价格段的狗狗数量</p>
-                    <a href="/chart/funnel" class="btn btn-info">查看图表</a>
-                </div>
-            </div>
-        </div>
-        
-        <!-- 世界地图 -->
-        <div class="col-md-6 col-lg-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body text-center">
-                    <i class="bi bi-globe" style="font-size: 3rem; color: #38f9d7;"></i>
-                    <h5 class="card-title mt-3">狗狗家乡分布</h5>
-                    <p class="card-text">展示狗狗产地分布</p>
-                    <a href="/chart/map" class="btn btn-success">查看图表</a>
-                </div>
-            </div>
+        <div class="col-md-6">
+            <select x-model="selectedCategory" class="form-select">
+                <template x-for="cat in categories" :key="cat.value">
+                    <option :value="cat.value" x-text="cat.icon + ' ' + cat.label"></option>
+                </template>
+            </select>
         </div>
     </div>
+    
+    <!-- 加载状态 -->
+    <div x-show="isLoading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">加载中...</span>
+        </div>
+        <p class="mt-3 text-muted">正在加载图表...</p>
+    </div>
+    
+    <!-- 图表网格 -->
+    <div class="row g-4" x-show="!isLoading">
+        <template x-for="chart in filteredCharts" :key="chart.id">
+            <div class="col-md-6 col-lg-4">
+                <div 
+                    class="card h-100 shadow-sm chart-card" 
+                    @click="navigateToChart(chart.id)"
+                    style="cursor: pointer; transition: all 0.3s ease;"
+                    onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 20px rgba(0,0,0,0.15)'"
+                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow=''"
+                >
+                    <div class="card-body text-center">
+                        <i :class="'bi ' + getIconClass(chart.id)" style="font-size: 3rem;" :style="'color: ' + getColorClass(chart.id)"></i>
+                        <h5 class="card-title mt-3" x-text="chart.title"></h5>
+                        <p class="card-text" x-text="chart.description"></p>
+                        <span class="badge" :style="'background: ' + getColorClass(chart.id)">点击查看</span>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
+    
+    <!-- 无结果提示 -->
+    <div x-show="!isLoading && filteredCharts.length === 0" class="text-center py-5">
+        <i class="bi bi-inbox" style="font-size: 4rem; color: #ccc;"></i>
+        <p class="mt-3 text-muted">没有找到匹配的图表</p>
+    </div>
 </div>
+
+<script>
+// 辅助函数
+function getIconClass(chartId) {
+    const icons = {
+        'scatter': 'bi-scatter-chart',
+        'line': 'bi-graph-up',
+        'bar': 'bi-bar-chart-fill',
+        'hist': 'bi-bar-chart-line',
+        'funnel': 'bi-funnel',
+        'map': 'bi-globe'
+    };
+    return icons[chartId] || 'bi-graph-up';
+}
+
+function getColorClass(chartId) {
+    const colors = {
+        'scatter': '#667eea',
+        'line': '#43e97b',
+        'bar': '#fa709a',
+        'hist': '#fee140',
+        'funnel': '#4facfe',
+        'map': '#38f9d7'
+    };
+    return colors[chartId] || '#667eea';
+}
+</script>
 {% endblock %}

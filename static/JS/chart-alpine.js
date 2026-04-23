@@ -200,6 +200,7 @@ function chartList() {
         ],
 
         async init() {
+            console.log('✅ 图表列表组件初始化');
             await this.loadCharts();
         },
 
@@ -208,12 +209,61 @@ function chartList() {
             
             try {
                 const response = await fetch('/api/charts/list');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
                 this.charts = await response.json();
+                console.log(`✅ 加载了 ${this.charts.length} 个图表`);
             } catch (error) {
                 console.error('加载图表列表失败:', error);
+                // 使用默认数据作为后备
+                this.charts = this.getDefaultCharts();
             } finally {
                 this.isLoading = false;
             }
+        },
+        
+        getDefaultCharts() {
+            return [
+                {
+                    id: 'scatter',
+                    title: '价格散点图',
+                    description: '展示狗狗价格分布情况',
+                    category: 'basic'
+                },
+                {
+                    id: 'line',
+                    title: '体重折线图',
+                    description: '展示狗狗体重趋势',
+                    category: 'basic'
+                },
+                {
+                    id: 'bar',
+                    title: '级别柱状图',
+                    description: '展示不同级别的狗狗数量',
+                    category: 'basic'
+                },
+                {
+                    id: 'hist',
+                    title: 'TOP10 直方图',
+                    description: '热门狗狗品种和店铺排行',
+                    category: 'advanced'
+                },
+                {
+                    id: 'funnel',
+                    title: '价格漏斗图',
+                    description: '价格区间转化分析',
+                    category: 'advanced'
+                },
+                {
+                    id: 'map',
+                    title: '世界地图',
+                    description: '狗狗家乡分布地图',
+                    category: 'map'
+                }
+            ];
         },
 
         get filteredCharts() {
@@ -237,6 +287,7 @@ function chartList() {
         },
 
         navigateToChart(chartId) {
+            console.log(`导航到图表: ${chartId}`);
             window.location.href = `/chart/${chartId}`;
         }
     };
