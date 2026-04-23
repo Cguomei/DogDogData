@@ -509,3 +509,14 @@ def get_language():
         'language': current_lang,
         'supported_languages': ['zh_CN', 'en_US', 'ja_JP']
     }), 200
+
+@api_bp.route('/api/dashboard/stats')
+def get_dashboard_stats():
+    """获取首页统计数据（用于 Alpine.js 动态刷新）"""
+    try:
+        from charts import get_dashboard_stats_from_summary
+        stats = get_dashboard_stats_from_summary()
+        
+        return jsonify(stats), 200
+    except Exception as e:
+        return jsonify({'error': f'获取统计数据失败: {str(e)}'}), 500
