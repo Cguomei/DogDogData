@@ -450,31 +450,6 @@ def api_restart():
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
-# ===== 健康检查 API =====
-@api_bp.route('/api/health')
-def health_check():
-    """健康检查接口（供监控系统调用）"""
-    try:
-        # 检查数据库连接
-        db.session.execute(text('SELECT 1'))
-        db_status = 'ok'
-    except Exception as e:
-        db_status = f'error: {str(e)}'
-    
-    # 构建响应
-    health_data = {
-        'status': 'healthy' if db_status == 'ok' else 'unhealthy',
-        'timestamp': datetime.utcnow().isoformat(),
-        'version': 'v4.5.3',
-        'checks': {
-            'database': db_status,
-            'cache': 'ok'  # 简化版本，后续可扩展
-        }
-    }
-    
-    status_code = 200 if health_data['status'] == 'healthy' else 503
-    return jsonify(health_data), status_code
-
 # ===== 国际化 API =====
 @api_bp.route('/api/set-language', methods=['POST'])
 def set_language():

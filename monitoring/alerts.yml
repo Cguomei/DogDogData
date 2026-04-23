@@ -1,0 +1,89 @@
+# Prometheus 告警规则
+# 用于监控系统异常
+
+groups:
+  - name: flask_app_alerts
+    rules:
+      # HTTP 错误率过高
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "HTTP 错误率过高"
+          description: "过去5分钟内，{{ $labels.instance }} 的 HTTP 5xx 错误率为 {{ $value | humanizePercentage }}"
+      
+      # 请求延迟过高（P95）
+      - alert: HighRequestLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "请求延迟过高"
+          description: "{{ $labels.instance }} 的 P95 延迟为 {{ $value }}s"
+      
+      # 应用宕机
+      - alert: AppDown
+        expr: up{job="flask_app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "应用宕机"
+          description: "{{ $labels.instance }} 已宕机超过1分钟"
+  
+  - name: system_alerts
+    rules:
+      # CPU 使用率过高
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "CPU 使用率过高"
+          description: "{{ $labels.instance }} 的 CPU 使用率为 {{ $value }}%"
+      
+      # 内存使用率过高
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "内存使用率过高"
+          description: "{{ $labels.instance }} 的内存使用率为 {{ $value }}%"
+      
+      # 磁盘空间不足
+      - alert: LowDiskSpace
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 15
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "磁盘空间不足"
+          description: "{{ $labels.instance }} 的根分区可用空间仅剩 {{ $value }}%"
+  
+  - name: business_alerts
+    rules:
+      # 数据库连接失败
+      - alert: DatabaseConnectionFailed
+        expr: health_check{check="database"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "数据库连接失败"
+          description: "{{ $labels.instance }} 无法连接到数据库"
+      
+      # 用户注册量异常下降
+      - alert: UserRegistrationDrop
+        expr: rate(user_registrations_total[1h]) < rate(user_registrations_total[1h] offset 1d) * 0.5
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "用户注册量异常下降"
+          description: "当前注册率比昨天同期下降了 {{ $value | humanizePercentage }}"
