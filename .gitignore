@@ -56,3 +56,8 @@ JMeter/
 # OS
 .DS_Store
 Thumbs.db
+
+# pytest
+.pytest_cache/
+*.coverage
+htmlcov/
