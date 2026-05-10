@@ -46,7 +46,11 @@ Test/docs/
 Test/test_tools/
 
 # 临时脚本和工具（不干扰项目结构）
-scripts/
+# scripts/ 目录已改为存放正式工具，不再整体忽略
+# scripts/tools/ - 小工具统一存放位置
+# scripts/*.py - 临时脚本可忽略，但 tools 子目录不忽略
+scripts/__pycache__/
+scripts/demo.db
 
 # 临时文件和报告
 *.tmp
