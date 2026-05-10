@@ -626,16 +626,21 @@ def ai_chat():
                 session.updated_at = datetime.now()
                 
                 db.session.commit()
+                
+                # 获取AI消息的ID
+                message_id = ai_msg.id
             except Exception as e:
                 db.session.rollback()
                 logger.error(f"[{request_id}] 保存对话历史失败: {str(e)}")
+                message_id = None
             
             return jsonify({
                 'success': True,
                 'answer': answer,
                 'type': question_type,
                 'source': 'knowledge_base',
-                'session_id': session_id
+                'session_id': session_id,
+                'message_id': message_id
             })
         else:
             logger.info(f"[{request_id}] 🔍 知识库未命中，调用模型")
@@ -696,6 +701,9 @@ def ai_chat():
             
             response_time = time.time() - start_time
             logger.info(f"[{request_id}] 保存对话历史完成 (耗时: {response_time:.3f}s)")
+            
+            # 获取AI消息的ID
+            message_id = ai_msg.id
         except Exception as e:
             db.session.rollback()
             logger.error(f"[{request_id}] 保存对话历史失败: {str(e)}")
@@ -713,7 +721,8 @@ def ai_chat():
             'success': True,
             'answer': answer,
             'type': question_type,
-            'session_id': session_id
+            'session_id': session_id,
+            'message_id': message_id  # 添加消息ID
         })
     
     except Exception as e:
@@ -993,6 +1002,68 @@ def delete_session(session_id):
     except Exception as e:
         db.session.rollback()
         logger.error(f"删除会话失败: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@ai_bp.route('/api/ai/feedback', methods=['POST'])
+@login_required
+def submit_feedback():
+    """
+    提交用户反馈（点赞/点踩）
+    
+    请求格式：
+    {
+        "message_id": 123,
+        "feedback": "like" 或 "dislike",
+        "comment": "可选的备注"
+    }
+    """
+    try:
+        data = request.get_json()
+        
+        if not all(k in data for k in ['message_id', 'feedback']):
+            return jsonify({
+                'success': False,
+                'error': '缺少必要字段'
+            }), 400
+        
+        message_id = data['message_id']
+        feedback = data['feedback']  # 'like' or 'dislike'
+        comment = data.get('comment', '')
+        
+        # 验证feedback值
+        if feedback not in ['like', 'dislike']:
+            return jsonify({
+                'success': False,
+                'error': 'feedback必须是like或dislike'
+            }), 400
+        
+        # 查询消息
+        message = ChatMessage.query.get_or_404(message_id)
+        
+        # 验证会话归属
+        session = ChatSession.query.get(message.session_id)
+        if session.user_id != current_user.id:
+            return jsonify({'error': '无权访问'}), 403
+        
+        # 更新反馈
+        message.feedback = feedback
+        message.feedback_comment = comment
+        db.session.commit()
+        
+        logger.info(f"用户 {current_user.username} 对消息 {message_id} 提交反馈: {feedback}")
+        
+        return jsonify({
+            'success': True,
+            'message': '反馈提交成功'
+        })
+    
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"提交反馈失败: {str(e)}")
         return jsonify({
             'success': False,
             'error': str(e)

@@ -313,6 +313,46 @@
             color: #2d3748;
         }
         
+        /* 反馈按钮 */
+        .feedback-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .feedback-btn {
+            padding: 6px 12px;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .feedback-btn:hover {
+            background: #f7fafc;
+            transform: scale(1.05);
+        }
+        
+        .feedback-btn.like:hover {
+            border-color: #48bb78;
+            color: #48bb78;
+        }
+        
+        .feedback-btn.dislike:hover {
+            border-color: #f56565;
+            color: #f56565;
+        }
+        
+        .feedback-btn.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
         .error-message {
             background: #fed7d7;
             color: #c53030;
@@ -601,8 +641,8 @@
                 hideTypingIndicator();
                 
                 if (data.success) {
-                    // 显示AI回复
-                    addMessage(data.answer, 'ai');
+                    // 显示AI回复（传递消息ID用于反馈）
+                    addMessage(data.answer, 'ai', true, data.message_id);
                 } else {
                     addMessage('❌ 错误：' + data.error, 'ai');
                 }
@@ -616,7 +656,7 @@
         }
         
         // 添加消息到聊天区域
-        function addMessage(text, sender, shouldScroll = true) {
+        function addMessage(text, sender, shouldScroll = true, messageId = null) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${sender}`;
             
@@ -624,12 +664,32 @@
             avatar.className = 'message-avatar';
             avatar.textContent = sender === 'user' ? '👤' : '🤖';
             
+            const contentWrapper = document.createElement('div');
+            contentWrapper.style.flex = '1';
+            
             const content = document.createElement('div');
             content.className = 'message-content';
             content.innerHTML = formatMessage(text);
             
+            contentWrapper.appendChild(content);
+            
+            // 如果是AI消息，添加反馈按钮
+            if (sender === 'ai' && messageId) {
+                const feedbackDiv = document.createElement('div');
+                feedbackDiv.className = 'feedback-buttons';
+                feedbackDiv.innerHTML = `
+                    <button class="feedback-btn like" onclick="submitFeedback(${messageId}, 'like', this)">
+                        👍 有帮助
+                    </button>
+                    <button class="feedback-btn dislike" onclick="submitFeedback(${messageId}, 'dislike', this)">
+                        👎 需改进
+                    </button>
+                `;
+                contentWrapper.appendChild(feedbackDiv);
+            }
+            
             messageDiv.appendChild(avatar);
-            messageDiv.appendChild(content);
+            messageDiv.appendChild(contentWrapper);
             
             chatMessages.appendChild(messageDiv);
             
@@ -723,6 +783,67 @@
         function sendQuickQuestion(question) {
             chatInput.value = question;
             sendMessage();
+        }
+        
+        // 提交反馈
+        async function submitFeedback(messageId, feedback, buttonElement) {
+            try {
+                const response = await fetch('/api/ai/feedback', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message_id: messageId,
+                        feedback: feedback
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 更新按钮状态
+                    const feedbackDiv = buttonElement.parentElement;
+                    const buttons = feedbackDiv.querySelectorAll('.feedback-btn');
+                    buttons.forEach(btn => btn.classList.remove('selected'));
+                    buttonElement.classList.add('selected');
+                    
+                    // 显示提示
+                    const message = feedback === 'like' ? '感谢你的认可！' : '我们会继续改进';
+                    showToast(message);
+                } else {
+                    alert('提交反馈失败：' + data.error);
+                }
+            } catch (error) {
+                console.error('提交反馈失败:', error);
+                alert('网络错误，请稍后重试');
+            }
+        }
+        
+        // 显示提示消息
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 100px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0,0,0,0.8);
+                color: white;
+                padding: 12px 24px;
+                border-radius: 8px;
+                font-size: 14px;
+                z-index: 1000;
+                animation: fadeIn 0.3s ease-in;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s';
+                setTimeout(() => toast.remove(), 300);
+            }, 2000);
         }
         
         // 回车发送
