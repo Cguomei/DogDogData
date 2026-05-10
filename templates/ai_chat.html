@@ -437,6 +437,16 @@
             checkModelStatus();
             loadKnowledgeStats();
             loadSessions();
+            
+            // 从 localStorage 恢复当前会话ID
+            const savedSessionId = localStorage.getItem('currentSessionId');
+            if (savedSessionId) {
+                currentSessionId = parseInt(savedSessionId);
+                // 加载该会话的消息
+                setTimeout(() => {
+                    loadSessionMessages(currentSessionId);
+                }, 500);
+            }
         };
         
         async function checkModelStatus() {
@@ -525,6 +535,9 @@
                 
                 if (data.success) {
                     currentSessionId = data.session_id;
+                    // 保存到 localStorage 以便离开页面后恢复
+                    localStorage.setItem('currentSessionId', currentSessionId);
+                    
                     // 清空聊天区域
                     chatMessages.innerHTML = `
                         <div class="welcome-message">
@@ -545,6 +558,8 @@
         // 切换会话
         async function switchSession(sessionId) {
             currentSessionId = sessionId;
+            // 保存到 localStorage
+            localStorage.setItem('currentSessionId', currentSessionId);
             
             // 更新UI选中状态
             document.querySelectorAll('.session-item').forEach(item => {

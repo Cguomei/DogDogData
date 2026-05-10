@@ -1,0 +1,222 @@
+============================= test session starts =============================
+platform win32 -- Python 3.10.20, pytest-8.4.2, pluggy-1.6.0 -- D:\Users\Lenovo\anaconda3\envs\fastApiProject\python.exe
+cachedir: .pytest_cache
+baseurl: http://localhost:5000
+metadata: {'Python': '3.10.20', 'Platform': 'Windows-10-10.0.26200-SP0', 'Packages': {'pytest': '8.4.2', 'pluggy': '1.6.0'}, 'Plugins': {'base-url': '2.1.0', 'dotenv': '0.5.2', 'flask': '1.3.0', 'html': '4.2.0', 'metadata': '3.1.1', 'playwright': '0.5.0'}, 'Base URL': 'http://localhost:5000'}
+rootdir: D:\PycharmProjects\fastApiProject
+configfile: pytest.ini
+plugins: base-url-2.1.0, dotenv-0.5.2, flask-1.3.0, html-4.2.0, metadata-3.1.1, playwright-0.5.0
+collecting ... collected 182 items
+
+Test/api_tests/test_ai_assistant.py::TestAIAssistant::test_model_status_authenticated PASSED [  0%]
+Test/api_tests/test_ai_assistant.py::TestAIAssistant::test_model_status_unauthenticated PASSED [  1%]
+Test/api_tests/test_ai_assistant.py::TestAIAssistant::test_chat_price_query PASSED [  1%]
+Test/api_tests/test_ai_assistant.py::TestAIAssistant::test_chat_breed_info PASSED [  2%]
+Test/api_tests/test_ai_assistant.py::TestAIAssistant::test_chat_recommendation PASSED [  2%]
+Test/api_tests/test_ai_assistant.py::TestAIAssistant::test_chat_comparison PASSED [  3%]
+Test/api_tests/test_ai_assistant.py::TestAIAssistant::test_chat_general_qa PASSED [  3%]
+Test/api_tests/test_ai_assistant.py::TestAIAssistant::test_chat_empty_message PASSED [  4%]
+Test/api_tests/test_ai_assistant.py::TestAIAssistant::test_chat_missing_message PASSED [  5%]
+Test/api_tests/test_ai_assistant.py::TestAIAssistant::test_chat_message_too_long PASSED [  5%]
+Test/api_tests/test_ai_assistant.py::TestAIAssistant::test_chat_unauthenticated PASSED [  6%]
+Test/api_tests/test_ai_assistant.py::TestAIAssistant::test_chat_page_authenticated PASSED [  6%]
+Test/api_tests/test_ai_assistant.py::TestAIAssistant::test_chat_page_unauthenticated PASSED [  7%]
+Test/api_tests/test_ai_assistant.py::TestAIAssistant::test_logs_page_admin PASSED [  7%]
+Test/api_tests/test_ai_assistant.py::TestAIAssistant::test_logs_api_recent PASSED [  8%]
+Test/api_tests/test_ai_assistant.py::TestAIAssistant::test_logs_api_errors PASSED [  8%]
+Test/api_tests/test_ai_assistant.py::TestSessionManagement::test_create_session PASSED [  9%]
+Test/api_tests/test_ai_assistant.py::TestSessionManagement::test_get_sessions PASSED [ 10%]
+Test/api_tests/test_ai_assistant.py::TestSessionManagement::test_get_session_detail PASSED [ 10%]
+Test/api_tests/test_ai_assistant.py::TestSessionManagement::test_chat_with_session PASSED [ 11%]
+Test/api_tests/test_ai_assistant.py::TestSessionManagement::test_get_messages PASSED [ 11%]
+Test/api_tests/test_ai_assistant.py::TestSessionManagement::test_delete_session PASSED [ 12%]
+Test/api_tests/test_ai_assistant.py::TestQuestionClassifier::test_classify_price_query PASSED [ 12%]
+Test/api_tests/test_ai_assistant.py::TestQuestionClassifier::test_classify_breed_info PASSED [ 13%]
+Test/api_tests/test_ai_assistant.py::TestQuestionClassifier::test_classify_recommendation PASSED [ 14%]
+Test/api_tests/test_ai_assistant.py::TestQuestionClassifier::test_classify_comparison PASSED [ 14%]
+Test/api_tests/test_ai_assistant.py::TestQuestionClassifier::test_extract_breed_name PASSED [ 15%]
+Test/api_tests/test_ai_assistant.py::TestQuestionClassifier::test_extract_multiple_breeds PASSED [ 15%]
+Test/api_tests/test_ai_assistant.py::TestFeedbackSystem::test_submit_like_feedback PASSED [ 16%]
+Test/api_tests/test_ai_assistant.py::TestFeedbackSystem::test_submit_dislike_feedback PASSED [ 16%]
+Test/api_tests/test_ai_assistant.py::TestFeedbackSystem::test_submit_feedback_invalid_type PASSED [ 17%]
+Test/api_tests/test_ai_assistant.py::TestFeedbackSystem::test_submit_feedback_missing_fields PASSED [ 17%]
+Test/api_tests/test_ai_assistant.py::TestAutoLearning::test_manual_learn PASSED [ 18%]
+Test/api_tests/test_ai_assistant.py::TestAutoLearning::test_manual_learn_missing_fields PASSED [ 19%]
+Test/api_tests/test_analytics.py::TestAnalyticsAPI::test_track_single_event PASSED [ 19%]
+Test/api_tests/test_analytics.py::TestAnalyticsAPI::test_batch_track_events PASSED [ 20%]
+Test/api_tests/test_analytics.py::TestAnalyticsAPI::test_track_event_validation PASSED [ 20%]
+Test/api_tests/test_analytics.py::TestAnalyticsAPI::test_event_categories PASSED [ 21%]
+Test/api_tests/test_analytics.py::TestAnalyticsAPI::test_user_agent_parsing PASSED [ 21%]
+Test/api_tests/test_analytics.py::TestAnalyticsAPI::test_get_events_admin PASSED [ 22%]
+Test/api_tests/test_analytics.py::TestAnalyticsAPI::test_analytics_requires_admin PASSED [ 23%]
+Test/api_tests/test_analytics.py::TestAnalyticsAPI::test_event_filtering PASSED [ 23%]
+Test/api_tests/test_analytics.py::TestAnalyticsAPI::test_batch_limit PASSED [ 24%]
+Test/api_tests/test_analytics.py::TestAnalyticsAPI::test_custom_properties PASSED [ 24%]
+Test/api_tests/test_analytics.py::TestAnalyticsAPI::test_get_analytics_stats PASSED [ 25%]
+Test/api_tests/test_analytics.py::TestAnalyticsAPI::test_conversion_funnel PASSED [ 25%]
+Test/api_tests/test_analytics.py::TestAnalyticsAPI::test_session_tracking PASSED [ 26%]
+Test/api_tests/test_analytics.py::TestAnalyticsAPI::test_events_pagination PASSED [ 26%]
+Test/api_tests/test_analytics.py::TestAnalyticsAPI::test_date_range_filter PASSED [ 27%]
+Test/api_tests/test_analytics.py::TestAnalyticsPerformance::test_batch_track_performance PASSED [ 28%]
+Test/api_tests/test_analytics.py::TestAnalyticsPerformance::test_analytics_query_performance PASSED [ 28%]
+Test/api_tests/test_breeds_api.py::TestGetBreeds::test_get_all_breeds PASSED [ 29%]
+Test/api_tests/test_breeds_api.py::TestGetBreeds::test_get_breed_by_id PASSED [ 29%]
+Test/api_tests/test_breeds_api.py::TestGetBreeds::test_get_nonexistent_breed PASSED [ 30%]
+Test/api_tests/test_breeds_api.py::TestAddBreed::test_add_breed_without_auth PASSED [ 30%]
+Test/api_tests/test_breeds_api.py::TestAddBreed::test_add_breed_as_normal_user PASSED [ 31%]
+Test/api_tests/test_breeds_api.py::TestAddBreed::test_add_breed_as_admin PASSED [ 32%]
+Test/api_tests/test_breeds_api.py::TestAddBreed::test_add_breed_with_invalid_data PASSED [ 32%]
+Test/api_tests/test_breeds_api.py::TestAddBreed::test_add_duplicate_breed PASSED [ 33%]
+Test/api_tests/test_breeds_api.py::TestUpdateBreed::test_update_breed_as_admin PASSED [ 33%]
+Test/api_tests/test_breeds_api.py::TestUpdateBreed::test_update_nonexistent_breed PASSED [ 34%]
+Test/api_tests/test_breeds_api.py::TestUpdateBreed::test_update_breed_without_auth PASSED [ 34%]
+Test/api_tests/test_breeds_api.py::TestDeleteBreed::test_delete_breed_as_admin PASSED [ 35%]
+Test/api_tests/test_breeds_api.py::TestDeleteBreed::test_delete_nonexistent_breed PASSED [ 35%]
+Test/api_tests/test_breeds_api.py::TestDeleteBreed::test_delete_breed_without_auth PASSED [ 36%]
+Test/api_tests/test_data_analysis_api.py::TestDataUpload::test_upload_csv_file PASSED [ 37%]
+Test/api_tests/test_data_analysis_api.py::TestDataUpload::test_upload_excel_file PASSED [ 37%]
+Test/api_tests/test_data_analysis_api.py::TestDataUpload::test_upload_without_file PASSED [ 38%]
+Test/api_tests/test_data_analysis_api.py::TestDataUpload::test_upload_invalid_format PASSED [ 38%]
+Test/api_tests/test_data_analysis_api.py::TestDataUpload::test_data_quality_validation PASSED [ 39%]
+Test/api_tests/test_data_analysis_api.py::TestChartGeneration::test_generate_scatter_chart PASSED [ 39%]
+Test/api_tests/test_data_analysis_api.py::TestChartGeneration::test_generate_line_chart PASSED [ 40%]
+Test/api_tests/test_data_analysis_api.py::TestChartGeneration::test_generate_bar_chart PASSED [ 41%]
+Test/api_tests/test_data_analysis_api.py::TestChartGeneration::test_generate_pie_chart PASSED [ 41%]
+Test/api_tests/test_data_analysis_api.py::TestChartGeneration::test_generate_chart_missing_params PASSED [ 42%]
+Test/api_tests/test_data_analysis_api.py::TestChartGeneration::test_generate_chart_invalid_columns PASSED [ 42%]
+Test/api_tests/test_data_analysis_api.py::TestChartGeneration::test_generate_chart_empty_data PASSED [ 43%]
+Test/api_tests/test_data_analysis_api.py::TestDataExport::test_export_to_csv PASSED [ 43%]
+Test/api_tests/test_data_analysis_api.py::TestDataExport::test_export_to_excel PASSED [ 44%]
+Test/api_tests/test_data_analysis_api.py::TestDataExport::test_export_empty_data PASSED [ 44%]
+Test/api_tests/test_dog_food.py::TestDogFoodAPI::test_get_food_statistics PASSED [ 45%]
+Test/api_tests/test_dog_food.py::TestDogFoodAPI::test_get_food_list PASSED [ 46%]
+Test/api_tests/test_dog_food.py::TestDogFoodAPI::test_get_food_list_with_pagination PASSED [ 46%]
+Test/api_tests/test_dog_food.py::TestDogFoodAPI::test_search_food_by_brand PASSED [ 47%]
+Test/api_tests/test_dog_food.py::TestDogFoodAPI::test_search_food_by_origin PASSED [ 47%]
+Test/api_tests/test_dog_food.py::TestDogFoodAPI::test_filter_food_by_price_range PASSED [ 48%]
+Test/api_tests/test_dog_food.py::TestDogFoodAPI::test_get_food_detail PASSED [ 48%]
+Test/api_tests/test_dog_food.py::TestDogFoodAPI::test_get_food_requires_auth PASSED [ 49%]
+Test/api_tests/test_dog_food.py::TestDogFoodAPI::test_food_statistics_accuracy PASSED [ 50%]
+Test/api_tests/test_dog_food.py::TestDogFoodAPI::test_food_price_distribution PASSED [ 50%]
+Test/api_tests/test_dog_food.py::TestDogFoodAPI::test_food_top_origins PASSED [ 51%]
+Test/api_tests/test_dog_food.py::TestDogFoodAPI::test_food_export_csv PASSED [ 51%]
+Test/api_tests/test_dog_food.py::TestDogFoodAPI::test_food_export_excel PASSED [ 52%]
+Test/api_tests/test_dog_food.py::TestDogFoodAPI::test_food_search_empty_result PASSED [ 52%]
+Test/api_tests/test_dog_food.py::TestDogFoodAPI::test_food_filter_invalid_price PASSED [ 53%]
+Test/api_tests/test_dog_food.py::TestDogFoodPerformance::test_food_list_response_time PASSED [ 53%]
+Test/api_tests/test_dog_food.py::TestDogFoodPerformance::test_food_statistics_response_time PASSED [ 54%]
+Test/api_tests/test_dog_food.py::TestDogFoodPerformance::test_concurrent_food_requests PASSED [ 55%]
+Test/api_tests/test_feedback.py::TestFeedbackAPI::test_submit_feedback_success PASSED [ 55%]
+Test/api_tests/test_feedback.py::TestFeedbackAPI::test_get_feedback_list PASSED [ 56%]
+Test/api_tests/test_feedback.py::TestFeedbackAPI::test_feedback_type_validation PASSED [ 56%]
+Test/api_tests/test_feedback.py::TestFeedbackAPI::test_feedback_content_validation PASSED [ 57%]
+Test/api_tests/test_feedback.py::TestFeedbackAPI::test_feedback_priority_validation PASSED [ 57%]
+Test/api_tests/test_feedback.py::TestFeedbackAPI::test_feedback_requires_login PASSED [ 58%]
+Test/api_tests/test_feedback.py::TestFeedbackAPI::test_get_single_feedback PASSED [ 58%]
+Test/api_tests/test_feedback.py::TestFeedbackAPI::test_feedback_status_default PASSED [ 59%]
+Test/api_tests/test_feedback.py::TestFeedbackAPI::test_optional_contact_info PASSED [ 60%]
+Test/api_tests/test_feedback.py::TestFeedbackAPI::test_optional_title PASSED [ 60%]
+Test/api_tests/test_feedback.py::TestFeedbackAPI::test_feedback_pagination PASSED [ 61%]
+Test/api_tests/test_feedback.py::TestFeedbackAPI::test_feedback_type_filter PASSED [ 61%]
+Test/api_tests/test_feedback.py::TestFeedbackAPI::test_feedback_status_filter PASSED [ 62%]
+Test/api_tests/test_feedback.py::TestFeedbackAPI::test_admin_manage_feedback PASSED [ 62%]
+Test/api_tests/test_feedback.py::TestFeedbackAPI::test_feedback_timestamps PASSED [ 63%]
+Test/api_tests/test_feedback.py::TestFeedbackPerformance::test_feedback_bulk_create_performance PASSED [ 64%]
+Test/api_tests/test_feedback.py::TestFeedbackPerformance::test_feedback_list_performance PASSED [ 64%]
+Test/api_tests/test_health_check.py::TestHealthCheckAPI::test_health_check_success PASSED [ 65%]
+Test/api_tests/test_health_check.py::TestHealthCheckAPI::test_health_check_database_ok PASSED [ 65%]
+Test/api_tests/test_health_check.py::TestHealthCheckAPI::test_health_check_timestamp_format PASSED [ 66%]
+Test/api_tests/test_health_check.py::TestHealthCheckAPI::test_health_check_no_auth_required PASSED [ 66%]
+Test/api_tests/test_health_check.py::TestHealthCheckAPI::test_health_check_response_time PASSED [ 67%]
+Test/api_tests/test_health_check.py::TestHealthCheckAPI::test_health_check_content_type PASSED [ 67%]
+Test/api_tests/test_health_check.py::TestHealthCheckAPI::test_health_check_headers PASSED [ 68%]
+Test/api_tests/test_health_check.py::TestHealthCheckAPI::test_health_check_concurrent_requests PASSED [ 69%]
+Test/api_tests/test_health_check.py::TestHealthCheckAPI::test_health_check_system_status PASSED [ 69%]
+Test/api_tests/test_health_check.py::TestHealthCheckAPI::test_health_check_consistency PASSED [ 70%]
+Test/api_tests/test_health_check.py::TestHealthCheckPerformance::test_health_check_under_load PASSED [ 70%]
+Test/api_tests/test_internationalization.py::TestInternationalizationAPI::test_set_language_success PASSED [ 71%]
+Test/api_tests/test_internationalization.py::TestInternationalizationAPI::test_get_language PASSED [ 71%]
+Test/api_tests/test_internationalization.py::TestInternationalizationAPI::test_set_language_chinese PASSED [ 72%]
+Test/api_tests/test_internationalization.py::TestInternationalizationAPI::test_set_language_english PASSED [ 73%]
+Test/api_tests/test_internationalization.py::TestInternationalizationAPI::test_set_language_japanese PASSED [ 73%]
+Test/api_tests/test_internationalization.py::TestInternationalizationAPI::test_set_unsupported_language PASSED [ 74%]
+Test/api_tests/test_internationalization.py::TestInternationalizationAPI::test_default_language_is_chinese PASSED [ 74%]
+Test/api_tests/test_internationalization.py::TestInternationalizationAPI::test_language_persistence_in_session PASSED [ 75%]
+Test/api_tests/test_internationalization.py::TestInternationalizationAPI::test_supported_languages_list PASSED [ 75%]
+Test/api_tests/test_internationalization.py::TestInternationalizationAPI::test_multiple_language_switches PASSED [ 76%]
+Test/api_tests/test_internationalization.py::TestInternationalizationAPI::test_set_language_missing_parameter PASSED [ 76%]
+Test/api_tests/test_internationalization.py::TestInternationalizationAPI::test_url_param_language_priority PASSED [ 77%]
+Test/api_tests/test_internationalization.py::TestFlaskBabelIntegration::test_translation_function_available PASSED [ 78%]
+Test/api_tests/test_internationalization.py::TestFlaskBabelIntegration::test_timezone_configuration PASSED [ 78%]
+Test/api_tests/test_internationalization.py::TestFlaskBabelIntegration::test_locale_selector PASSED [ 79%]
+Test/api_tests/test_internationalization.py::TestI18NPerformance::test_language_switch_performance PASSED [ 79%]
+Test/api_tests/test_monitoring.py::TestHealthCheck::test_health_check_success PASSED [ 80%]
+Test/api_tests/test_monitoring.py::TestHealthCheck::test_health_check_database_status PASSED [ 80%]
+Test/api_tests/test_monitoring.py::TestHealthCheck::test_health_check_system_info PASSED [ 81%]
+Test/api_tests/test_monitoring.py::TestHealthCheck::test_health_check_version PASSED [ 82%]
+Test/api_tests/test_monitoring.py::TestMonitoringPerformance::test_health_check_response_time PASSED [ 82%]
+Test/api_tests/test_monitoring.py::TestMonitoringPerformance::test_prometheus_metrics_endpoint PASSED [ 83%]
+Test/api_tests/test_monitoring.py::TestPrometheusMetrics::test_metrics_endpoint_exists PASSED [ 83%]
+Test/api_tests/test_monitoring.py::TestPrometheusMetrics::test_metrics_contains_http_requests PASSED [ 84%]
+Test/api_tests/test_monitoring.py::TestPrometheusMetrics::test_metrics_format_valid PASSED [ 84%]
+Test/api_tests/test_monitoring.py::TestBusinessMetrics::test_custom_metrics_module_imports PASSED [ 85%]
+Test/api_tests/test_monitoring.py::TestBusinessMetrics::test_metric_counters_exist PASSED [ 85%]
+Test/api_tests/test_monitoring.py::TestMonitoringIntegration::test_full_monitoring_workflow PASSED [ 86%]
+Test/api_tests/test_monitoring.py::TestMonitoringIntegration::test_error_handling_in_health_check PASSED [ 87%]
+Test/api_tests/test_security_advanced.py::TestSecurityXSS::test_xss_in_feedback_title PASSED [ 87%]
+Test/api_tests/test_security_advanced.py::TestSecurityXSS::test_xss_in_feedback_content PASSED [ 88%]
+Test/api_tests/test_security_advanced.py::TestSecurityXSS::test_xss_in_breed_name PASSED [ 88%]
+Test/api_tests/test_security_advanced.py::TestSecurityXSS::test_xss_in_chat_message PASSED [ 89%]
+Test/api_tests/test_security_advanced.py::TestSecurityXSS::test_reflected_xss_in_search PASSED [ 89%]
+Test/api_tests/test_security_advanced.py::TestSecuritySQLInjection::test_sql_injection_in_breed_search PASSED [ 90%]
+Test/api_tests/test_security_advanced.py::TestSecuritySQLInjection::test_sql_injection_in_food_search PASSED [ 91%]
+Test/api_tests/test_security_advanced.py::TestSecuritySQLInjection::test_sql_injection_in_price_filter PASSED [ 91%]
+Test/api_tests/test_security_advanced.py::TestSecuritySQLInjection::test_sql_injection_in_user_id PASSED [ 92%]
+Test/api_tests/test_security_advanced.py::TestSecurityAuthentication::test_access_protected_route_without_auth PASSED [ 92%]
+Test/api_tests/test_security_advanced.py::TestSecurityAuthentication::test_access_admin_route_as_user PASSED [ 93%]
+Test/api_tests/test_security_advanced.py::TestSecurityAuthentication::test_access_admin_route_without_auth PASSED [ 93%]
+Test/api_tests/test_security_advanced.py::TestSecurityAuthentication::test_session_fixation PASSED [ 94%]
+Test/api_tests/test_security_advanced.py::TestSecurityInputValidation::test_oversized_input PASSED [ 94%]
+Test/api_tests/test_security_advanced.py::TestSecurityInputValidation::test_negative_values PASSED [ 95%]
+Test/api_tests/test_security_advanced.py::TestSecurityInputValidation::test_special_characters_in_filename PASSED [ 96%]
+Test/api_tests/test_security_advanced.py::TestSecurityInputValidation::test_null_bytes_in_input PASSED [ 96%]
+Test/api_tests/test_security_advanced.py::TestSecurityPathTraversal::test_path_traversal_in_export PASSED [ 97%]
+Test/api_tests/test_security_advanced.py::TestSecurityPathTraversal::test_path_traversal_in_upload PASSED [ 97%]
+Test/api_tests/test_security_advanced.py::TestSecurityRateLimiting::test_brute_force_login PASSED [ 98%]
+Test/api_tests/test_security_advanced.py::TestSecurityRateLimiting::test_api_flood PASSED [ 98%]
+Test/api_tests/test_security_advanced.py::TestSecurityHeaders::test_security_headers_present PASSED [ 99%]
+Test/api_tests/test_security_advanced.py::TestSecurityHeaders::test_no_server_header_leak PASSED [100%]
+
+============================== warnings summary ===============================
+Test/api_tests/test_ai_assistant.py::TestSessionManagement::test_create_session
+  D:\Users\Lenovo\anaconda3\envs\fastApiProject\lib\site-packages\_pytest\python.py:161: PytestReturnNotNoneWarning: Test functions should return None, but Test/api_tests/test_ai_assistant.py::TestSessionManagement::test_create_session returned <class 'int'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+Test/api_tests/test_ai_assistant.py: 5 warnings
+Test/api_tests/test_breeds_api.py: 8 warnings
+Test/api_tests/test_feedback.py: 5 warnings
+  D:\Users\Lenovo\anaconda3\envs\fastApiProject\lib\site-packages\flask_sqlalchemy\query.py:30: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    rv = self.get(ident)
+
+Test/api_tests/test_ai_assistant.py::TestSessionManagement::test_chat_with_session
+Test/api_tests/test_ai_assistant.py::TestSessionManagement::test_get_messages
+Test/api_tests/test_ai_assistant.py::TestFeedbackSystem::test_submit_like_feedback
+Test/api_tests/test_ai_assistant.py::TestFeedbackSystem::test_submit_dislike_feedback
+  D:\PycharmProjects\fastApiProject\routes\ai_assistant.py:584: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    session = ChatSession.query.get(session_id)
+
+Test/api_tests/test_ai_assistant.py::TestFeedbackSystem::test_submit_like_feedback
+Test/api_tests/test_ai_assistant.py::TestFeedbackSystem::test_submit_dislike_feedback
+  D:\PycharmProjects\fastApiProject\routes\ai_assistant.py:1048: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    session = ChatSession.query.get(message.session_id)
+
+Test/api_tests/test_breeds_api.py::TestAddBreed::test_add_breed_as_admin
+  D:\Users\Lenovo\anaconda3\envs\fastApiProject\lib\site-packages\_pytest\python.py:161: PytestReturnNotNoneWarning: Test functions should return None, but Test/api_tests/test_breeds_api.py::TestAddBreed::test_add_breed_as_admin returned <class 'int'>.
+  Did you mean to use `assert` instead of `return`?
+  See https://docs.pytest.org/en/stable/how-to/assert.html#return-not-none for more information.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================= 178 passed, 26 warnings in 60.92s (0:01:00) =================

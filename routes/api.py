@@ -741,3 +741,64 @@ def health_check():
             'system': system_info
         }
     }), status_code
+
+# ===== 图表数据 API =====
+@api_bp.route('/api/chart/scatter/data')
+def get_scatter_data():
+    """获取价格散点图数据"""
+    try:
+        from charts import get_price_scatter_data
+        data = get_price_scatter_data()
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({'error': f'获取散点图数据失败: {str(e)}'}), 500
+
+@api_bp.route('/api/chart/line/data')
+def get_line_data():
+    """获取体重折线图数据"""
+    try:
+        from charts import get_weight_line_data
+        data = get_weight_line_data()
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({'error': f'获取折线图数据失败: {str(e)}'}), 500
+
+@api_bp.route('/api/chart/bar/data')
+def get_bar_data():
+    """获取级别柱状图数据"""
+    try:
+        from charts import get_level_bar_data
+        data = get_level_bar_data()
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({'error': f'获取柱状图数据失败: {str(e)}'}), 500
+
+@api_bp.route('/api/chart/hist/data')
+def get_hist_data():
+    """获取TOP10直方图数据"""
+    try:
+        from charts import get_hist_data
+        data = get_hist_data()
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({'error': f'获取直方图数据失败: {str(e)}'}), 500
+
+@api_bp.route('/api/chart/funnel/data')
+def get_funnel_data():
+    """获取价格漏斗图数据"""
+    try:
+        from charts import get_funnel_data
+        data = get_funnel_data()
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({'error': f'获取漏斗图数据失败: {str(e)}'}), 500
+
+@api_bp.route('/api/chart/map/data')
+def get_map_data():
+    """获取世界地图数据"""
+    try:
+        from charts import get_map_data
+        data = get_map_data()
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({'error': f'获取地图数据失败: {str(e)}'}), 500

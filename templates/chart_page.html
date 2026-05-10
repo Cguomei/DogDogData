@@ -87,19 +87,27 @@ async function exportChartData() {
         // 根据当前页面获取对应的数据API
         const path = window.location.pathname;
         let apiUrl = '';
+        let dataType = '';
         
+        // 根据不同图表使用不同的API
         if (path.includes('/chart/scatter')) {
-            apiUrl = '/api/breeds';  // 散点图使用品种数据
+            apiUrl = '/api/chart/scatter/data';  // 散点图：价格数据
+            dataType = '价格散点图';
         } else if (path.includes('/chart/line')) {
-            apiUrl = '/api/breeds';  // 折线图使用品种数据
+            apiUrl = '/api/chart/line/data';     // 折线图：体重数据
+            dataType = '体重折线图';
         } else if (path.includes('/chart/bar')) {
-            apiUrl = '/api/breeds';  // 柱状图使用品种数据
+            apiUrl = '/api/chart/bar/data';      // 柱状图：级别数据
+            dataType = '级别柱状图';
         } else if (path.includes('/chart/hist')) {
-            apiUrl = '/api/food';    // 直方图使用狗粮数据
+            apiUrl = '/api/chart/hist/data';     // 直方图：TOP10数据
+            dataType = 'TOP10直方图';
         } else if (path.includes('/chart/funnel')) {
-            apiUrl = '/api/breeds';  // 漏斗图使用品种数据
+            apiUrl = '/api/chart/funnel/data';   // 漏斗图：价格段数据
+            dataType = '价格漏斗图';
         } else if (path.includes('/chart/map')) {
-            apiUrl = '/api/breeds';  // 地图使用品种数据
+            apiUrl = '/api/chart/map/data';      // 地图：产地数据
+            dataType = '世界地图';
         }
         
         if (!apiUrl) {
@@ -107,12 +115,25 @@ async function exportChartData() {
             return;
         }
         
+        // 显示加载提示
+        const btn = event.target.closest('button');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> 加载中...';
+        btn.disabled = true;
+        
         // 获取数据
         const response = await fetch(apiUrl);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
         const data = await response.json();
         
         if (!data || data.length === 0) {
             alert('没有数据可导出');
+            btn.innerHTML = originalText;
+            btn.disabled = false;
             return;
         }
         
@@ -142,8 +163,18 @@ async function exportChartData() {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
         
+        // 恢复按钮状态
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        
     } catch (error) {
+        console.error('导出失败:', error);
         alert('导出失败: ' + error.message);
+        const btn = event.target.closest('button');
+        if (btn) {
+            btn.innerHTML = '<i class="bi bi-file-earmark-excel"></i> 导出数据';
+            btn.disabled = false;
+        }
     }
 }
 </script>

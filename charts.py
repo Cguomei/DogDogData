@@ -617,3 +617,210 @@ if __name__ == '__main__':
     with open('test_map.html', 'w', encoding='utf-8') as f:
         f.write(html)
     print("测试地图已保存为 test_map.html")
+
+
+# ===== 图表数据提取 API（用于导出功能） =====
+
+def get_price_scatter_data():
+    """获取价格散点图数据（用于导出）"""
+    try:
+        con = pymysql.connect(**DB_CONFIG)
+        cur = con.cursor()
+        sql = "SELECT price, count(price) as count FROM jd_dogs GROUP BY price ORDER BY price;"
+        cur.execute(sql)
+        rows = cur.fetchall()
+        con.close()
+        
+        return [{
+            '价格': row[0],
+            '数量': row[1]
+        } for row in rows]
+    except Exception as e:
+        print("获取价格散点图数据出错：", e)
+        return []
+
+def get_weight_line_data():
+    """获取体重折线图数据（用于导出）"""
+    try:
+        con = pymysql.connect(**DB_CONFIG)
+        cur = con.cursor()
+        sql = """
+            SELECT weight, count(*) AS count
+            FROM (
+                SELECT CASE 
+                    WHEN 0 < weight AND weight <= 1 THEN '0-1kg'
+                    WHEN 1 < weight AND weight <= 2 THEN '1-2kg'
+                    WHEN 2 < weight AND weight <= 5 THEN '2-5kg'
+                    WHEN 5 < weight AND weight <= 10 THEN '5-10kg'
+                    WHEN 10 < weight AND weight <= 20 THEN '10-20kg'
+                    WHEN weight > 20 THEN '20kg以上'
+                    ELSE '其他'
+                END AS weight
+                FROM jd_dogs WHERE weight IS NOT NULL
+            ) AS weight_num
+            GROUP BY weight
+            ORDER BY weight;
+        """
+        cur.execute(sql)
+        rows = cur.fetchall()
+        con.close()
+        
+        return [{
+            '体重区间': row[0],
+            '数量': row[1]
+        } for row in rows]
+    except Exception as e:
+        print("获取体重折线图数据出错：", e)
+        return []
+
+def get_level_bar_data():
+    """获取级别柱状图数据（用于导出）"""
+    try:
+        con = pymysql.connect(**DB_CONFIG)
+        cur = con.cursor()
+        sql = """
+            SELECT dog_name, 
+                   SUM(CASE WHEN pet_level='宠物级' THEN 1 ELSE 0 END) as 宠物级,
+                   SUM(CASE WHEN pet_level='血统级' THEN 1 ELSE 0 END) as 血统级
+            FROM jd_dogs 
+            WHERE dog_name IS NOT NULL AND pet_level IS NOT NULL
+            GROUP BY dog_name
+            ORDER BY 宠物级 + 血统级 DESC
+            LIMIT 20;
+        """
+        cur.execute(sql)
+        rows = cur.fetchall()
+        con.close()
+        
+        return [{
+            '品种': row[0],
+            '宠物级': row[1],
+            '血统级': row[2]
+        } for row in rows]
+    except Exception as e:
+        print("获取级别柱状图数据出错：", e)
+        return []
+
+def get_hist_data():
+    """获取TOP10直方图数据（用于导出）"""
+    try:
+        con = pymysql.connect(**DB_CONFIG)
+        cur = con.cursor()
+        
+        # 获取狗狗品种TOP10
+        sql_breeds = """
+            SELECT dog_name, count(*) as count
+            FROM jd_dogs
+            GROUP BY dog_name
+            ORDER BY count DESC
+            LIMIT 10;
+        """
+        cur.execute(sql_breeds)
+        breed_rows = cur.fetchall()
+        
+        # 获取店铺TOP10
+        sql_shops = """
+            SELECT shop_name, count(*) as count
+            FROM jd_dogs
+            GROUP BY shop_name
+            ORDER BY count DESC
+            LIMIT 10;
+        """
+        cur.execute(sql_shops)
+        shop_rows = cur.fetchall()
+        
+        con.close()
+        
+        result = []
+        # 添加品种TOP10
+        for row in breed_rows:
+            result.append({
+                '类型': '品种',
+                '名称': row[0] if row[0] else '-',
+                '数量': row[1]
+            })
+        
+        # 添加店铺TOP10
+        for row in shop_rows:
+            result.append({
+                '类型': '店铺',
+                '名称': row[0] if row[0] else '-',
+                '数量': row[1]
+            })
+        
+        return result
+    except Exception as e:
+        print("获取TOP10直方图数据出错：", e)
+        return []
+
+def get_funnel_data():
+    """获取价格漏斗图数据（用于导出）"""
+    try:
+        con = pymysql.connect(**DB_CONFIG)
+        cur = con.cursor()
+        
+        price_ranges = [
+            (0, 2500, '0-2.5k'),
+            (2500, 5000, '2.5k-5k'),
+            (5000, 7500, '5k-7.5k'),
+            (7500, 10000, '7.5k-1w'),
+            (10000, 20000, '1w-2w'),
+            (20000, 1000000, '2w以上')
+        ]
+        
+        result = []
+        for low, high, label in price_ranges:
+            cur.execute(
+                "SELECT COUNT(*) FROM jd_dogs WHERE price > %s AND price <= %s",
+                (low, high)
+            )
+            count = cur.fetchone()[0]
+            result.append({
+                '价格区间': label,
+                '数量': count
+            })
+        
+        con.close()
+        return result
+    except Exception as e:
+        print("获取价格漏斗图数据出错：", e)
+        return []
+
+def get_map_data():
+    """获取世界地图数据（用于导出）"""
+    try:
+        from translate import Translator
+        con = pymysql.connect(**DB_CONFIG)
+        cur = con.cursor()
+        sql = """
+            SELECT Origin_wool as origin, count(Origin_wool) as count
+            FROM dog_price 
+            WHERE Origin_wool IS NOT NULL AND Origin_wool != ''
+            GROUP BY Origin_wool
+            ORDER BY count DESC
+            LIMIT 20;
+        """
+        cur.execute(sql)
+        rows = cur.fetchall()
+        con.close()
+        
+        result = []
+        translator = Translator(from_lang="chinese", to_lang="english")
+        
+        for row in rows:
+            origin_cn = row[0]
+            try:
+                origin_en = translator.translate(origin_cn)
+            except:
+                origin_en = origin_cn
+            
+            result.append({
+                '产地（中文）': origin_cn,
+                '产地（英文）': origin_en,
+                '数量': row[1]
+            })
+        
+        return result
+    except Exception as e:
+        print("获取世界地图数据出错：", e)
+        return []
