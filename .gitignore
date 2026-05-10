@@ -17,6 +17,9 @@ ENV/
 *.swp
 *.swo
 
+# AI Assistant Config (Lingma)
+.lingma/
+
 # Environment variables（敏感文件，严禁上传）
 .env
 .env.local
