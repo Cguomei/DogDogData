@@ -161,6 +161,11 @@
             to { opacity: 1; transform: translateY(0); }
         }
         
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
         .message.user {
             flex-direction: row-reverse;
         }
@@ -433,7 +438,7 @@
         let currentSessionId = null;
         
         // 页面加载时初始化
-        window.onload = function() {
+        window.addEventListener('DOMContentLoaded', function() {
             checkModelStatus();
             loadKnowledgeStats();
             loadSessions();
@@ -447,7 +452,10 @@
                     loadSessionMessages(currentSessionId);
                 }, 500);
             }
-        };
+            
+            // 聚焦输入框
+            chatInput.focus();
+        });
         
         async function checkModelStatus() {
             try {
@@ -514,7 +522,7 @@
                     <div class="session-title">${escapeHtml(session.title)}</div>
                     <div class="session-meta">
                         <span>${formatTime(session.last_message_at)}</span>
-                        <span>${session.message_count}条消息</span>
+                        <span>${session.message_count || 0}条消息</span>
                     </div>
                 </div>
             `).join('');
@@ -564,8 +572,22 @@
             // 更新UI选中状态
             document.querySelectorAll('.session-item').forEach(item => {
                 item.classList.remove('active');
+                if (parseInt(item.getAttribute('onclick').match(/\d+/)[0]) === sessionId) {
+                    item.classList.add('active');
+                }
             });
-            event.currentTarget.classList.add('active');
+            
+            // 显示加载状态
+            chatMessages.innerHTML = `
+                <div style="display: flex; justify-content: center; align-items: center; height: 100%;">
+                    <div class="typing-indicator">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <p style="margin-left: 10px; color: #a0aec0;">加载中...</p>
+                </div>
+            `;
             
             // 加载该会话的消息历史
             await loadSessionMessages(sessionId);
@@ -582,15 +604,47 @@
                     chatMessages.innerHTML = '';
                     
                     // 显示所有消息
-                    data.messages.forEach(msg => {
-                        addMessage(msg.content, msg.role === 'user' ? 'user' : 'ai', false);
-                    });
-                    
-                    // 滚动到底部
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    if (data.messages && data.messages.length > 0) {
+                        data.messages.forEach(msg => {
+                            addMessage(msg.content, msg.role === 'user' ? 'user' : 'ai', false, msg.id);
+                        });
+                        
+                        // 滚动到底部
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                        
+                        // 显示提示信息
+                        showNotification(`已切换到会话（${data.message_count}条消息）`, 'success');
+                    } else {
+                        // 如果是空会话，显示欢迎页面和明确提示
+                        chatMessages.innerHTML = `
+                            <div class="welcome-message">
+                                <h3>你好！我是你的AI宠物顾问 👋</h3>
+                                <p>这是一个新的对话会话</p>
+                                <p style="margin-top: 10px; font-size: 14px; color: #667eea;">💡 发送第一条消息开始对话吧！</p>
+                            </div>
+                        `;
+                        showNotification('新会话已创建，可以开始对话了', 'info');
+                    }
+                } else {
+                    // API返回失败
+                    chatMessages.innerHTML = `
+                        <div class="error-message">
+                            <p>❌ 加载消息失败：${data.error || '未知错误'}</p>
+                            <button onclick="loadSessionMessages(${sessionId})" style="margin-top: 10px; padding: 5px 15px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">重试</button>
+                        </div>
+                    `;
+                    showNotification('加载消息失败', 'error');
                 }
             } catch (error) {
                 console.error('加载消息失败:', error);
+                // 出错时显示错误信息和重试按钮
+                chatMessages.innerHTML = `
+                    <div class="error-message">
+                        <p>❌ 网络错误，无法加载消息</p>
+                        <button onclick="loadSessionMessages(${sessionId})" style="margin-top: 10px; padding: 5px 15px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">重试</button>
+                    </div>
+                `;
+                showNotification('网络连接失败', 'error');
             }
         }
         
@@ -658,6 +712,9 @@
                 if (data.success) {
                     // 显示AI回复（传递消息ID用于反馈）
                     addMessage(data.answer, 'ai', true, data.message_id);
+                    
+                    // 更新会话列表（刷新消息计数）
+                    loadSessions();
                 } else {
                     addMessage('❌ 错误：' + data.error, 'ai');
                 }
@@ -835,7 +892,7 @@
             }
         }
         
-        // 显示提示消息
+        // 显示提示消息（Toast）
         function showToast(message) {
             const toast = document.createElement('div');
             toast.style.cssText = `
@@ -861,6 +918,40 @@
             }, 2000);
         }
         
+        // 显示通知（支持不同类型）
+        function showNotification(message, type = 'info') {
+            const colors = {
+                success: '#48bb78',
+                error: '#f56565',
+                info: '#667eea',
+                warning: '#ed8936'
+            };
+            
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${colors[type] || colors.info};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                font-size: 14px;
+                z-index: 1000;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                animation: slideIn 0.3s ease-out;
+                max-width: 300px;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transition = 'opacity 0.3s';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+        
         // 回车发送
         function handleKeyPress(event) {
             if (event.key === 'Enter') {
@@ -868,10 +959,24 @@
             }
         }
         
-        // 页面加载完成后聚焦输入框
-        window.onload = function() {
-            chatInput.focus();
-        };
+        // 格式化时间
+        function formatTime(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = now - date;
+            
+            // 小于1分钟
+            if (diff < 60000) return '刚刚';
+            // 小于1小时
+            if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
+            // 小于24小时
+            if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
+            // 其他
+            return `${date.getMonth() + 1}/${date.getDate()}`;
+        }
+        
+
     </script>
 </body>
 </html>
