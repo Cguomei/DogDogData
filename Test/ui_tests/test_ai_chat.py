@@ -181,6 +181,120 @@ class TestAIChatUI:
         
         # 检查欢迎消息内容
         expect(welcome).to_contain_text("你好！我是你的AI宠物顾问")
+    
+    # ===== V2新功能测试 =====
+    
+    def test_session_sidebar_visible(self, page: Page):
+        """测试会话侧边栏显示"""
+        page.goto("http://localhost:5000/ai-chat")
+        
+        # 检查侧边栏存在
+        sidebar = page.locator(".sidebar")
+        expect(sidebar).to_be_visible()
+        
+        # 检查新建对话按钮
+        new_chat_btn = page.locator(".new-chat-btn")
+        expect(new_chat_btn).to_be_visible()
+        expect(new_chat_btn).to_contain_text("新建对话")
+    
+    def test_create_new_session(self, page: Page):
+        """测试创建新会话"""
+        page.goto("http://localhost:5000/ai-chat")
+        
+        # 点击新建对话按钮
+        new_chat_btn = page.locator(".new-chat-btn")
+        new_chat_btn.click()
+        
+        # 等待一下，让会话列表更新
+        page.wait_for_timeout(1000)
+        
+        # 检查会话列表中是否有新会话
+        session_list = page.locator(".session-list")
+        expect(session_list).to_be_visible()
+    
+    def test_session_list_display(self, page: Page):
+        """测试会话列表显示"""
+        page.goto("http://localhost:5000/ai-chat")
+        
+        # 先创建一个会话
+        new_chat_btn = page.locator(".new-chat-btn")
+        new_chat_btn.click()
+        page.wait_for_timeout(1000)
+        
+        # 发送一条消息
+        chat_input = page.locator("#chatInput")
+        chat_input.fill("测试会话")
+        page.locator("#sendBtn").click()
+        page.wait_for_timeout(3000)
+        
+        # 刷新页面，检查会话列表
+        page.reload()
+        page.wait_for_timeout(2000)
+        
+        # 检查会话项是否存在
+        session_items = page.locator(".session-item")
+        count = session_items.count()
+        assert count > 0
+    
+    def test_feedback_buttons_appear(self, page: Page):
+        """测试反馈按钮出现"""
+        page.goto("http://localhost:5000/ai-chat")
+        
+        # 发送消息并等待回复
+        chat_input = page.locator("#chatInput")
+        chat_input.fill("泰迪有什么特点？")
+        page.locator("#sendBtn").click()
+        
+        # 等待AI回复
+        ai_message = page.locator(".message.ai .message-content")
+        expect(ai_message).to_be_visible(timeout=15000)
+        
+        # 检查反馈按钮是否存在
+        feedback_buttons = page.locator(".feedback-buttons")
+        expect(feedback_buttons.first).to_be_visible(timeout=5000)
+    
+    def test_submit_like_feedback(self, page: Page):
+        """测试提交点赞反馈"""
+        page.goto("http://localhost:5000/ai-chat")
+        
+        # 发送消息并等待回复
+        chat_input = page.locator("#chatInput")
+        chat_input.fill("金毛好养吗？")
+        page.locator("#sendBtn").click()
+        
+        # 等待AI回复
+        ai_message = page.locator(".message.ai .message-content")
+        expect(ai_message).to_be_visible(timeout=15000)
+        
+        # 点击点赞按钮
+        like_btn = page.locator(".feedback-btn.like").first
+        like_btn.click()
+        
+        # 等待提示消息
+        page.wait_for_timeout(1000)
+        
+        # 检查按钮是否变为选中状态
+        expect(like_btn).to_have_class("feedback-btn like selected")
+    
+    def test_context_conversation(self, page: Page):
+        """测试上下文对话"""
+        page.goto("http://localhost:5000/ai-chat")
+        
+        # 第一条消息
+        chat_input = page.locator("#chatInput")
+        chat_input.fill("金毛好养吗？")
+        page.locator("#sendBtn").click()
+        expect(page.locator(".message.ai").nth(0)).to_be_visible(timeout=15000)
+        
+        # 第二条消息（追问，测试上下文）
+        chat_input.fill("那它掉毛多吗？")
+        page.locator("#sendBtn").click()
+        expect(page.locator(".message.ai").nth(1)).to_be_visible(timeout=15000)
+        
+        # 检查是否有两条AI回复
+        ai_messages = page.locator(".message.ai")
+        count = ai_messages.count()
+        assert count >= 2
 
 
 if __name__ == '__main__':

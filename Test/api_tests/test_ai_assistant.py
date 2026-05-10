@@ -170,6 +170,124 @@ class TestAIAssistant:
         assert response.status_code in [200, 403]
 
 
+class TestSessionManagement:
+    """会话管理测试（V2新功能）"""
+    
+    def test_create_session(self, authenticated_api_client):
+        """测试创建会话"""
+        response = authenticated_api_client.post(
+            '/api/ai/sessions',
+            json={'title': '测试会话'}
+        )
+        
+        assert response.status_code == 201
+        data = response.get_json()
+        assert data['success'] is True
+        assert 'session_id' in data
+        assert 'title' in data
+        return data['session_id']
+    
+    def test_get_sessions(self, authenticated_api_client):
+        """测试获取会话列表"""
+        # 先创建一个会话
+        create_response = authenticated_api_client.post(
+            '/api/ai/sessions',
+            json={'title': '测试会话1'}
+        )
+        
+        # 获取列表
+        response = authenticated_api_client.get('/api/ai/sessions')
+        
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data['success'] is True
+        assert 'sessions' in data
+        assert len(data['sessions']) > 0
+    
+    def test_get_session_detail(self, authenticated_api_client):
+        """测试获取会话详情"""
+        # 先创建会话
+        create_response = authenticated_api_client.post(
+            '/api/ai/sessions',
+            json={'title': '测试会话详情'}
+        )
+        session_id = create_response.get_json()['session_id']
+        
+        # 获取详情
+        response = authenticated_api_client.get(f'/api/ai/sessions/{session_id}')
+        
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data['success'] is True
+        assert 'session' in data
+    
+    def test_chat_with_session(self, authenticated_api_client):
+        """测试带会话ID的聊天"""
+        # 创建会话
+        create_response = authenticated_api_client.post(
+            '/api/ai/sessions',
+            json={'title': '聊天测试会话'}
+        )
+        session_id = create_response.get_json()['session_id']
+        
+        # 发送消息
+        response = authenticated_api_client.post(
+            '/api/ai/chat',
+            json={
+                'message': '泰迪有什么特点？',
+                'session_id': session_id
+            }
+        )
+        
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data['success'] is True
+        assert data['session_id'] == session_id
+        assert 'message_id' in data  # V2新增
+    
+    def test_get_messages(self, authenticated_api_client):
+        """测试获取消息历史"""
+        # 创建会话并发送消息
+        create_response = authenticated_api_client.post(
+            '/api/ai/sessions',
+            json={'title': '消息历史测试'}
+        )
+        session_id = create_response.get_json()['session_id']
+        
+        authenticated_api_client.post(
+            '/api/ai/chat',
+            json={
+                'message': '测试消息',
+                'session_id': session_id
+            }
+        )
+        
+        # 获取消息历史
+        response = authenticated_api_client.get(f'/api/ai/sessions/{session_id}/messages')
+        
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data['success'] is True
+        assert 'messages' in data
+        assert data['message_count'] > 0
+    
+    def test_delete_session(self, authenticated_api_client):
+        """测试删除会话"""
+        # 创建会话
+        create_response = authenticated_api_client.post(
+            '/api/ai/sessions',
+            json={'title': '待删除会话'}
+        )
+        session_id = create_response.get_json()['session_id']
+        
+        # 删除会话
+        response = authenticated_api_client.delete(f'/api/ai/sessions/{session_id}')
+        
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data['success'] is True
+
+
 class TestQuestionClassifier:
     """问题分类器测试"""
     
@@ -217,6 +335,133 @@ class TestQuestionClassifier:
         assert len(breeds) >= 2
         assert '金毛' in breeds
         assert '泰迪' in breeds
+
+
+class TestFeedbackSystem:
+    """用户反馈系统测试（V2新功能）"""
+    
+    def test_submit_like_feedback(self, authenticated_api_client):
+        """测试点赞反馈"""
+        # 先创建会话并发送消息
+        create_response = authenticated_api_client.post(
+            '/api/ai/sessions',
+            json={'title': '反馈测试'}
+        )
+        session_id = create_response.get_json()['session_id']
+        
+        chat_response = authenticated_api_client.post(
+            '/api/ai/chat',
+            json={
+                'message': '测试问题',
+                'session_id': session_id
+            }
+        )
+        message_id = chat_response.get_json()['message_id']
+        
+        # 提交点赞反馈
+        response = authenticated_api_client.post(
+            '/api/ai/feedback',
+            json={
+                'message_id': message_id,
+                'feedback': 'like'
+            }
+        )
+        
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data['success'] is True
+    
+    def test_submit_dislike_feedback(self, authenticated_api_client):
+        """测试点踩反馈"""
+        # 先创建会话并发送消息
+        create_response = authenticated_api_client.post(
+            '/api/ai/sessions',
+            json={'title': '反馈测试2'}
+        )
+        session_id = create_response.get_json()['session_id']
+        
+        chat_response = authenticated_api_client.post(
+            '/api/ai/chat',
+            json={
+                'message': '测试问题2',
+                'session_id': session_id
+            }
+        )
+        message_id = chat_response.get_json()['message_id']
+        
+        # 提交点踩反馈
+        response = authenticated_api_client.post(
+            '/api/ai/feedback',
+            json={
+                'message_id': message_id,
+                'feedback': 'dislike',
+                'comment': '回答不够详细'
+            }
+        )
+        
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data['success'] is True
+    
+    def test_submit_feedback_invalid_type(self, authenticated_api_client):
+        """测试无效反馈类型"""
+        response = authenticated_api_client.post(
+            '/api/ai/feedback',
+            json={
+                'message_id': 1,
+                'feedback': 'invalid'
+            }
+        )
+        
+        assert response.status_code == 400
+        data = response.get_json()
+        assert data['success'] is False
+    
+    def test_submit_feedback_missing_fields(self, authenticated_api_client):
+        """测试缺少必要字段"""
+        response = authenticated_api_client.post(
+            '/api/ai/feedback',
+            json={
+                'message_id': 1
+            }
+        )
+        
+        assert response.status_code == 400
+        data = response.get_json()
+        assert data['success'] is False
+
+
+class TestAutoLearning:
+    """自动学习功能测试（V2新功能）"""
+    
+    def test_manual_learn(self, authenticated_api_client):
+        """测试手动学习"""
+        response = authenticated_api_client.post(
+            '/api/ai/learn',
+            json={
+                'question': '柯基的特点是什么？',
+                'answer': '柯基是一种小型犬，腿短身长，性格活泼。',
+                'category': 'breed_info'
+            }
+        )
+        
+        # 可能成功或失败（如果已存在）
+        assert response.status_code in [200, 400]
+        data = response.get_json()
+        assert 'success' in data
+    
+    def test_manual_learn_missing_fields(self, authenticated_api_client):
+        """测试手动学习缺少字段"""
+        response = authenticated_api_client.post(
+            '/api/ai/learn',
+            json={
+                'question': '测试问题'
+            }
+        )
+        
+        assert response.status_code == 400
+        data = response.get_json()
+        assert data['success'] is False
 
 
 if __name__ == '__main__':
