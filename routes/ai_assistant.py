@@ -435,6 +435,84 @@ def get_conversation_context(session_id: int, max_messages: int = 10) -> list:
         return []
 
 
+def auto_learn_from_answer(question: str, answer: str, question_type: str) -> bool:
+    """
+    自动学习：将模型的优质回答加入知识库
+    
+    Args:
+        question: 用户问题
+        answer: AI回答
+        question_type: 问题类型
+    
+    Returns:
+        是否成功加入知识库
+    """
+    try:
+        from utils.knowledge_base import get_knowledge_base
+        
+        kb = get_knowledge_base()
+        
+        # 简单的质量判断：回答长度 > 50字符才考虑学习
+        if len(answer) < 50:
+            logger.info(f"回答过短，跳过学习: {len(answer)}字符")
+            return False
+        
+        # 检查是否已存在类似问题
+        existing = kb.search(question, question_type)
+        if existing:
+            logger.info(f"知识库已存在类似问题，跳过学习")
+            return False
+        
+        # 提取关键词作为知识标题
+        keywords = extract_keywords(question)
+        title = f"{question_type}: {keywords}"
+        
+        # 添加到知识库
+        success = kb.add_knowledge(
+            title=title,
+            question=question,
+            answer=answer,
+            category=question_type,
+            confidence=0.7  # 自动学习的置信度较低
+        )
+        
+        if success:
+            logger.info(f"✅ 自动学习成功: {title}")
+        else:
+            logger.warning(f"⚠️ 自动学习失败")
+        
+        return success
+    
+    except Exception as e:
+        logger.error(f"自动学习异常: {str(e)}")
+        return False
+
+
+def extract_keywords(text: str, max_keywords: int = 3) -> str:
+    """
+    从文本中提取关键词（简化版）
+    
+    Args:
+        text: 输入文本
+        max_keywords: 最多提取的关键词数量
+    
+    Returns:
+        关键词字符串
+    """
+    # 简单的关键词提取：去除停用词，取前几个有意义的词
+    stop_words = ['的', '了', '在', '是', '我', '有', '和', '就', '不', '人', '都', '一', '一个', '上', '也', '很', '到', '说', '要', '去', '你', '会', '着', '没有', '看', '好', '自己', '这']
+    
+    # 分词（简单按空格和标点分割）
+    import re
+    words = re.findall(r'[\w]+', text)
+    
+    # 过滤停用词和短词
+    keywords = [w for w in words if w not in stop_words and len(w) > 1]
+    
+    # 返回前N个关键词
+    return ' '.join(keywords[:max_keywords])
+
+
 # ===== API接口 =====
 
 @ai_bp.route('/api/ai/chat', methods=['POST'])
@@ -622,6 +700,15 @@ def ai_chat():
             db.session.rollback()
             logger.error(f"[{request_id}] 保存对话历史失败: {str(e)}")
         
+        # Step 4: 自动学习（仅对模型生成的回答）
+        if data.get('source', 'model') == 'model':
+            try:
+                learn_success = auto_learn_from_answer(user_message, answer, question_type)
+                if learn_success:
+                    logger.info(f"[{request_id}] 🎓 自动学习成功，知识已加入库")
+            except Exception as e:
+                logger.error(f"[{request_id}] 自动学习异常: {str(e)}")
+        
         return jsonify({
             'success': True,
             'answer': answer,
@@ -715,6 +802,54 @@ def knowledge_stats():
         })
     except Exception as e:
         logger.error(f"获取知识库统计失败: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@ai_bp.route('/api/ai/learn', methods=['POST'])
+@login_required
+def manual_learn():
+    """
+    手动学习：将指定的问答对加入知识库
+    
+    请求格式：
+    {
+        "question": "问题",
+        "answer": "回答",
+        "category": "breed_info"
+    }
+    """
+    try:
+        data = request.get_json()
+        
+        if not all(k in data for k in ['question', 'answer', 'category']):
+            return jsonify({
+                'success': False,
+                'error': '缺少必要字段'
+            }), 400
+        
+        question = data['question']
+        answer = data['answer']
+        category = data['category']
+        
+        # 调用自动学习函数
+        success = auto_learn_from_answer(question, answer, category)
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': '学习成功，知识已加入库'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'message': '学习失败，可能已存在类似知识'
+            }), 400
+    
+    except Exception as e:
+        logger.error(f"手动学习失败: {str(e)}")
         return jsonify({
             'success': False,
             'error': str(e)
