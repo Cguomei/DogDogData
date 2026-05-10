@@ -368,13 +368,19 @@ def handle_comparison(params: dict) -> str:
     return call_local_model(messages)
 
 
-def handle_general_qa(question: str) -> str:
-    """处理通用问答"""
-    # 直接调用本地模型
+def handle_general_qa(question: str, context: list = None) -> str:
+    """处理通用问答（支持上下文）"""
     messages = [
-        {"role": "system", "content": "你是宠物知识专家，回答要简洁专业"},
-        {"role": "user", "content": question}
+        {"role": "system", "content": "你是宠物知识专家，回答要简洁专业"}
     ]
+    
+    # 如果有上下文，添加到消息中
+    if context and len(context) > 0:
+        messages.extend(context)
+        logger.info(f"使用上下文对话，历史消息数: {len(context)}")
+    
+    # 添加当前问题
+    messages.append({"role": "user", "content": question})
     
     return call_local_model(messages)
 
@@ -389,6 +395,44 @@ def get_breed_info_from_model(breed: str) -> str:
     ]
     
     return call_local_model(messages)
+
+
+def get_conversation_context(session_id: int, max_messages: int = 10) -> list:
+    """
+    获取会话的上下文历史
+    
+    Args:
+        session_id: 会话ID
+        max_messages: 最多返回的消息数量（默认10条，即5轮对话）
+    
+    Returns:
+        消息列表，格式为 [{"role": "user/assistant", "content": "..."}]
+    """
+    try:
+        # 获取最近的消息（按时间倒序）
+        messages = ChatMessage.query.filter_by(
+            session_id=session_id
+        ).order_by(
+            ChatMessage.created_at.desc()
+        ).limit(max_messages).all()
+        
+        # 反转列表，使其按时间正序
+        messages.reverse()
+        
+        # 转换为模型需要的格式
+        context = []
+        for msg in messages:
+            context.append({
+                "role": msg.role,
+                "content": msg.content
+            })
+        
+        logger.info(f"获取会话 {session_id} 的上下文: {len(context)}条消息")
+        return context
+    
+    except Exception as e:
+        logger.error(f"获取上下文失败: {str(e)}")
+        return []
 
 
 # ===== API接口 =====
@@ -534,7 +578,9 @@ def ai_chat():
             answer = handle_comparison(params)
         else:  # general_qa
             logger.info(f"[{request_id}] 处理通用问答")
-            answer = handle_general_qa(user_message)
+            # 获取上下文历史
+            context = get_conversation_context(session_id, max_messages=10)
+            answer = handle_general_qa(user_message, context)
         
         logger.info(f"[{request_id}] 生成回复成功，长度: {len(answer)}字符")
         logger.info(f"[{request_id}] 回复内容: {answer[:200]}...")
