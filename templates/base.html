@@ -49,6 +49,10 @@
                     <li class="nav-item"><a class="nav-link" href="/custom-analysis">📊 自定义分析</a></li>
                     <li class="nav-item"><a class="nav-link" href="/admin/breeds">📋 品种管理</a></li>
                     <li class="nav-item"><a class="nav-link" href="/charts">图表列表</a></li>
+                    <!-- AI智能助手 -->
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item"><a class="nav-link" href="/ai-chat">🤖 AI助手</a></li>
+                    {% endif %}
                     <!-- 网页小宠物入口 -->
                     <li class="nav-item">
                         <button class="btn btn-sm btn-outline-warning ms-2" id="summon-pet-btn" title="召唤小宠物">

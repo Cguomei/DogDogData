@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知识库管理 - AI助手</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 20px;
+        }
+        
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            background: white;
+            transition: transform 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            color: #666;
+            margin-top: 10px;
+        }
+        
+        .category-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            margin: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .category-price { background: #e3f2fd; color: #1976d2; }
+        .category-breed { background: #f3e5f5; color: #7b1fa2; }
+        .category-recommend { background: #e8f5e9; color: #388e3c; }
+        .category-comparison { background: #fff3e0; color: #f57c00; }
+        .category-general { background: #fce4ec; color: #c2185b; }
+        
+        .knowledge-item {
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        
+        .knowledge-question {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .knowledge-answer {
+            color: #666;
+            font-size: 0.9rem;
+            max-height: 100px;
+            overflow: hidden;
+        }
+        
+        .usage-count {
+            float: right;
+            color: #999;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 标题 -->
+        <div class="text-center mb-4">
+            <h1 class="text-white">📚 AI助手知识库管理</h1>
+            <p class="text-white-50">查看和管理AI助手的本地知识</p>
+        </div>
+        
+        <!-- 统计卡片 -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalKnowledge">-</div>
+                    <div class="stat-label">知识总数</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalQueries">-</div>
+                    <div class="stat-label">总查询数</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-number" id="kbHits">-</div>
+                    <div class="stat-label">命中次数</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-number" id="hitRate">-</div>
+                    <div class="stat-label">命中率</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 分类统计 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">📊 知识分类统计</h5>
+            </div>
+            <div class="card-body">
+                <div id="categoryStats">
+                    <div class="text-center text-muted">加载中...</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 知识列表 -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">📖 知识库列表</h5>
+                <button class="btn btn-light btn-sm" onclick="loadKnowledgeBase()">
+                    🔄 刷新
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="knowledgeList">
+                    <div class="text-center text-muted">加载中...</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 返回按钮 -->
+        <div class="text-center mt-4">
+            <a href="/ai-chat" class="btn btn-light btn-lg">
+                ← 返回聊天页面
+            </a>
+        </div>
+    </div>
+    
+    <script>
+        // 加载知识库统计
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/ai/knowledge/stats');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const stats = data.stats;
+                    
+                    document.getElementById('totalKnowledge').textContent = stats.total_knowledge;
+                    document.getElementById('totalQueries').textContent = stats.total_queries;
+                    document.getElementById('kbHits').textContent = stats.kb_hits;
+                    document.getElementById('hitRate').textContent = stats.hit_rate;
+                    
+                    // 显示分类统计
+                    displayCategoryStats(stats.categories);
+                }
+            } catch (error) {
+                console.error('加载统计失败:', error);
+            }
+        }
+        
+        // 显示分类统计
+        function displayCategoryStats(categories) {
+            const container = document.getElementById('categoryStats');
+            
+            if (!categories || Object.keys(categories).length === 0) {
+                container.innerHTML = '<div class="text-muted">暂无数据</div>';
+                return;
+            }
+            
+            let html = '';
+            const categoryNames = {
+                'price_query': '价格查询',
+                'breed_info': '品种信息',
+                'recommendation': '推荐建议',
+                'comparison': '对比分析',
+                'general_qa': '通用问答'
+            };
+            
+            const categoryClasses = {
+                'price_query': 'category-price',
+                'breed_info': 'category-breed',
+                'recommendation': 'category-recommend',
+                'comparison': 'category-comparison',
+                'general_qa': 'category-general'
+            };
+            
+            for (const [cat, count] of Object.entries(categories)) {
+                const name = categoryNames[cat] || cat;
+                const cls = categoryClasses[cat] || '';
+                html += `<span class="category-badge ${cls}">${name}: ${count}</span>`;
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        // 加载知识库列表（简化版，只显示前10条）
+        async function loadKnowledgeBase() {
+            const container = document.getElementById('knowledgeList');
+            container.innerHTML = '<div class="text-center text-muted">加载中...</div>';
+            
+            // 这里可以添加API来获取详细列表
+            // 目前先显示提示信息
+            container.innerHTML = `
+                <div class="alert alert-info">
+                    <strong>💡 提示</strong><br>
+                    知识库包含常见问题的标准答案，优先使用可以快速响应。<br>
+                    当前版本暂不支持在线编辑，可通过修改 <code>data/knowledge_base.json</code> 文件来更新知识。
+                </div>
+            `;
+        }
+        
+        // 页面加载时初始化
+        window.addEventListener('DOMContentLoaded', () => {
+            loadStats();
+            loadKnowledgeBase();
+        });
+    </script>
+</body>
+</html>

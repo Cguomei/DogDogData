@@ -370,3 +370,89 @@ def create_app_token(user_id, device_info=None):
     db.session.commit()
     
     return token
+
+
+class ChatSession(db.Model):
+    """AI对话会话表"""
+    __tablename__ = 'chat_sessions'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    
+    # 会话信息
+    title = db.Column(db.String(200))  # 会话标题（自动生成或用户设置）
+    is_active = db.Column(db.Boolean, default=True)  # 是否活跃
+    
+    # 统计信息
+    message_count = db.Column(db.Integer, default=0)  # 消息数量
+    last_message_at = db.Column(db.DateTime)  # 最后消息时间
+    
+    # 时间戳
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
+    
+    # 索引
+    __table_args__ = (
+        db.Index('idx_user_created', 'user_id', 'created_at'),
+    )
+    
+    # 关联
+    user = db.relationship('User', backref=db.backref('chat_sessions', lazy='dynamic'))
+    messages = db.relationship('ChatMessage', backref='session', lazy='dynamic', cascade='all, delete-orphan')
+    
+    def to_dict(self):
+        """转换为字典"""
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'title': self.title,
+            'is_active': self.is_active,
+            'message_count': self.message_count,
+            'last_message_at': self.last_message_at.strftime('%Y-%m-%d %H:%M:%S') if self.last_message_at else None,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
+            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None
+        }
+
+
+class ChatMessage(db.Model):
+    """AI对话消息表"""
+    __tablename__ = 'chat_messages'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.Integer, db.ForeignKey('chat_sessions.id'), nullable=False)
+    
+    # 消息内容
+    role = db.Column(db.Enum('user', 'assistant', 'system'), nullable=False)  # 角色
+    content = db.Column(db.Text, nullable=False)  # 消息内容
+    
+    # 元数据
+    question_type = db.Column(db.String(50))  # 问题类型（price_query, breed_info等）
+    source = db.Column(db.String(50))  # 来源：knowledge_base 或 model
+    response_time = db.Column(db.Float)  # 响应时间（秒）
+    
+    # 反馈
+    feedback = db.Column(db.Enum('like', 'dislike'))  # 用户反馈（可为NULL）
+    feedback_comment = db.Column(db.Text)  # 反馈备注
+    
+    # 时间戳
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    
+    # 索引
+    __table_args__ = (
+        db.Index('idx_session_created', 'session_id', 'created_at'),
+    )
+    
+    def to_dict(self):
+        """转换为字典"""
+        return {
+            'id': self.id,
+            'session_id': self.session_id,
+            'role': self.role,
+            'content': self.content,
+            'question_type': self.question_type,
+            'source': self.source,
+            'response_time': self.response_time,
+            'feedback': self.feedback,
+            'feedback_comment': self.feedback_comment,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None
+        }
