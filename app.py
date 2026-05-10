@@ -27,6 +27,7 @@ from routes.feedback import feedback_bp
 from routes.analytics import analytics_bp
 from routes.ai_assistant import ai_bp
 from routes.ai_log_viewer import log_viewer_bp
+from routes.pet_api import pet_api_bp
 
 # 加载环境变量
 load_dotenv()
@@ -166,6 +167,7 @@ def create_app(config_name=None):
     app.register_blueprint(analytics_bp)
     app.register_blueprint(ai_bp)
     app.register_blueprint(log_viewer_bp)
+    app.register_blueprint(pet_api_bp)
     
     # 为API路由添加CSRF豁免
     csrf.exempt(api_bp)
@@ -173,6 +175,7 @@ def create_app(config_name=None):
     csrf.exempt(analytics_bp)
     csrf.exempt(ai_bp)
     csrf.exempt(log_viewer_bp)
+    csrf.exempt(pet_api_bp)
     
     # 启动定时任务
     start_scheduler(app)

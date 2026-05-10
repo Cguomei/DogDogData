@@ -28,11 +28,17 @@ def submit_feedback():
     if len(content) > 5000:
         return jsonify({'error': '反馈内容过长，请控制在 5000 字以内'}), 400
     
-    # 验证反馈类型
-    feedback_type = data.get('type', 'other')
+    # 验证反馈类型（支持 feedback_type 和 type 两种字段名）
+    feedback_type = data.get('feedback_type') or data.get('type', 'other')
     valid_types = ['bug', 'feature', 'improvement', 'other']
     if feedback_type not in valid_types:
         return jsonify({'error': f'无效的反馈类型，支持的类型: {valid_types}'}), 400
+    
+    # 验证优先级
+    priority = data.get('priority', 'medium')
+    valid_priorities = ['low', 'medium', 'high', 'critical']
+    if priority not in valid_priorities:
+        return jsonify({'error': f'无效的优先级，支持的优先级: {valid_priorities}'}), 400
     
     # 创建反馈记录
     feedback = Feedback(
@@ -44,7 +50,7 @@ def submit_feedback():
         attachment_url=data.get('attachment_url'),
         contact_email=data.get('contact_email'),
         contact_phone=data.get('contact_phone'),
-        priority=data.get('priority', 'medium')
+        priority=priority
     )
     
     try:
@@ -70,14 +76,17 @@ def get_user_feedbacks():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 10, type=int)
     
-    # 状态过滤
+    # 过滤参数
     status = request.args.get('status')
+    feedback_type = request.args.get('type')  # 支持 type 参数
     
     # 构建查询
     query = Feedback.query.filter_by(user_id=current_user.id)
     
     if status:
         query = query.filter_by(status=status)
+    if feedback_type:
+        query = query.filter_by(feedback_type=feedback_type)
     
     # 按创建时间倒序
     query = query.order_by(Feedback.created_at.desc())

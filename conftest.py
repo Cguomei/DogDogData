@@ -98,13 +98,41 @@ def runner(app):
 def create_test_users(app, db):
     """在测试会话开始前创建两个测试用户：普通用户 user/123456，管理员 admin/123456。"""
     with app.app_context():
-        # 先尝试删除旧的测试用户（如果存在）
+        # 先清理无效的 chat_sessions（user_id 为 NULL 的记录）
+        try:
+            from sqlalchemy import text
+            # 直接使用 SQL 删除无效记录，避免 ORM 的 autoflush 问题
+            db.session.execute(text("DELETE FROM chat_sessions WHERE user_id IS NULL"))
+            db.session.commit()
+        except Exception as e:
+            print(f"⚠️ 清理无效会话时出错: {e}")
+            db.session.rollback()
+        
+        # 先尝试删除旧的测试用户及其相关数据（如果存在）
+        from models_extended import ChatSession, ChatMessage, Feedback
+        
         old_user = User.query.filter_by(username='user').first()
         if old_user:
+            # 先删除该用户的反馈
+            Feedback.query.filter_by(user_id=old_user.id).delete()
+            # 先删除该用户的聊天会话和消息
+            sessions = ChatSession.query.filter_by(user_id=old_user.id).all()
+            for session in sessions:
+                # 删除会话的消息
+                ChatMessage.query.filter_by(session_id=session.id).delete()
+                db.session.delete(session)
             db.session.delete(old_user)
         
         old_admin = User.query.filter_by(username='admin').first()
         if old_admin:
+            # 先删除该用户的反馈
+            Feedback.query.filter_by(user_id=old_admin.id).delete()
+            # 先删除该用户的聊天会话和消息
+            sessions = ChatSession.query.filter_by(user_id=old_admin.id).all()
+            for session in sessions:
+                # 删除会话的消息
+                ChatMessage.query.filter_by(session_id=session.id).delete()
+                db.session.delete(session)
             db.session.delete(old_admin)
         
         db.session.commit()
@@ -122,6 +150,21 @@ def create_test_users(app, db):
         db.session.add(admin)
         
         db.session.commit()
+
+
+def pytest_collection_modifyitems(items):
+    """过滤掉 test_framework.py 中的 test_case 装饰器函数本身"""
+    filtered_items = []
+    for item in items:
+        # 跳过名为 test_case 的顶层函数
+        if item.name == 'test_case':
+            # 检查是否是顶层函数（不在类中）
+            parent_name = getattr(item.parent, 'name', None) if hasattr(item, 'parent') and item.parent else None
+            # 如果父级不是测试类，则跳过
+            if not parent_name or not parent_name.startswith('Test'):
+                continue
+        filtered_items.append(item)
+    items[:] = filtered_items
 
 @pytest.fixture
 def login_user(client):

@@ -6,8 +6,8 @@ import os
 
 # 基础配置
 BASE_URL = os.getenv("TEST_BASE_URL", "http://localhost:5000")
-BROWSER_TYPE = os.getenv("TEST_BROWSER", "msedge")  # chromium, firefox, webkit, msedge
-HEADLESS = os.getenv("TEST_HEADLESS", "true").lower() == "true"
+BROWSER_TYPE = os.getenv("TEST_BROWSER", "chromium")  # chromium, firefox, webkit
+HEADLESS = os.getenv("TEST_HEADLESS", "false").lower() == "true"  # 默认显示浏览器窗口
 SLOW_MO = int(os.getenv("TEST_SLOW_MO", "0"))  # 慢动作模式（毫秒）
 TIMEOUT = int(os.getenv("TEST_TIMEOUT", "30000"))  # 默认超时 30 秒
 

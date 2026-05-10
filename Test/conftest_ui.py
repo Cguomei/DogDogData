@@ -17,31 +17,42 @@ from playwright_config import (
 
 
 @pytest.fixture(scope="session")
-def browser_context():
-    """会话级别的浏览器上下文"""
+def browser():
+    """会话级别的浏览器实例"""
     from playwright.sync_api import sync_playwright
-    from playwright_config import get_browser_context
     
     playwright = sync_playwright().start()
-    browser, context = get_browser_context(playwright)
     
-    # 启用视频录制（可选）
-    # context.tracing.start(screenshots=True, snapshots=True, sources=True)
+    # 使用chromium浏览器
+    browser = playwright.chromium.launch(
+        headless=False,  # 显示浏览器窗口
+        slow_mo=0
+    )
     
-    yield context
+    yield browser
     
-    # 停止追踪并保存
-    # context.tracing.stop(path=f"{TRACE_DIR}/trace.zip")
-    
-    context.close()
     browser.close()
     playwright.stop()
 
 
 @pytest.fixture(scope="function")
-def page(browser_context: BrowserContext):
+def context(browser):
+    """函数级别的浏览器上下文"""
+    context = browser.new_context(
+        viewport={"width": 1920, "height": 1080},
+        ignore_https_errors=True,
+        locale="zh-CN",
+        timezone_id="Asia/Shanghai"
+    )
+    
+    yield context
+    context.close()
+
+
+@pytest.fixture(scope="function")
+def page(context):
     """函数级别的页面对象，每个测试使用新页面"""
-    page = browser_context.new_page()
+    page = context.new_page()
     page.set_default_timeout(30000)
     
     yield page

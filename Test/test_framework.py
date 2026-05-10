@@ -185,5 +185,6 @@ def test_case(test_id, priority='Medium', expected=None):
         func.__test_id = test_id
         func.__priority = priority
         func.__expected = expected
+        # 不再设置 __test__ = False，因为这是用于测试方法的装饰器
         return func
     return decorator

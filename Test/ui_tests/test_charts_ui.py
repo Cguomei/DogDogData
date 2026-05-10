@@ -4,7 +4,9 @@
 """
 import pytest
 from playwright.sync_api import Page, expect
-from playwright_config import BASE_URL
+
+# 配置
+BASE_URL = 'http://localhost:5000'
 
 
 class TestChartPage:

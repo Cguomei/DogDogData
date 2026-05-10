@@ -364,6 +364,141 @@ def get_food():
     food_list = get_dog_food_list()
     return jsonify(food_list)
 
+@api_bp.route('/api/food/statistics')
+def get_food_statistics():
+    """获取狗粮统计数据"""
+    from charts import get_dog_food_stats
+    stats = get_dog_food_stats()
+    return jsonify(stats)
+
+@api_bp.route('/api/food/list')
+def get_food_list():
+    """获取狗粮列表（支持分页）"""
+    from charts import get_dog_food_list
+    
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    
+    # 限制每页数量
+    per_page = min(per_page, 100)
+    
+    all_foods = get_dog_food_list(limit=1000)  # 获取足够多的数据
+    total = len(all_foods)
+    
+    # 分页
+    start = (page - 1) * per_page
+    end = start + per_page
+    paginated_foods = all_foods[start:end]
+    
+    return jsonify({
+        'foods': paginated_foods,
+        'total': total,
+        'page': page,
+        'per_page': per_page,
+        'pages': (total + per_page - 1) // per_page
+    })
+
+@api_bp.route('/api/food/search')
+def search_food():
+    """搜索狗粮（按品牌或产地）"""
+    from charts import get_dog_food_list
+    
+    brand = request.args.get('brand', '')
+    origin = request.args.get('origin', '')
+    
+    all_foods = get_dog_food_list(limit=1000)
+    
+    # 过滤
+    filtered = all_foods
+    if brand:
+        filtered = [f for f in filtered if brand.lower() in f.get('name', '').lower()]
+    if origin:
+        filtered = [f for f in filtered if origin.lower() in f.get('origin', '').lower()]
+    
+    return jsonify({'foods': filtered})
+
+@api_bp.route('/api/food/filter')
+def filter_food():
+    """筛选狗粮（按价格区间）"""
+    from charts import get_dog_food_list
+    
+    try:
+        min_price = request.args.get('min_price', type=float)
+        max_price = request.args.get('max_price', type=float)
+    except:
+        return jsonify({'error': '价格参数格式错误'}), 400
+    
+    all_foods = get_dog_food_list(limit=1000)
+    
+    # 过滤价格
+    filtered = all_foods
+    if min_price is not None and max_price is not None:
+        filtered = [
+            f for f in filtered 
+            if isinstance(f.get('price'), (int, float)) and min_price <= f['price'] <= max_price
+        ]
+    elif min_price is not None:
+        filtered = [
+            f for f in filtered 
+            if isinstance(f.get('price'), (int, float)) and f['price'] >= min_price
+        ]
+    elif max_price is not None:
+        filtered = [
+            f for f in filtered 
+            if isinstance(f.get('price'), (int, float)) and f['price'] <= max_price
+        ]
+    
+    return jsonify({'foods': filtered})
+
+@api_bp.route('/api/food/<int:food_id>')
+def get_food_detail(food_id):
+    """获取单个狗粮详情"""
+    from charts import get_dog_food_list
+    
+    all_foods = get_dog_food_list(limit=1000)
+    
+    if food_id < len(all_foods):
+        return jsonify(all_foods[food_id])
+    else:
+        return jsonify({'error': '未找到该狗粮'}), 404
+
+@api_bp.route('/api/food/export')
+def export_food_data():
+    """导出狗粮数据"""
+    from charts import get_dog_food_list
+    import pandas as pd
+    import io
+    from flask import send_file
+    
+    format_type = request.args.get('format', 'csv')
+    
+    foods = get_dog_food_list(limit=1000)
+    df = pd.DataFrame(foods)
+    
+    if format_type == 'csv':
+        csv_buffer = io.StringIO()
+        df.to_csv(csv_buffer, index=False, encoding='utf-8-sig')
+        csv_buffer.seek(0)
+        
+        return send_file(
+            io.BytesIO(csv_buffer.getvalue().encode('utf-8-sig')),
+            mimetype='text/csv',
+            as_attachment=True,
+            download_name='dog_food_data.csv'
+        )
+    else:  # excel
+        excel_buffer = io.BytesIO()
+        with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='DogFood')
+        excel_buffer.seek(0)
+        
+        return send_file(
+            excel_buffer,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name='dog_food_data.xlsx'
+        )
+
 # ===== 数据导出 API =====
 @api_bp.route('/api/export-data', methods=['POST'])
 def export_data():

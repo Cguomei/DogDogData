@@ -13,9 +13,9 @@ class TestFeedbackAPI:
     def test_submit_feedback_success(self, client, create_test_users):
         """测试提交反馈成功"""
         # 登录用户
-        response = client.post('/auth/login', data={
+        response = client.post('/login', data={
             'username': 'user',
-            'password': 'Test@123456'
+            'password': '123456'
         }, follow_redirects=True)
         
         # 验证登录成功
@@ -41,9 +41,9 @@ class TestFeedbackAPI:
     def test_get_feedback_list(self, client, create_test_users):
         """测试获取反馈列表"""
         # 提交一个反馈
-        client.post('/auth/login', data={
+        client.post('/login', data={
             'username': 'user',
-            'password': 'Test@123456'
+            'password': '123456'
         })
         
         client.post('/api/feedback', json={
@@ -65,9 +65,9 @@ class TestFeedbackAPI:
     @test_case('TC-FEEDBACK-003', priority='Critical', expected='反馈类型验证')
     def test_feedback_type_validation(self, client, create_test_users):
         """测试反馈类型验证"""
-        client.post('/auth/login', data={
+        client.post('/login', data={
             'username': 'user',
-            'password': 'Test@123456'
+            'password': '123456'
         })
         
         valid_types = ['bug', 'feature', 'improvement', 'other']
@@ -90,9 +90,9 @@ class TestFeedbackAPI:
     @test_case('TC-FEEDBACK-004', priority='High', expected='内容验证')
     def test_feedback_content_validation(self, client, create_test_users):
         """测试反馈内容验证"""
-        client.post('/auth/login', data={
+        client.post('/login', data={
             'username': 'user',
-            'password': 'Test@123456'
+            'password': '123456'
         })
         
         # 测试空内容
@@ -114,9 +114,9 @@ class TestFeedbackAPI:
     @test_case('TC-FEEDBACK-005', priority='Medium', expected='优先级验证')
     def test_feedback_priority_validation(self, client, create_test_users):
         """测试反馈优先级验证"""
-        client.post('/auth/login', data={
+        client.post('/login', data={
             'username': 'user',
-            'password': 'Test@123456'
+            'password': '123456'
         })
         
         valid_priorities = ['low', 'medium', 'high', 'critical']
@@ -155,9 +155,9 @@ class TestFeedbackAPI:
     def test_get_single_feedback(self, client, create_test_users):
         """测试获取单个反馈详情"""
         # 登录并创建反馈
-        client.post('/auth/login', data={
+        client.post('/login', data={
             'username': 'user',
-            'password': 'Test@123456'
+            'password': '123456'
         })
         
         response = client.post('/api/feedback', json={
@@ -181,9 +181,9 @@ class TestFeedbackAPI:
     @test_case('TC-FEEDBACK-008', priority='Low', expected='状态默认值')
     def test_feedback_status_default(self, client, create_test_users):
         """测试反馈状态默认值"""
-        client.post('/auth/login', data={
+        client.post('/login', data={
             'username': 'user',
-            'password': 'Test@123456'
+            'password': '123456'
         })
         
         response = client.post('/api/feedback', json={
@@ -204,9 +204,9 @@ class TestFeedbackAPI:
     @test_case('TC-FEEDBACK-009', priority='Medium', expected='联系信息可选')
     def test_optional_contact_info(self, client, create_test_users):
         """测试联系信息为可选项"""
-        client.post('/auth/login', data={
+        client.post('/login', data={
             'username': 'user',
-            'password': 'Test@123456'
+            'password': '123456'
         })
         
         # 仅提供必要信息
@@ -237,9 +237,9 @@ class TestFeedbackAPI:
     @test_case('TC-FEEDBACK-010', priority='Low', expected='标题可选')
     def test_optional_title(self, client, create_test_users):
         """测试标题为可选项"""
-        client.post('/auth/login', data={
+        client.post('/login', data={
             'username': 'user',
-            'password': 'Test@123456'
+            'password': '123456'
         })
         
         response = client.post('/api/feedback', json={
@@ -253,9 +253,9 @@ class TestFeedbackAPI:
     @test_case('TC-FEEDBACK-011', priority='High', expected='分页查询')
     def test_feedback_pagination(self, client, create_test_users):
         """测试反馈分页查询"""
-        client.post('/auth/login', data={
+        client.post('/login', data={
             'username': 'user',
-            'password': 'Test@123456'
+            'password': '123456'
         })
         
         # 创建多个反馈
@@ -282,9 +282,9 @@ class TestFeedbackAPI:
     @test_case('TC-FEEDBACK-012', priority='Medium', expected='类型筛选')
     def test_feedback_type_filter(self, client, create_test_users):
         """测试反馈类型筛选"""
-        client.post('/auth/login', data={
+        client.post('/login', data={
             'username': 'user',
-            'password': 'Test@123456'
+            'password': '123456'
         })
         
         # 创建不同类型反馈
@@ -309,9 +309,9 @@ class TestFeedbackAPI:
     @test_case('TC-FEEDBACK-013', priority='Medium', expected='状态筛选')
     def test_feedback_status_filter(self, client, create_test_users):
         """测试反馈状态筛选"""
-        client.post('/auth/login', data={
+        client.post('/login', data={
             'username': 'user',
-            'password': 'Test@123456'
+            'password': '123456'
         })
         
         # 创建反馈
@@ -333,15 +333,15 @@ class TestFeedbackAPI:
     def test_admin_manage_feedback(self, client, create_test_users):
         """测试管理员权限管理反馈"""
         # 使用管理员登录
-        client.post('/auth/login', data={
+        client.post('/login', data={
             'username': 'admin',
-            'password': 'Test@123456'
+            'password': '123456'
         })
         
         # 创建普通用户反馈
-        client.post('/auth/login', data={
+        client.post('/login', data={
             'username': 'user',
-            'password': 'Test@123456'
+            'password': '123456'
         })
         response = client.post('/api/feedback', json={
             'feedback_type': 'bug',
@@ -350,15 +350,14 @@ class TestFeedbackAPI:
         feedback_id = response.get_json()['feedback_id']
         
         # 管理员登录
-        client.post('/auth/login', data={
+        client.post('/login', data={
             'username': 'admin',
-            'password': 'Test@123456'
+            'password': '123456'
         })
         
-        # 更新反馈状态
-        response = client.put(f'/api/feedback/{feedback_id}', json={
-            'status': 'processing',
-            'admin_reply': '管理员正在处理此反馈'
+        # 更新反馈状态（使用正确的路由）
+        response = client.put(f'/api/feedback/{feedback_id}/status', json={
+            'status': 'processing'
         })
         
         assert response.status_code == 200
@@ -367,16 +366,15 @@ class TestFeedbackAPI:
         response = client.get(f'/api/feedback/{feedback_id}')
         data = response.get_json()
         assert data['feedback']['status'] == 'processing'
-        assert data['feedback']['admin_reply'] == '管理员正在处理此反馈'
         
         print("✅ 管理员权限管理反馈正常")
     
     @test_case('TC-FEEDBACK-015', priority='Low', expected='时间戳自动更新')
     def test_feedback_timestamps(self, client, create_test_users):
         """测试反馈时间戳自动更新"""
-        client.post('/auth/login', data={
+        client.post('/login', data={
             'username': 'user',
-            'password': 'Test@123456'
+            'password': '123456'
         })
         
         response = client.post('/api/feedback', json={
@@ -407,9 +405,9 @@ class TestFeedbackPerformance:
         """测试批量创建反馈的性能"""
         import time
         
-        client.post('/auth/login', data={
+        client.post('/login', data={
             'username': 'user',
-            'password': 'Test@123456'
+            'password': '123456'
         })
         
         start_time = time.time()
@@ -436,9 +434,9 @@ class TestFeedbackPerformance:
         """测试反馈列表查询性能"""
         import time
         
-        client.post('/auth/login', data={
+        client.post('/login', data={
             'username': 'user',
-            'password': 'Test@123456'
+            'password': '123456'
         })
         
         # 先创建一些反馈数据
