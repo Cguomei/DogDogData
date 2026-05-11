@@ -18,6 +18,9 @@ from utils.knowledge_base import get_knowledge_base
 # 导入对话历史模型
 from models_extended import ChatSession, ChatMessage
 
+# 导入图表模块
+import charts
+
 # 配置日志
 logger = logging.getLogger('ai_assistant')
 logger.setLevel(logging.DEBUG)
@@ -160,6 +163,15 @@ def classify_question(question: str) -> dict:
     """
     question_lower = question.lower()
     
+    # 0. 图表生成请求（优先级最高）
+    chart_keywords = ['图表', '图', '统计图', '散点图', '折线图', '柱状图', '漏斗图', '地图', '可视化']
+    if any(keyword in question_lower for keyword in chart_keywords):
+        chart_type = detect_chart_type(question)
+        return {
+            'type': 'chart_generation',
+            'params': {'chart_type': chart_type}
+        }
+    
     # 1. 价格查询
     if any(keyword in question_lower for keyword in ['价格', '多少钱', '价位', '售价']):
         breed = extract_breed_name(question)
@@ -197,6 +209,46 @@ def classify_question(question: str) -> dict:
             'type': 'general_qa',
             'params': {}
         }
+
+
+def detect_chart_type(question: str) -> str:
+    """
+    检测用户想要的图表类型
+    
+    Args:
+        question: 用户问题
+    
+    Returns:
+        图表类型字符串
+    """
+    question_lower = question.lower()
+    
+    # 价格散点图
+    if any(kw in question_lower for kw in ['价格.*散点', '散点.*价格', '价格分布']):
+        return 'price_scatter'
+    
+    # 体重折线图
+    if any(kw in question_lower for kw in ['体重', '重量']):
+        return 'weight_line'
+    
+    # 体型分布柱状图
+    if any(kw in question_lower for kw in ['体型', '大小', '小型', '中型', '大型']):
+        return 'level_bar'
+    
+    # 店铺TOP10
+    if any(kw in question_lower for kw in ['店铺', '商家', 'top', '排行']):
+        return 'shop_top10'
+    
+    # 价格漏斗图
+    if any(kw in question_lower for kw in ['漏斗', '价格段', '价格区间']):
+        return 'price_funnel'
+    
+    # 世界地图
+    if any(kw in question_lower for kw in ['地图', '产地', '家乡', '来源']):
+        return 'world_map'
+    
+    # 默认返回价格散点图
+    return 'price_scatter'
 
 
 def extract_breed_name(question: str) -> str:
@@ -463,6 +515,93 @@ def handle_comparison(params: dict, context: list = None) -> str:
     ]
     
     return call_local_model(messages)
+
+
+def handle_chart_generation(params: dict, context: list = None) -> str:
+    """
+    处理图表生成请求
+    
+    Args:
+        params: 参数 {'chart_type': 'price_scatter', 'breed': '金毛'}
+        context: 对话上下文
+    
+    Returns:
+        HTML字符串或错误消息
+    """
+    chart_type = params.get('chart_type', '')
+    breed = params.get('breed', '')
+    
+    logger.info(f"图表生成请求: type={chart_type}, breed={breed}")
+    
+    try:
+        # 根据图表类型调用对应的函数
+        if chart_type == 'price_scatter':
+            # 价格散点图
+            html = charts.get_price_scatter()
+            return f"""
+            <div class="chart-container">
+                <h3>📊 狗狗价格散点图</h3>
+                {html}
+                <p style="margin-top: 10px; color: #666;">💡 提示：横轴为价格，纵轴为该价格的狗狗数量</p>
+            </div>
+            """
+        
+        elif chart_type == 'weight_line':
+            # 体重折线图
+            html = charts.get_weight_line()
+            return f"""
+            <div class="chart-container">
+                <h3>📈 狗狗体重分布图</h3>
+                {html}
+            </div>
+            """
+        
+        elif chart_type == 'level_bar':
+            # 体型分布柱状图
+            html = charts.get_level_bar()
+            return f"""
+            <div class="chart-container">
+                <h3>📊 体型分布分析 - TOP20 犬种</h3>
+                {html}
+            </div>
+            """
+        
+        elif chart_type == 'shop_top10':
+            # 店铺TOP10直方图
+            html = charts.get_shop_top10_hist()
+            return f"""
+            <div class="chart-container">
+                <h3>📊 售卖前10种宠物狗 + 店铺TOP10</h3>
+                {html}
+            </div>
+            """
+        
+        elif chart_type == 'price_funnel':
+            # 价格漏斗图
+            html = charts.get_price_funnel()
+            return f"""
+            <div class="chart-container">
+                <h3>🔻 狗狗价格段漏斗图</h3>
+                {html}
+            </div>
+            """
+        
+        elif chart_type == 'world_map':
+            # 世界地图
+            html = charts.get_world_map()
+            return f"""
+            <div class="chart-container">
+                <h3>🌍 世界地图 - 狗狗家乡分布</h3>
+                {html}
+            </div>
+            """
+        
+        else:
+            return f"❌ 不支持的图表类型: {chart_type}。支持的类型包括：price_scatter, weight_line, level_bar, shop_top10, price_funnel, world_map"
+    
+    except Exception as e:
+        logger.error(f"图表生成失败: {str(e)}")
+        return f"❌ 图表生成失败: {str(e)}"
 
 
 def handle_general_qa(question: str, context: list = None) -> str:
@@ -873,7 +1012,10 @@ def ai_chat():
         context = get_conversation_context(session_id, max_messages=10)
         
         answer = ""
-        if question_type == 'price_query':
+        if question_type == 'chart_generation':
+            logger.info(f"[{request_id}] 处理图表生成: {params.get('chart_type')}")
+            answer = handle_chart_generation(params, context)
+        elif question_type == 'price_query':
             logger.info(f"[{request_id}] 处理价格查询: {params.get('breed')}")
             answer = handle_price_query(params, context)
         elif question_type == 'breed_info':
