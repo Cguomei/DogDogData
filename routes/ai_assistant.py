@@ -532,14 +532,15 @@ def get_conversation_context(session_id: int, max_messages: int = 10) -> list:
         return []
 
 
-def auto_learn_from_answer(question: str, answer: str, question_type: str) -> bool:
+def auto_learn_from_answer(question: str, answer: str, question_type: str, feedback_score: float = None) -> bool:
     """
-    自动学习：将模型的优质回答加入知识库
+    自动学习：将模型的优质回答加入知识库（增强版）
     
     Args:
         question: 用户问题
         answer: AI回答
         question_type: 问题类型
+        feedback_score: 用户反馈分数（1-5），None表示无反馈
     
     Returns:
         是否成功加入知识库
@@ -549,32 +550,74 @@ def auto_learn_from_answer(question: str, answer: str, question_type: str) -> bo
         
         kb = get_knowledge_base()
         
-        # 简单的质量判断：回答长度 > 50字符才考虑学习
-        if len(answer) < 50:
+        # ===== 优化1: 更严格的质量判断 =====
+        
+        # 1.1 回答长度检查（至少80字符）
+        if len(answer) < 80:
             logger.info(f"回答过短，跳过学习: {len(answer)}字符")
             return False
         
-        # 检查是否已存在类似问题
-        existing = kb.search(question, question_type)
-        if existing:
-            logger.info(f"知识库已存在类似问题，跳过学习")
+        # 1.2 避免学习明显的错误回答
+        error_indicators = ['抱歉', '无法回答', '不知道', '不清楚', '暂时没']
+        if any(indicator in answer for indicator in error_indicators):
+            logger.info(f"回答包含错误指示词，跳过学习")
             return False
         
-        # 提取关键词作为知识标题
-        keywords = extract_keywords(question)
+        # 1.3 如果有用户反馈，优先使用反馈分数
+        if feedback_score is not None:
+            if feedback_score < 3:  # 低于3分不学习
+                logger.info(f"用户反馈分数低 ({feedback_score})，跳过学习")
+                return False
+            confidence = 0.5 + (feedback_score - 3) * 0.1  # 3分=0.5, 4分=0.6, 5分=0.7
+        else:
+            # 无反馈时，基于回答质量估算置信度
+            confidence = _estimate_answer_confidence(answer, question_type)
+        
+        # ===== 优化2: 智能去重检查 =====
+        
+        # 2.1 检查是否已存在类似问题
+        existing = kb.search(question, question_type)
+        if existing:
+            # 如果新回答质量更高，可以考虑更新
+            existing_confidence = existing.get('confidence', 0.5)
+            if confidence > existing_confidence + 0.1:  # 新回答明显更好
+                logger.info(f"发现更优质的回答，准备更新知识库")
+                # TODO: 可以实现更新逻辑
+            else:
+                logger.info(f"知识库已存在类似或更优回答，跳过学习")
+                return False
+        
+        # ===== 优化3: 改进关键词提取 =====
+        
+        # 3.1 提取更准确的关键词
+        keywords = extract_keywords_enhanced(question, question_type)
         title = f"{question_type}: {keywords}"
         
-        # 添加到知识库
+        # ===== 优化4: 添加元数据 =====
+        
+        metadata = {
+            'learned_at': datetime.now().isoformat(),
+            'question_type': question_type,
+            'answer_length': len(answer),
+            'confidence_source': 'user_feedback' if feedback_score else 'auto_estimate',
+            'requires_review': confidence < 0.6  # 低置信度需要人工审核
+        }
+        
+        # ===== 优化5: 添加到知识库 =====
+        
         success = kb.add_knowledge(
             title=title,
             question=question,
             answer=answer,
             category=question_type,
-            confidence=0.7  # 自动学习的置信度较低
+            confidence=confidence,
+            metadata=metadata  # 添加元数据
         )
         
         if success:
-            logger.info(f"✅ 自动学习成功: {title}")
+            logger.info(f"✅ 自动学习成功: {title} (置信度: {confidence:.2f})")
+            if metadata['requires_review']:
+                logger.warning(f"⚠️ 该知识需要人工审核")
         else:
             logger.warning(f"⚠️ 自动学习失败")
         
@@ -583,6 +626,89 @@ def auto_learn_from_answer(question: str, answer: str, question_type: str) -> bo
     except Exception as e:
         logger.error(f"自动学习异常: {str(e)}")
         return False
+
+
+def _estimate_answer_confidence(answer: str, question_type: str) -> float:
+    """
+    估算回答的置信度（基于启发式规则）
+    
+    Args:
+        answer: AI回答
+        question_type: 问题类型
+    
+    Returns:
+        置信度分数 (0.5-0.9)
+    """
+    confidence = 0.5  # 基础置信度
+    
+    # 1. 回答长度加分（适中最好）
+    if 100 <= len(answer) <= 500:
+        confidence += 0.1
+    elif len(answer) > 500:
+        confidence += 0.15
+    
+    # 2. 包含结构化信息加分
+    structure_indicators = ['•', '-', '*', '1.', '2.', '首先', '其次', '最后']
+    if any(indicator in answer for indicator in structure_indicators):
+        confidence += 0.1
+    
+    # 3. 包含专业术语加分
+    professional_terms = {
+        'breed_info': ['性格', '体型', '养护', '寿命', '特点'],
+        'price_query': ['价格', '¥', '元', '平均', '区间'],
+        'recommendation': ['推荐', '适合', '建议', '考虑'],
+        'comparison': ['对比', '差异', '优势', '劣势']
+    }
+    
+    terms = professional_terms.get(question_type, [])
+    term_count = sum(1 for term in terms if term in answer)
+    if term_count >= 2:
+        confidence += 0.1
+    
+    # 4. 限制最高置信度
+    return min(confidence, 0.85)
+
+
+def extract_keywords_enhanced(text: str, question_type: str, max_keywords: int = 5) -> str:
+    """
+    增强的关键词提取（针对不同类型优化）
+    
+    Args:
+        text: 输入文本
+        question_type: 问题类型
+        max_keywords: 最多提取的关键词数量
+    
+    Returns:
+        关键词字符串
+    """
+    import re
+    
+    # 通用停用词
+    stop_words = {'的', '了', '在', '是', '我', '有', '和', '就', '不', '人', '都', 
+                  '一', '一个', '上', '也', '很', '到', '说', '要', '去', '你', '会', 
+                  '着', '没有', '看', '好', '自己', '这', '那', '什么', '怎么', '吗', '呢'}
+    
+    # 针对不同类型的特殊处理
+    if question_type == 'price_query':
+        # 价格查询：重点提取品种名
+        breed_pattern = r'([\u4e00-\u9fa5]{2,4})(?:犬|狗|品种)?'
+        breeds = re.findall(breed_pattern, text)
+        if breeds:
+            return breeds[0]  # 返回第一个品种名
+    
+    elif question_type == 'breed_info':
+        # 品种信息：提取品种名+关键特征
+        breed_pattern = r'([\u4e00-\u9fa5]{2,4})(?:犬|狗)?'
+        breeds = re.findall(breed_pattern, text)
+        if breeds:
+            return breeds[0]
+    
+    # 通用提取
+    words = re.findall(r'[\w]+', text)
+    keywords = [w for w in words if w not in stop_words and len(w) > 1]
+    
+    # 返回前N个关键词
+    return ' '.join(keywords[:max_keywords])
 
 
 def extract_keywords(text: str, max_keywords: int = 3) -> str:
