@@ -132,6 +132,64 @@ class UserFavorite(db.Model):
         }
 
 
+class UserPreference(db.Model):
+    """用户偏好设置表"""
+    __tablename__ = 'user_preferences'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), unique=True, nullable=False)
+    
+    # 宠物偏好
+    preferred_breeds = db.Column(db.Text)  # JSON字符串，喜欢的品种列表
+    preferred_size = db.Column(db.String(20))  # 偏好体型：small/medium/large/all
+    budget_range = db.Column(db.String(50))  # 预算范围：0-3000, 3000-8000, 8000+
+    
+    # 经验水平
+    experience_level = db.Column(db.String(20), default='beginner')  # beginner/intermediate/advanced
+    
+    # 用途偏好
+    purpose = db.Column(db.String(50))  # companion/guard/show/multi
+    
+    # 其他偏好
+    max_age = db.Column(db.Integer)  # 最大接受年龄（岁）
+    gender_preference = db.Column(db.String(10))  # male/female/any
+    
+    # AI助手偏好
+    response_style = db.Column(db.String(20), default='concise')  # concise/detailed/friendly
+    auto_save_chat = db.Column(db.Boolean, default=True)  # 自动保存对话
+    
+    # 通知偏好
+    price_alert_enabled = db.Column(db.Boolean, default=False)  # 价格提醒
+    new_breed_alert_enabled = db.Column(db.Boolean, default=False)  # 新品种提醒
+    
+    # 时间戳
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
+    
+    # 关联
+    user = db.relationship('User', backref=db.backref('preference', uselist=False))
+    
+    def to_dict(self):
+        """转换为字典"""
+        import json
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'preferred_breeds': json.loads(self.preferred_breeds) if self.preferred_breeds else [],
+            'preferred_size': self.preferred_size,
+            'budget_range': self.budget_range,
+            'experience_level': self.experience_level,
+            'purpose': self.purpose,
+            'max_age': self.max_age,
+            'gender_preference': self.gender_preference,
+            'response_style': self.response_style,
+            'auto_save_chat': self.auto_save_chat,
+            'price_alert_enabled': self.price_alert_enabled,
+            'new_breed_alert_enabled': self.new_breed_alert_enabled,
+            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None
+        }
+
+
 class UserActivityLog(db.Model):
     """用户活动日志表（用于分析和安全审计）"""
     __tablename__ = 'user_activity_logs'
