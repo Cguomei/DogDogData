@@ -1434,3 +1434,460 @@ def submit_feedback():
             'success': False,
             'error': str(e)
         }), 500
+
+
+# ===== 报告生成模块 =====
+
+def generate_session_summary(session_id: int) -> dict:
+    """
+    生成会话总结报告
+    
+    Args:
+        session_id: 会话ID
+    
+    Returns:
+        包含总结信息的字典
+    """
+    try:
+        # 获取会话信息
+        session = ChatSession.query.get(session_id)
+        if not session:
+            return {'error': '会话不存在'}
+        
+        # 获取所有消息
+        messages = ChatMessage.query.filter_by(
+            session_id=session_id
+        ).order_by(
+            ChatMessage.created_at.asc()
+        ).all()
+        
+        if not messages:
+            return {'error': '会话中没有消息'}
+        
+        # 统计信息
+        user_messages = [m for m in messages if m.role == 'user']
+        ai_messages = [m for m in messages if m.role == 'assistant']
+        
+        # 问题类型统计
+        question_types = {}
+        for msg in messages:
+            if msg.question_type:
+                question_types[msg.question_type] = question_types.get(msg.question_type, 0) + 1
+        
+        # 提取关键话题（从用户消息中提取品种名）
+        topics = set()
+        for msg in user_messages:
+            breeds = extract_multiple_breeds(msg.content)
+            topics.update(breeds)
+        
+        summary = {
+            'session_id': session_id,
+            'title': session.title,
+            'created_at': session.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            'last_message_at': session.last_message_at.strftime('%Y-%m-%d %H:%M:%S') if session.last_message_at else None,
+            'total_messages': len(messages),
+            'user_messages': len(user_messages),
+            'ai_messages': len(ai_messages),
+            'duration_minutes': round((session.last_message_at - session.created_at).total_seconds() / 60, 1) if session.last_message_at and session.created_at else 0,
+            'question_types': question_types,
+            'topics': list(topics),
+            'feedback_stats': {
+                'like': sum(1 for m in ai_messages if m.feedback == 'like'),
+                'dislike': sum(1 for m in ai_messages if m.feedback == 'dislike'),
+                'no_feedback': sum(1 for m in ai_messages if m.feedback is None)
+            }
+        }
+        
+        logger.info(f"生成会话 {session_id} 的总结报告")
+        return summary
+    
+    except Exception as e:
+        logger.error(f"生成会话总结失败: {str(e)}")
+        return {'error': str(e)}
+
+
+def generate_purchase_recommendation(user_preferences: dict) -> str:
+    """
+    生成宠物选购建议报告
+    
+    Args:
+        user_preferences: 用户偏好 {'budget': 5000, 'size': 'medium', 'experience': 'beginner'}
+    
+    Returns:
+        HTML格式的建议报告
+    """
+    budget = user_preferences.get('budget', 0)
+    size = user_preferences.get('size', '')  # small, medium, large
+    experience = user_preferences.get('experience', '')  # beginner, intermediate, advanced
+    purpose = user_preferences.get('purpose', '')  # companion, guard, show
+    
+    # 构建查询条件
+    conditions = []
+    params = {}
+    
+    if budget > 0:
+        conditions.append("price <= :budget")
+        params['budget'] = budget
+    
+    if size:
+        size_map = {
+            'small': ['小型', '小'],
+            'medium': ['中型', '中'],
+            'large': ['大型', '大']
+        }
+        size_keywords = size_map.get(size, [])
+        if size_keywords:
+            size_condition = " OR ".join([f"pet_level LIKE :size{i}" for i in range(len(size_keywords))])
+            conditions.append(f"({size_condition})")
+            for i, kw in enumerate(size_keywords):
+                params[f'size{i}'] = f'%{kw}%'
+    
+    where_clause = " AND ".join(conditions) if conditions else "1=1"
+    
+    # 查询符合条件的狗狗
+    sql = text(f"""
+        SELECT 
+            dog_name,
+            price,
+            pet_level,
+            size,
+            COUNT(*) as count
+        FROM jd_dogs
+        WHERE {where_clause}
+        GROUP BY dog_name, price, pet_level, size
+        ORDER BY price ASC
+        LIMIT 10
+    """)
+    
+    try:
+        results = db.session.execute(sql, params).fetchall()
+        
+        if not results:
+            return "抱歉，没有找到符合您条件的狗狗。请尝试调整筛选条件。"
+        
+        # 生成HTML报告
+        html = f"""
+        <div class="report-container" style="padding: 20px; background: #f8f9fa; border-radius: 10px;">
+            <h2 style="color: #2c3e50;">🐕 宠物选购建议报告</h2>
+            <hr>
+            
+            <div style="margin-bottom: 20px;">
+                <h3 style="color: #34495e;">📋 您的需求</h3>
+                <ul style="list-style: none; padding-left: 0;">
+                    <li>💰 预算：¥{budget if budget > 0 else '不限'}</li>
+                    <li>📏 体型：{size if size else '不限'}</li>
+                    <li>🎓 经验：{experience if experience else '不限'}</li>
+                    <li>🎯 用途：{purpose if purpose else '不限'}</li>
+                </ul>
+            </div>
+            
+            <div>
+                <h3 style="color: #34495e;">✅ 推荐品种（TOP 10）</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #3498db; color: white;">
+                            <th style="padding: 10px; text-align: left;">品种</th>
+                            <th style="padding: 10px; text-align: right;">平均价格</th>
+                            <th style="padding: 10px; text-align: center;">体型</th>
+                            <th style="padding: 10px; text-align: center;">体型分类</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        """
+        
+        for row in results:
+            html += f"""
+                        <tr style="border-bottom: 1px solid #ddd;">
+                            <td style="padding: 10px;"><strong>{row.dog_name}</strong></td>
+                            <td style="padding: 10px; text-align: right;">¥{row.price:.0f}</td>
+                            <td style="padding: 10px; text-align: center;">{row.pet_level or '未知'}</td>
+                            <td style="padding: 10px; text-align: center;">{row.size or '未知'}</td>
+                        </tr>
+            """
+        
+        html += """
+                    </tbody>
+                </table>
+            </div>
+            
+            <div style="margin-top: 20px; padding: 15px; background: #e8f4f8; border-left: 4px solid #3498db; border-radius: 5px;">
+                <h4 style="color: #2c3e50; margin-top: 0;">💡 温馨提示</h4>
+                <ul style="margin-bottom: 0;">
+                    <li>价格仅供参考，实际价格会因地区、血统、年龄等因素有所差异</li>
+                    <li>建议实地考察，选择正规犬舍或宠物店</li>
+                    <li>新手建议选择性格温顺、易训练的品种</li>
+                    <li>养宠前请充分考虑时间、精力和经济能力</li>
+                </ul>
+            </div>
+        </div>
+        """
+        
+        logger.info(f"生成选购建议报告: 预算={budget}, 体型={size}")
+        return html
+    
+    except Exception as e:
+        logger.error(f"生成选购建议失败: {str(e)}")
+        return f"❌ 生成报告失败: {str(e)}"
+
+
+def generate_data_analysis_report(time_range: str = '30days') -> str:
+    """
+    生成数据分析报告
+    
+    Args:
+        time_range: 时间范围 ('7days', '30days', '90days')
+    
+    Returns:
+        HTML格式的数据分析报告
+    """
+    # 解析时间范围
+    days_map = {
+        '7days': 7,
+        '30days': 30,
+        '90days': 90
+    }
+    days = days_map.get(time_range, 30)
+    
+    try:
+        # 统计数据
+        # 1. 热门品种TOP10
+        top_breeds_sql = text("""
+            SELECT 
+                dog_name,
+                COUNT(*) as count,
+                AVG(price) as avg_price
+            FROM jd_dogs
+            GROUP BY dog_name
+            ORDER BY count DESC
+            LIMIT 10
+        """)
+        top_breeds = db.session.execute(top_breeds_sql).fetchall()
+        
+        # 2. 价格分布
+        price_dist_sql = text("""
+            SELECT 
+                CASE 
+                    WHEN price < 1000 THEN '0-1000'
+                    WHEN price < 3000 THEN '1000-3000'
+                    WHEN price < 5000 THEN '3000-5000'
+                    WHEN price < 10000 THEN '5000-10000'
+                    ELSE '10000+'
+                END as price_range,
+                COUNT(*) as count
+            FROM jd_dogs
+            GROUP BY price_range
+            ORDER BY price_range
+        """)
+        price_dist = db.session.execute(price_dist_sql).fetchall()
+        
+        # 3. 总体统计
+        total_stats_sql = text("""
+            SELECT 
+                COUNT(*) as total_count,
+                AVG(price) as avg_price,
+                MIN(price) as min_price,
+                MAX(price) as max_price,
+                COUNT(DISTINCT dog_name) as breed_count
+            FROM jd_dogs
+        """)
+        total_stats = db.session.execute(total_stats_sql).fetchone()
+        
+        # 生成HTML报告
+        html = f"""
+        <div class="report-container" style="padding: 20px; background: #f8f9fa; border-radius: 10px;">
+            <h2 style="color: #2c3e50;">📊 数据分析报告</h2>
+            <p style="color: #7f8c8d;">统计周期：最近{days}天 | 生成时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+            <hr>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
+                <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <div style="font-size: 24px; font-weight: bold; color: #3498db;">{total_stats.total_count}</div>
+                    <div style="color: #7f8c8d; margin-top: 5px;">总数据量</div>
+                </div>
+                <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <div style="font-size: 24px; font-weight: bold; color: #2ecc71;">¥{total_stats.avg_price:.0f}</div>
+                    <div style="color: #7f8c8d; margin-top: 5px;">平均价格</div>
+                </div>
+                <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <div style="font-size: 24px; font-weight: bold; color: #e74c3c;">{total_stats.breed_count}</div>
+                    <div style="color: #7f8c8d; margin-top: 5px;">品种数量</div>
+                </div>
+                <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <div style="font-size: 24px; font-weight: bold; color: #f39c12;">¥{total_stats.min_price:.0f} - ¥{total_stats.max_price:.0f}</div>
+                    <div style="color: #7f8c8d; margin-top: 5px;">价格区间</div>
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 30px;">
+                <h3 style="color: #34495e;">🏆 热门品种 TOP 10</h3>
+                <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden;">
+                    <thead>
+                        <tr style="background: #3498db; color: white;">
+                            <th style="padding: 12px; text-align: left;">排名</th>
+                            <th style="padding: 12px; text-align: left;">品种</th>
+                            <th style="padding: 12px; text-align: right;">数量</th>
+                            <th style="padding: 12px; text-align: right;">平均价格</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        """
+        
+        for idx, row in enumerate(top_breeds, 1):
+            medal = ['🥇', '🥈', '🥉'][idx-1] if idx <= 3 else f'{idx}.'
+            html += f"""
+                        <tr style="border-bottom: 1px solid #eee;">
+                            <td style="padding: 12px;">{medal}</td>
+                            <td style="padding: 12px;"><strong>{row.dog_name}</strong></td>
+                            <td style="padding: 12px; text-align: right;">{row.count}</td>
+                            <td style="padding: 12px; text-align: right;">¥{row.avg_price:.0f}</td>
+                        </tr>
+            """
+        
+        html += """
+                    </tbody>
+                </table>
+            </div>
+            
+            <div>
+                <h3 style="color: #34495e;">💰 价格分布</h3>
+                <div style="background: white; padding: 20px; border-radius: 8px;">
+        """
+        
+        for row in price_dist:
+            percentage = (row.count / total_stats.total_count * 100) if total_stats.total_count > 0 else 0
+            html += f"""
+                    <div style="margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span style="font-weight: bold;">{row.price_range}元</span>
+                            <span>{row.count}条 ({percentage:.1f}%)</span>
+                        </div>
+                        <div style="background: #ecf0f1; border-radius: 10px; height: 20px; overflow: hidden;">
+                            <div style="background: linear-gradient(90deg, #3498db, #2ecc71); width: {percentage}%; height: 100%; transition: width 0.3s;"></div>
+                        </div>
+                    </div>
+            """
+        
+        html += """
+                </div>
+            </div>
+            
+            <div style="margin-top: 30px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 5px;">
+                <h4 style="color: #856404; margin-top: 0;">📝 数据洞察</h4>
+                <ul style="margin-bottom: 0; color: #856404;">
+                    <li>数据基于京东商城宠物狗销售记录</li>
+                    <li>价格受季节、促销活动等因素影响会有波动</li>
+                    <li>建议结合多个维度进行综合分析</li>
+                </ul>
+            </div>
+        </div>
+        """
+        
+        logger.info(f"生成数据分析报告: 时间范围={time_range}")
+        return html
+    
+    except Exception as e:
+        logger.error(f"生成数据分析报告失败: {str(e)}")
+        return f"❌ 生成报告失败: {str(e)}"
+
+
+@ai_bp.route('/api/ai/report/session/<int:session_id>', methods=['GET'])
+@login_required
+def get_session_report(session_id):
+    """
+    获取会话总结报告
+    
+    Args:
+        session_id: 会话ID
+    
+    Returns:
+        JSON格式的会话总结
+    """
+    try:
+        # 验证会话归属
+        session = ChatSession.query.get(session_id)
+        if not session or session.user_id != current_user.id:
+            return jsonify({'error': '无权访问该会话'}), 403
+        
+        summary = generate_session_summary(session_id)
+        
+        if 'error' in summary:
+            return jsonify({'success': False, 'error': summary['error']}), 400
+        
+        return jsonify({
+            'success': True,
+            'data': summary
+        })
+    
+    except Exception as e:
+        logger.error(f"获取会话报告失败: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@ai_bp.route('/api/ai/report/purchase', methods=['POST'])
+@login_required
+def get_purchase_report():
+    """
+    获取宠物选购建议报告
+    
+    Request Body:
+    {
+        "budget": 5000,
+        "size": "medium",
+        "experience": "beginner",
+        "purpose": "companion"
+    }
+    
+    Returns:
+        HTML格式的选购建议
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': '缺少请求数据'}), 400
+        
+        report_html = generate_purchase_recommendation(data)
+        
+        return jsonify({
+            'success': True,
+            'html': report_html
+        })
+    
+    except Exception as e:
+        logger.error(f"生成选购建议报告失败: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@ai_bp.route('/api/ai/report/analysis', methods=['GET'])
+@login_required
+def get_analysis_report():
+    """
+    获取数据分析报告
+    
+    Query Params:
+        time_range: 时间范围 (7days, 30days, 90days)
+    
+    Returns:
+        HTML格式的数据分析报告
+    """
+    try:
+        time_range = request.args.get('time_range', '30days')
+        
+        report_html = generate_data_analysis_report(time_range)
+        
+        return jsonify({
+            'success': True,
+            'html': report_html
+        })
+    
+    except Exception as e:
+        logger.error(f"生成数据分析报告失败: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
