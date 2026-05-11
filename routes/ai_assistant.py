@@ -228,8 +228,8 @@ def extract_multiple_breeds(question: str) -> list:
 
 # ===== 数据查询处理器 =====
 
-def handle_price_query(params: dict) -> str:
-    """处理价格查询"""
+def handle_price_query(params: dict, context: list = None) -> str:
+    """处理价格查询（支持上下文）"""
     breed = params.get('breed')
     
     if not breed or breed == '未知品种':
@@ -238,6 +238,29 @@ def handle_price_query(params: dict) -> str:
     
     logger.info(f"价格查询: 品种={breed}")
     
+    # 如果有上下文，使用模型进行更智能的回答
+    if context and len(context) > 0:
+        # 构建包含上下文的提示
+        context_text = "\n".join([f"{msg['role']}: {msg['content']}" for msg in context[-4:]])
+        prompt = f"""
+        你是一个宠物数据顾问。用户询问价格信息。
+        
+        对话历史：
+        {context_text}
+        
+        当前问题：查询{breed}的价格
+        
+        请先给出价格数据，然后结合上下文提供更个性化的建议。
+        """
+        
+        messages = [
+            {"role": "system", "content": "你是宠物数据专家"},
+            {"role": "user", "content": prompt}
+        ]
+        
+        return call_local_model(messages)
+    
+    # 无上下文时，直接查询数据库
     # 查询数据库 - jd_dogs表使用dog_name字段
     sql = text("""
         SELECT 
@@ -273,8 +296,8 @@ def handle_price_query(params: dict) -> str:
         return f"查询出错：{str(e)}"
 
 
-def handle_breed_info(params: dict) -> str:
-    """处理品种信息查询"""
+def handle_breed_info(params: dict, context: list = None) -> str:
+    """处理品种信息查询（支持上下文）"""
     breed = params.get('breed')
     
     if not breed or breed == '未知品种':
@@ -283,7 +306,51 @@ def handle_breed_info(params: dict) -> str:
     
     logger.info(f"品种查询: {breed}")
     
-    # 查询数据库
+    # 如果有上下文，使用模型进行更智能的回答
+    if context and len(context) > 0:
+        context_text = "\n".join([f"{msg['role']}: {msg['content']}" for msg in context[-4:]])
+        prompt = f"""
+        你是一个宠物专家。用户询问品种信息。
+        
+        对话历史：
+        {context_text}
+        
+        当前问题：了解{breed}的特点
+        
+        请结合上下文，提供个性化的品种介绍和养护建议。
+        """
+        
+        messages = [
+            {"role": "system", "content": "你是宠物专家"},
+            {"role": "user", "content": prompt}
+        ]
+        
+        return call_local_model(messages)
+    
+    # 无上下文时，查询数据库
+    
+    # 如果有上下文，使用模型进行更智能的回答
+    if context and len(context) > 0:
+        context_text = "\n".join([f"{msg['role']}: {msg['content']}" for msg in context[-4:]])
+        prompt = f"""
+        你是一个宠物专家。用户询问品种信息。
+        
+        对话历史：
+        {context_text}
+        
+        当前问题：了解{breed}的特点
+        
+        请结合上下文，提供个性化的品种介绍和养护建议。
+        """
+        
+        messages = [
+            {"role": "system", "content": "你是宠物专家"},
+            {"role": "user", "content": prompt}
+        ]
+        
+        return call_local_model(messages)
+    
+    # 无上下文时，查询数据库
     sql = text("""
         SELECT breed_name, avg_life_years, size_category, popularity
         FROM dog_breeds
@@ -314,10 +381,10 @@ def handle_breed_info(params: dict) -> str:
         return f"查询出错：{str(e)}"
 
 
-def handle_recommendation(params: dict) -> str:
-    """处理推荐问题"""
-    # 使用本地模型生成个性化推荐
-    prompt = """
+def handle_recommendation(params: dict, context: list = None) -> str:
+    """处理推荐问题（支持上下文）"""
+    # 构建基础提示
+    base_prompt = """
     你是一个专业的宠物顾问。请根据用户的需求推荐适合的犬种。
     
     要求：
@@ -325,20 +392,36 @@ def handle_recommendation(params: dict) -> str:
     2. 说明推荐理由
     3. 给出简要的养护建议
     4. 语气友好专业
-    
-    用户需求：适合新手养的狗狗
     """
+    
+    # 如果有上下文，添加上下文信息
+    if context and len(context) > 0:
+        context_text = "\n".join([f"{msg['role']}: {msg['content']}" for msg in context[-6:]])
+        full_prompt = f"""
+        {base_prompt}
+        
+        对话历史：
+        {context_text}
+        
+        请结合用户的偏好和历史对话，提供个性化的推荐。
+        """
+    else:
+        full_prompt = f"""
+        {base_prompt}
+        
+        用户需求：适合新手养的狗狗
+        """
     
     messages = [
         {"role": "system", "content": "你是宠物顾问专家"},
-        {"role": "user", "content": prompt}
+        {"role": "user", "content": full_prompt}
     ]
     
     return call_local_model(messages)
 
 
-def handle_comparison(params: dict) -> str:
-    """处理对比问题"""
+def handle_comparison(params: dict, context: list = None) -> str:
+    """处理对比问题（支持上下文）"""
     breeds = params.get('breeds', [])
     
     if len(breeds) < 2:
@@ -346,8 +429,8 @@ def handle_comparison(params: dict) -> str:
     
     breed1, breed2 = breeds[0], breeds[1]
     
-    # 调用本地模型进行对比分析
-    prompt = f"""
+    # 构建基础提示
+    base_prompt = f"""
     请对比以下两个犬种，从以下几个方面分析：
     1. 性格特点
     2. 体型大小
@@ -360,9 +443,23 @@ def handle_comparison(params: dict) -> str:
     请用清晰的格式呈现对比结果，并给出选择建议。
     """
     
+    # 如果有上下文，添加上下文信息
+    if context and len(context) > 0:
+        context_text = "\n".join([f"{msg['role']}: {msg['content']}" for msg in context[-4:]])
+        full_prompt = f"""
+        {base_prompt}
+        
+        对话历史：
+        {context_text}
+        
+        请结合上下文，提供更精准的对比分析。
+        """
+    else:
+        full_prompt = base_prompt
+    
     messages = [
         {"role": "system", "content": "你是宠物对比分析专家"},
-        {"role": "user", "content": prompt}
+        {"role": "user", "content": full_prompt}
     ]
     
     return call_local_model(messages)
@@ -646,23 +743,24 @@ def ai_chat():
             logger.info(f"[{request_id}] 🔍 知识库未命中，调用模型")
         
         # Step 2: 根据类型处理（模型调用）
+        # 获取会话上下文（支持所有问题类型）
+        context = get_conversation_context(session_id, max_messages=10)
+        
         answer = ""
         if question_type == 'price_query':
             logger.info(f"[{request_id}] 处理价格查询: {params.get('breed')}")
-            answer = handle_price_query(params)
+            answer = handle_price_query(params, context)
         elif question_type == 'breed_info':
             logger.info(f"[{request_id}] 处理品种信息: {params.get('breed')}")
-            answer = handle_breed_info(params)
+            answer = handle_breed_info(params, context)
         elif question_type == 'recommendation':
             logger.info(f"[{request_id}] 处理推荐请求")
-            answer = handle_recommendation(params)
+            answer = handle_recommendation(params, context)
         elif question_type == 'comparison':
             logger.info(f"[{request_id}] 处理对比请求: {params.get('breeds')}")
-            answer = handle_comparison(params)
+            answer = handle_comparison(params, context)
         else:  # general_qa
             logger.info(f"[{request_id}] 处理通用问答")
-            # 获取上下文历史
-            context = get_conversation_context(session_id, max_messages=10)
             answer = handle_general_qa(user_message, context)
         
         logger.info(f"[{request_id}] 生成回复成功，长度: {len(answer)}字符")
