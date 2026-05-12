@@ -526,6 +526,44 @@
             chatInput.focus();
         });
         
+        // ===== 跨窗口会话同步机制 =====
+        
+        // 监听其他窗口的localStorage变化
+        window.addEventListener('storage', function(event) {
+            // 只处理currentSessionId的变化
+            if (event.key === 'currentSessionId') {
+                const newSessionId = event.newValue ? parseInt(event.newValue) : null;
+                
+                // 如果会话ID发生变化，同步当前窗口
+                if (newSessionId !== currentSessionId) {
+                    console.log(`检测到其他窗口切换会话: ${currentSessionId} -> ${newSessionId}`);
+                    
+                    // 更新当前会话ID
+                    currentSessionId = newSessionId;
+                    
+                    // 如果新会话ID有效，加载该会话的消息
+                    if (currentSessionId) {
+                        loadSessionMessages(currentSessionId);
+                    } else {
+                        // 如果sessionId被清除，显示欢迎页面
+                        chatMessages.innerHTML = `
+                            <div class="welcome-message">
+                                <h3>你好！我是你的AI宠物顾问 👋</h3>
+                                <p>我可以帮你查询价格、了解品种、获取养护建议...</p>
+                                <p style="margin-top: 10px; font-size: 14px;">试试下面的快捷问题开始吧！</p>
+                            </div>
+                        `;
+                    }
+                    
+                    // 重新加载会话列表以更新选中状态
+                    loadSessions();
+                    
+                    // 显示提示
+                    showNotification('会话已同步', 'info');
+                }
+            }
+        });
+        
         async function checkModelStatus() {
             try {
                 const response = await fetch('/api/ai/model/status');
@@ -775,6 +813,12 @@
             sendBtn.disabled = true;
             
             try {
+                // 从 localStorage 获取最新的会话ID（防止多窗口不同步）
+                const latestSessionId = localStorage.getItem('currentSessionId');
+                if (latestSessionId) {
+                    currentSessionId = parseInt(latestSessionId);
+                }
+                
                 // 调用API
                 const requestBody = {
                     message: message
