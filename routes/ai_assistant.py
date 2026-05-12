@@ -1103,16 +1103,52 @@ def ai_chat():
     
     except Exception as e:
         import traceback
-        error_trace = traceback.format_exc()
-        logger.error(f"[{request_id}] AI聊天错误: {str(e)}")
-        logger.error(f"[{request_id}] 堆栈跟踪:\n{error_trace}")
-        logger.error(f"[{request_id}] 请求数据: {data if 'data' in locals() else 'N/A'}")
-        logger.error(f"[{request_id}] 用户: {current_user.username if current_user.is_authenticated else '未登录'}")
+        import sys
         
-        return jsonify({
+        # 获取详细的错误信息
+        error_type = type(e).__name__
+        error_msg = str(e)
+        error_trace = traceback.format_exc()
+        
+        # 记录详细错误日志
+        logger.error(f"\n{'='*80}")
+        logger.error(f"[{request_id}] ❌ AI聊天发生错误")
+        logger.error(f"{'='*80}")
+        logger.error(f"错误类型: {error_type}")
+        logger.error(f"错误消息: {error_msg}")
+        logger.error(f"请求用户: {current_user.username if current_user.is_authenticated else '未登录'} (ID: {current_user.id if current_user.is_authenticated else 'N/A'})")
+        logger.error(f"请求数据: {json.dumps(data, ensure_ascii=False) if 'data' in locals() and data else 'N/A'}")
+        logger.error(f"会话ID: {session_id if 'session_id' in locals() else 'N/A'}")
+        logger.error(f"问题类型: {question_type if 'question_type' in locals() else 'N/A'}")
+        logger.error(f"Python版本: {sys.version}")
+        logger.error(f"\n堆栈跟踪:\n{error_trace}")
+        logger.error(f"{'='*80}\n")
+        
+        # 根据错误类型返回不同的提示
+        error_response = {
             'success': False,
-            'error': f'服务器内部错误: {str(e)}'
-        }), 500
+            'error_type': error_type,
+            'request_id': request_id  # 返回请求ID便于追踪
+        }
+        
+        # 常见错误的友好提示
+        if 'ConnectionError' in error_type or 'connection' in error_msg.lower():
+            error_response['error'] = '无法连接到AI模型服务，请检查模型是否启动'
+            error_response['suggestion'] = '请确保Ollama服务正在运行：ollama serve'
+        elif 'Timeout' in error_type or 'timeout' in error_msg.lower():
+            error_response['error'] = 'AI模型响应超时，请稍后重试'
+            error_response['suggestion'] = '模型可能正在处理其他请求，请稍等片刻再试'
+        elif 'Database' in error_type or 'database' in error_msg.lower() or 'sql' in error_msg.lower():
+            error_response['error'] = '数据库操作失败，请联系管理员'
+            error_response['suggestion'] = '系统已记录错误，技术人员会尽快处理'
+        elif 'Permission' in error_type or 'permission' in error_msg.lower():
+            error_response['error'] = '权限不足，请重新登录'
+            error_response['suggestion'] = '您的会话可能已过期，请刷新页面重新登录'
+        else:
+            error_response['error'] = f'服务器内部错误 ({error_type})'
+            error_response['suggestion'] = '系统已记录错误详情，请稍后重试或联系管理员'
+        
+        return jsonify(error_response), 500
 
 
 @ai_bp.route('/ai-chat')

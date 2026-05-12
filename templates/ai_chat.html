@@ -852,7 +852,36 @@
                 
                 if (!response.ok) {
                     hideTypingIndicator();
-                    addMessage(`❌ 服务器错误 (${response.status})`, 'ai');
+                    
+                    // 尝试解析错误响应
+                    let errorMessage = `❌ 服务器错误 (${response.status})`;
+                    let suggestion = '';
+                    
+                    try {
+                        const errorData = await response.json();
+                        
+                        if (errorData.error) {
+                            errorMessage = `❌ ${errorData.error}`;
+                        }
+                        
+                        if (errorData.suggestion) {
+                            suggestion = `<br><br>💡 ${errorData.suggestion}`;
+                        }
+                        
+                        if (errorData.request_id) {
+                            console.log(`请求ID: ${errorData.request_id}（便于技术支持追踪）`);
+                        }
+                    } catch (e) {
+                        // 如果无法解析JSON，使用默认消息
+                        console.error('无法解析错误响应:', e);
+                    }
+                    
+                    // 显示错误消息
+                    addMessage(errorMessage + suggestion, 'ai');
+                    
+                    // 显示通知
+                    showNotification('发生错误，已记录日志', 'error');
+                    
                     return;
                 }
                 
@@ -874,7 +903,21 @@
             } catch (error) {
                 console.error('请求失败:', error);
                 hideTypingIndicator();
-                addMessage('❌ 网络错误，请稍后重试', 'ai');
+                
+                // 根据错误类型显示不同的提示
+                let errorMessage = '❌ 网络错误，请稍后重试';
+                let suggestion = '';
+                
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    errorMessage = '❌ 无法连接到服务器';
+                    suggestion = '<br><br>💡 请检查网络连接或联系管理员';
+                } else if (error.name === 'AbortError') {
+                    errorMessage = '❌ 请求超时';
+                    suggestion = '<br><br>💡 服务器响应较慢，请稍后重试';
+                }
+                
+                addMessage(errorMessage + suggestion, 'ai');
+                showNotification('网络连接失败', 'error');
             } finally {
                 sendBtn.disabled = false;
             }
