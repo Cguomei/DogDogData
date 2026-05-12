@@ -878,10 +878,9 @@ def extract_keywords(text: str, max_keywords: int = 3) -> str:
 # ===== API接口 =====
 
 @ai_bp.route('/api/ai/chat', methods=['POST'])
-@login_required
 def ai_chat():
     """
-    AI聊天接口（本地模型版）
+    AI聊天接口（本地模型版）- 支持游客模式
     
     请求格式：
     {
@@ -898,9 +897,15 @@ def ai_chat():
     request_id = datetime.now().strftime('%Y%m%d%H%M%S%f')
     
     try:
-        # 记录请求信息
-        logger.info(f"[{request_id}] 收到AI聊天请求")
-        logger.info(f"[{request_id}] 用户: {current_user.username} (ID: {current_user.id})")
+        # 检查用户状态（登录或游客）
+        is_guest = not current_user.is_authenticated
+        
+        if is_guest:
+            logger.info(f"[{request_id}] 🚶 收到游客AI聊天请求")
+            logger.info(f"[{request_id}] IP地址: {request.remote_addr}")
+        else:
+            logger.info(f"[{request_id}] 👤 收到AI聊天请求")
+            logger.info(f"[{request_id}] 用户: {current_user.username} (ID: {current_user.id})")
         
         data = request.get_json()
         logger.info(f"[{request_id}] 请求数据: {json.dumps(data, ensure_ascii=False)}")
@@ -933,19 +938,29 @@ def ai_chat():
         session_id = data.get('session_id')
         if not session_id:
             # 自动创建新会话
+            # 游客使用user_id=0，登录用户使用实际ID
+            user_id_for_session = 0 if is_guest else current_user.id
+            
             session = ChatSession(
-                user_id=current_user.id,
+                user_id=user_id_for_session,
                 title=user_message[:50]  # 用第一条消息作为标题
             )
             db.session.add(session)
             db.session.commit()
             session_id = session.id
-            logger.info(f"[{request_id}] 创建新会话: ID={session_id}")
+            logger.info(f"[{request_id}] 创建新会话: ID={session_id} (游客: {is_guest})")
         else:
             # 验证会话归属
             session = ChatSession.query.get(session_id)
-            if not session or session.user_id != current_user.id:
+            if not session:
+                return jsonify({'error': '会话不存在'}), 404
+            
+            # 如果是登录用户，验证会话归属
+            if not is_guest and session.user_id != current_user.id:
                 return jsonify({'error': '无权访问该会话'}), 403
+            
+            # 游客只能访问自己创建的会话（通过localStorage中的sessionId）
+            # 这里不做严格验证，因为游客没有身份标识
         
         # Step 1: 问题分类
         classification = classify_question(user_message)
@@ -1152,9 +1167,8 @@ def ai_chat():
 
 
 @ai_bp.route('/ai-chat')
-@login_required
 def ai_chat_page():
-    """AI聊天页面"""
+    """AI聊天页面 - 支持游客访问"""
     return render_template('ai_chat.html')
 
 
@@ -1280,20 +1294,33 @@ def manual_learn():
 # ===== 对话历史 API =====
 
 @ai_bp.route('/api/ai/sessions')
-@login_required
 def get_sessions():
-    """获取当前用户的对话会话列表"""
+    """获取当前用户的对话会话列表 - 支持游客"""
     try:
-        sessions = ChatSession.query.filter_by(
-            user_id=current_user.id,
-            is_active=True
-        ).order_by(
-            ChatSession.updated_at.desc()
-        ).limit(50).all()  # 最多返回50个会话
+        # 检查用户状态
+        is_guest = not current_user.is_authenticated
+        
+        if is_guest:
+            # 游客：返回user_id=0的会话
+            sessions = ChatSession.query.filter_by(
+                user_id=0,
+                is_active=True
+            ).order_by(
+                ChatSession.updated_at.desc()
+            ).limit(20).all()  # 游客最多20个会话
+        else:
+            # 登录用户：返回自己的会话
+            sessions = ChatSession.query.filter_by(
+                user_id=current_user.id,
+                is_active=True
+            ).order_by(
+                ChatSession.updated_at.desc()
+            ).limit(50).all()  # 最多返回50个会话
         
         return jsonify({
             'success': True,
-            'sessions': [s.to_dict() for s in sessions]
+            'sessions': [s.to_dict() for s in sessions],
+            'is_guest': is_guest
         })
     except Exception as e:
         logger.error(f"获取会话列表失败: {str(e)}")
@@ -1304,27 +1331,36 @@ def get_sessions():
 
 
 @ai_bp.route('/api/ai/sessions', methods=['POST'])
-@login_required
 def create_session():
-    """创建新的对话会话"""
+    """创建新的对话会话 - 支持游客"""
     try:
+        # 检查用户状态
+        is_guest = not current_user.is_authenticated
+        
         data = request.get_json()
         title = data.get('title', '新对话')
         
+        # 游客使用user_id=0
+        user_id_for_session = 0 if is_guest else current_user.id
+        
         session = ChatSession(
-            user_id=current_user.id,
+            user_id=user_id_for_session,
             title=title
         )
         
         db.session.add(session)
         db.session.commit()
         
-        logger.info(f"创建新会话: ID={session.id}, 用户={current_user.username}")
+        if is_guest:
+            logger.info(f"游客创建新会话: ID={session.id}")
+        else:
+            logger.info(f"创建新会话: ID={session.id}, 用户={current_user.username}")
         
         return jsonify({
             'success': True,
             'session_id': session.id,
-            'title': session.title
+            'title': session.title,
+            'is_guest': is_guest
         }), 201
     except Exception as e:
         db.session.rollback()
@@ -1336,19 +1372,26 @@ def create_session():
 
 
 @ai_bp.route('/api/ai/sessions/<int:session_id>')
-@login_required
 def get_session(session_id):
-    """获取指定会话的详细信息"""
+    """获取指定会话的详细信息 - 支持游客"""
     try:
         session = ChatSession.query.get_or_404(session_id)
         
-        # 权限检查
-        if session.user_id != current_user.id:
+        # 检查用户状态
+        is_guest = not current_user.is_authenticated
+        
+        # 如果是登录用户，验证会话归属
+        if not is_guest and session.user_id != current_user.id:
+            return jsonify({'error': '无权访问'}), 403
+        
+        # 游客可以访问user_id=0的会话
+        if is_guest and session.user_id != 0:
             return jsonify({'error': '无权访问'}), 403
         
         return jsonify({
             'success': True,
-            'session': session.to_dict()
+            'session': session.to_dict(),
+            'is_guest': is_guest
         })
     except Exception as e:
         logger.error(f"获取会话详情失败: {str(e)}")

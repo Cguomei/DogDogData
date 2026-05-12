@@ -416,6 +416,13 @@
         
         <!-- 主聊天区域 -->
         <div class="chat-main">
+        <!-- 游客提示横幅 -->
+        <div id="guestBanner" style="display: none; background: linear-gradient(90deg, #f6ad55 0%, #ed8936 100%); color: white; padding: 12px 20px; text-align: center; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <span>🚶 您当前以游客身份访问，对话记录将在浏览器关闭后清除。</span>
+            <a href="/login?next=/ai-chat" style="color: white; text-decoration: underline; margin-left: 10px; font-weight: 600;">立即登录 →</a>
+            <button onclick="closeGuestBanner()" style="background: none; border: none; color: white; cursor: pointer; margin-left: 15px; font-size: 18px;">×</button>
+        </div>
+        
         <div class="chat-header">
             <div class="chat-header-left">
                 <h2>🤖 AI智能宠物顾问</h2>
@@ -470,6 +477,12 @@
         
         // 当前会话ID
         let currentSessionId = null;
+        
+        // 关闭游客提示横幅
+        function closeGuestBanner() {
+            document.getElementById('guestBanner').style.display = 'none';
+            localStorage.setItem('hideGuestBanner', 'true');
+        }
         
         // 页面加载时初始化
         window.addEventListener('DOMContentLoaded', function() {
@@ -617,6 +630,14 @@
                 
                 if (data.success) {
                     renderSessionList(data.sessions);
+                    
+                    // 检查是否为游客，显示提示横幅
+                    if (data.is_guest) {
+                        const hideBanner = localStorage.getItem('hideGuestBanner');
+                        if (!hideBanner) {
+                            document.getElementById('guestBanner').style.display = 'block';
+                        }
+                    }
                 }
             } catch (error) {
                 console.error('加载会话列表失败:', error);
