@@ -960,9 +960,14 @@ def ai_chat():
         if kb_result:
             # 知识库命中，直接返回
             answer = kb_result['answer']
-            logger.info(f"[{request_id}] ✅ 知识库命中，直接使用")
+            category = kb_result.get('category', '未知')
+            logger.info(f"[{request_id}] ✅ 知识库命中，类别: {category}")
             logger.info(f"[{request_id}] 生成回复成功，长度: {len(answer)}字符")
             logger.info(f"[{request_id}] 回复内容: {answer[:200]}...")
+            
+            # 在回答中添加知识库来源提示
+            source_hint = f"\n\n📚 *来自知识库 ({category})*"
+            answer_with_source = answer + source_hint
             
             # 保存对话历史（知识库命中）
             try:
@@ -998,7 +1003,7 @@ def ai_chat():
             
             return jsonify({
                 'success': True,
-                'answer': answer,
+                'answer': answer_with_source,
                 'type': question_type,
                 'source': 'knowledge_base',
                 'session_id': session_id,
@@ -1006,6 +1011,8 @@ def ai_chat():
             })
         else:
             logger.info(f"[{request_id}] 🔍 知识库未命中，调用模型")
+            # 在回答中添加提示，告知用户使用了模型生成
+            answer_suffix = "\n\n💡 *本回答由AI模型生成，仅供参考*"
         
         # Step 2: 根据类型处理（模型调用）
         # 获取会话上下文（支持所有问题类型）
@@ -1030,6 +1037,9 @@ def ai_chat():
         else:  # general_qa
             logger.info(f"[{request_id}] 处理通用问答")
             answer = handle_general_qa(user_message, context)
+        
+        # 添加模型生成提示
+        answer += answer_suffix
         
         logger.info(f"[{request_id}] 生成回复成功，长度: {len(answer)}字符")
         logger.info(f"[{request_id}] 回复内容: {answer[:200]}...")

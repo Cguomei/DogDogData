@@ -120,27 +120,59 @@
         .chat-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 20px;
-            text-align: center;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .chat-header-left {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
         }
         
         .chat-header h2 {
-            font-size: 24px;
-            margin-bottom: 5px;
+            font-size: 20px;
+            margin: 0;
         }
         
-        .chat-header p {
-            font-size: 14px;
+        .chat-header-subtitle {
+            font-size: 13px;
             opacity: 0.9;
+            margin: 0;
+        }
+        
+        .chat-header-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
         }
         
         .model-status {
             font-size: 12px;
-            margin-top: 5px;
-            padding: 4px 8px;
+            padding: 4px 10px;
             background: rgba(255,255,255,0.2);
             border-radius: 12px;
             display: inline-block;
+        }
+        
+        .kb-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+        }
+        
+        .kb-info a {
+            color: white;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        
+        .kb-info a:hover {
+            opacity: 0.8;
         }
         
         .chat-messages {
@@ -385,14 +417,16 @@
         <!-- 主聊天区域 -->
         <div class="chat-main">
         <div class="chat-header">
-            <h2>🤖 AI智能宠物顾问</h2>
-            <p>问我任何关于狗狗的问题</p>
-            <div class="model-status" id="modelStatus">检查模型状态...</div>
-            <div style="margin-top: 10px;">
-                <a href="/ai-knowledge" style="color: white; font-size: 12px; text-decoration: underline;">
-                    📚 查看知识库
-                </a>
-                <span id="kbStats" style="color: rgba(255,255,255,0.8); font-size: 12px; margin-left: 10px;"></span>
+            <div class="chat-header-left">
+                <h2>🤖 AI智能宠物顾问</h2>
+                <p class="chat-header-subtitle">问我任何关于狗狗的问题</p>
+            </div>
+            <div class="chat-header-right">
+                <div class="model-status" id="modelStatus">检查模型状态...</div>
+                <div class="kb-info">
+                    <a href="/ai-knowledge">📚 查看知识库</a>
+                    <span id="kbStats"></span>
+                </div>
             </div>
         </div>
         
@@ -447,9 +481,44 @@
             const savedSessionId = localStorage.getItem('currentSessionId');
             if (savedSessionId) {
                 currentSessionId = parseInt(savedSessionId);
-                // 加载该会话的消息
-                setTimeout(() => {
-                    loadSessionMessages(currentSessionId);
+                // 验证会话是否存在，如果不存在则创建新会话
+                setTimeout(async () => {
+                    try {
+                        const response = await fetch(`/api/ai/sessions/${currentSessionId}`);
+                        
+                        // 检查HTTP状态
+                        if (response.status === 401) {
+                            // 未登录，清除localStorage
+                            localStorage.removeItem('currentSessionId');
+                            currentSessionId = null;
+                            console.log('用户未登录');
+                            return;
+                        }
+                        
+                        if (response.status === 404) {
+                            // 会话不存在，清除localStorage
+                            localStorage.removeItem('currentSessionId');
+                            currentSessionId = null;
+                            console.log('保存的会话已失效');
+                            return;
+                        }
+                        
+                        if (!response.ok) {
+                            // 其他错误
+                            console.error(`加载会话失败: ${response.status}`);
+                            localStorage.removeItem('currentSessionId');
+                            currentSessionId = null;
+                            return;
+                        }
+                        
+                        // 会话存在，加载消息
+                        await loadSessionMessages(currentSessionId);
+                        
+                    } catch (error) {
+                        console.error('验证会话失败:', error);
+                        // 网络错误时不清除localStorage，可能是临时网络问题
+                        currentSessionId = null;
+                    }
                 }, 500);
             }
             
@@ -484,7 +553,16 @@
                 if (data.success) {
                     const stats = data.stats;
                     const kbStatsElement = document.getElementById('kbStats');
-                    kbStatsElement.textContent = `📚 知识: ${stats.total_knowledge}条 | 命中率: ${stats.hit_rate}`;
+                    
+                    // 格式化命中率
+                    const hitRate = parseFloat(stats.hit_rate);
+                    const hitRateDisplay = isNaN(hitRate) ? '0.0%' : `${hitRate.toFixed(1)}%`;
+                    
+                    // 显示更多信息
+                    kbStatsElement.innerHTML = `
+                        <span title="知识库条目数">📚 ${stats.total_knowledge}条</span>
+                        <span style="margin-left: 8px;" title="查询命中率">🎯 ${hitRateDisplay}</span>
+                    `;
                 }
             } catch (error) {
                 console.error('加载知识库统计失败:', error);
@@ -539,6 +617,10 @@
                     body: JSON.stringify({ title: '新对话' })
                 });
                 
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
                 
                 if (data.success) {
@@ -546,7 +628,7 @@
                     // 保存到 localStorage 以便离开页面后恢复
                     localStorage.setItem('currentSessionId', currentSessionId);
                     
-                    // 清空聊天区域
+                    // 清空聊天区域，显示欢迎页面
                     chatMessages.innerHTML = `
                         <div class="welcome-message">
                             <h3>你好！我是你的AI宠物顾问 👋</h3>
@@ -554,12 +636,18 @@
                             <p style="margin-top: 10px; font-size: 14px;">试试下面的快捷问题开始吧！</p>
                         </div>
                     `;
+                    
                     // 重新加载会话列表
-                    loadSessions();
+                    await loadSessions();
+                    
+                    // 显示成功提示
+                    showNotification('新会话已创建', 'success');
+                } else {
+                    throw new Error(data.error || '创建失败');
                 }
             } catch (error) {
                 console.error('创建会话失败:', error);
-                alert('创建会话失败，请稍后重试');
+                showNotification('创建会话失败：' + error.message, 'error');
             }
         }
         
@@ -597,6 +685,27 @@
         async function loadSessionMessages(sessionId) {
             try {
                 const response = await fetch(`/api/ai/sessions/${sessionId}/messages`);
+                
+                // 检查HTTP状态
+                if (response.status === 404) {
+                    // 会话不存在，清除localStorage并创建新会话
+                    console.warn(`会话 ${sessionId} 不存在，创建新会话`);
+                    localStorage.removeItem('currentSessionId');
+                    currentSessionId = null;
+                    await createNewSession();
+                    return;
+                }
+                
+                if (response.status === 401) {
+                    // 未登录，跳转到登录页
+                    window.location.href = '/login?next=/ai-chat';
+                    return;
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
                 
                 if (data.success) {
