@@ -464,5 +464,173 @@ class TestAutoLearning:
         assert data['success'] is False
 
 
+class TestGuestMode:
+    """游客模式测试（v4.9.7新功能）"""
+    
+    def test_chat_page_guest_access(self, api_client):
+        """测试游客可以访问聊天页面"""
+        response = api_client.get('/ai-chat')
+        
+        # 游客应该可以直接访问，不再重定向到登录页
+        assert response.status_code == 200
+        assert b'ai-chat' in response.data or b'AI' in response.data
+    
+    def test_chat_api_guest_access(self, api_client):
+        """测试游客可以使用AI聊天API"""
+        response = api_client.post(
+            '/api/ai/chat',
+            json={'message': '金毛的价格是多少？'}
+        )
+        
+        # 游客应该可以直接使用，不再返回401/302
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data['success'] is True
+        assert 'answer' in data
+        assert 'session_id' in data
+    
+    def test_create_session_as_guest(self, api_client):
+        """测试游客创建会话"""
+        response = api_client.post(
+            '/api/ai/sessions',
+            json={'title': '游客测试会话'}
+        )
+        
+        assert response.status_code == 201
+        data = response.get_json()
+        assert data['success'] is True
+        assert 'session_id' in data
+        assert data.get('is_guest') is True
+    
+    def test_get_sessions_as_guest(self, api_client):
+        """测试游客获取会话列表"""
+        # 先创建一个游客会话
+        create_response = api_client.post(
+            '/api/ai/sessions',
+            json={'title': '游客会话1'}
+        )
+        
+        # 获取列表
+        response = api_client.get('/api/ai/sessions')
+        
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data['success'] is True
+        assert 'sessions' in data
+        assert data.get('is_guest') is True
+        
+        # 验证返回的会话属于游客（user_id=308）
+        if len(data['sessions']) > 0:
+            session = data['sessions'][0]
+            assert session['user_id'] == 308
+    
+    def test_get_session_detail_as_guest(self, api_client):
+        """测试游客获取会话详情"""
+        # 先创建一个游客会话
+        create_response = api_client.post(
+            '/api/ai/sessions',
+            json={'title': '游客会话详情测试'}
+        )
+        session_id = create_response.get_json()['session_id']
+        
+        # 获取详情
+        response = api_client.get(f'/api/ai/sessions/{session_id}')
+        
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data['success'] is True
+        assert 'session' in data
+        assert data['session']['id'] == session_id
+        assert data['session']['user_id'] == 308
+    
+    def test_guest_session_isolation(self, authenticated_api_client, api_client):
+        """测试游客和登录用户的会话隔离"""
+        # 登录用户创建会话
+        auth_response = authenticated_api_client.post(
+            '/api/ai/sessions',
+            json={'title': '登录用户会话'}
+        )
+        auth_session_id = auth_response.get_json()['session_id']
+        
+        # 游客创建会话
+        guest_response = api_client.post(
+            '/api/ai/sessions',
+            json={'title': '游客会话'}
+        )
+        guest_session_id = guest_response.get_json()['session_id']
+        
+        # 登录用户只能看到自己的会话
+        auth_sessions = authenticated_api_client.get('/api/ai/sessions').get_json()
+        auth_session_ids = [s['id'] for s in auth_sessions['sessions']]
+        assert auth_session_id in auth_session_ids
+        assert guest_session_id not in auth_session_ids
+        
+        # 游客只能看到游客会话
+        guest_sessions = api_client.get('/api/ai/sessions').get_json()
+        guest_session_ids = [s['id'] for s in guest_sessions['sessions']]
+        assert guest_session_id in guest_session_ids
+        assert auth_session_id not in guest_session_ids
+    
+    def test_guest_cannot_access_auth_session(self, authenticated_api_client, api_client):
+        """测试游客无法访问登录用户的会话"""
+        # 登录用户创建会话
+        auth_response = authenticated_api_client.post(
+            '/api/ai/sessions',
+            json={'title': '私有会话'}
+        )
+        auth_session_id = auth_response.get_json()['session_id']
+        
+        # 游客尝试访问
+        response = api_client.get(f'/api/ai/sessions/{auth_session_id}')
+        
+        # 应该拒绝访问
+        assert response.status_code == 403
+        data = response.get_json()
+        assert 'error' in data
+    
+    def test_guest_chat_with_session(self, api_client):
+        """测试游客带会话ID聊天"""
+        # 创建游客会话
+        create_response = api_client.post(
+            '/api/ai/sessions',
+            json={'title': '游客对话会话'}
+        )
+        session_id = create_response.get_json()['session_id']
+        
+        # 使用该会话ID聊天
+        response = api_client.post(
+            '/api/ai/chat',
+            json={
+                'message': '泰迪有什么特点？',
+                'session_id': session_id
+            }
+        )
+        
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data['success'] is True
+        assert data['session_id'] == session_id
+    
+    def test_model_status_guest_access(self, api_client):
+        """测试游客可以检查模型状态"""
+        response = api_client.get('/api/ai/model/status')
+        
+        # 游客应该可以访问
+        assert response.status_code == 200
+        data = response.get_json()
+        assert 'status' in data
+        assert 'type' in data
+    
+    def test_knowledge_stats_guest_access(self, api_client):
+        """测试游客可以获取知识库统计"""
+        response = api_client.get('/api/ai/knowledge/stats')
+        
+        # 游客应该可以访问
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data['success'] is True
+        assert 'stats' in data
+
+
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])
