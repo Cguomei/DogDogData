@@ -938,9 +938,27 @@ def ai_chat():
         session_id = data.get('session_id')
         if not session_id:
             # 自动创建新会话
-            # 游客使用guest用户ID（308），登录用户使用实际ID
-            GUEST_USER_ID = 308  # guest用户的ID
-            user_id_for_session = GUEST_USER_ID if is_guest else current_user.id
+            # 游客使用guest用户，登录用户使用实际ID
+            if is_guest:
+                # 动态获取或创建guest用户
+                from models import User
+                from werkzeug.security import generate_password_hash
+                
+                guest_user = User.query.filter_by(username='guest').first()
+                if not guest_user:
+                    # 如果guest用户不存在，创建它
+                    guest_user = User(
+                        username='guest',
+                        password_hash=generate_password_hash('guest'),
+                        role='guest'
+                    )
+                    db.session.add(guest_user)
+                    db.session.commit()
+                    logger.info(f"[{request_id}] 创建guest用户: ID={guest_user.id}")
+                
+                user_id_for_session = guest_user.id
+            else:
+                user_id_for_session = current_user.id
             
             session = ChatSession(
                 user_id=user_id_for_session,
@@ -1298,12 +1316,22 @@ def get_sessions():
     try:
         # 检查用户状态
         is_guest = not current_user.is_authenticated
-        GUEST_USER_ID = 308  # guest用户的ID
         
         if is_guest:
+            # 动态获取guest用户ID
+            from models import User
+            guest_user = User.query.filter_by(username='guest').first()
+            if not guest_user:
+                # 如果不存在，返回空列表
+                return jsonify({
+                    'success': True,
+                    'sessions': [],
+                    'is_guest': True
+                })
+            
             # 游客：返回guest用户的会话
             sessions = ChatSession.query.filter_by(
-                user_id=GUEST_USER_ID,
+                user_id=guest_user.id,
                 is_active=True
             ).order_by(
                 ChatSession.updated_at.desc()
@@ -1336,13 +1364,27 @@ def create_session():
     try:
         # 检查用户状态
         is_guest = not current_user.is_authenticated
-        GUEST_USER_ID = 308  # guest用户的ID
         
         data = request.get_json()
         title = data.get('title', '新对话')
         
-        # 游客使用guest用户ID
-        user_id_for_session = GUEST_USER_ID if is_guest else current_user.id
+        # 游客使用guest用户ID，动态获取
+        if is_guest:
+            from models import User
+            guest_user = User.query.filter_by(username='guest').first()
+            if not guest_user:
+                # 如果不存在，创建它
+                from werkzeug.security import generate_password_hash
+                guest_user = User(
+                    username='guest',
+                    password_hash=generate_password_hash('guest'),
+                    role='guest'
+                )
+                db.session.add(guest_user)
+                db.session.commit()
+            user_id_for_session = guest_user.id
+        else:
+            user_id_for_session = current_user.id
         
         session = ChatSession(
             user_id=user_id_for_session,
@@ -1380,15 +1422,17 @@ def get_session(session_id):
         
         # 检查用户状态
         is_guest = not current_user.is_authenticated
-        GUEST_USER_ID = 308  # guest用户的ID
         
         # 如果是登录用户，验证会话归属
         if not is_guest and session.user_id != current_user.id:
             return jsonify({'error': '无权访问'}), 403
         
         # 游客可以访问guest用户的会话
-        if is_guest and session.user_id != GUEST_USER_ID:
-            return jsonify({'error': '无权访问'}), 403
+        if is_guest:
+            from models import User
+            guest_user = User.query.filter_by(username='guest').first()
+            if guest_user and session.user_id != guest_user.id:
+                return jsonify({'error': '无权访问'}), 403
         
         return jsonify({
             'success': True,
