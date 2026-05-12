@@ -514,3 +514,154 @@ class ChatMessage(db.Model):
             'feedback_comment': self.feedback_comment,
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None
         }
+
+
+class PriceAlert(db.Model):
+    """价格预警订阅表"""
+    __tablename__ = 'price_alerts'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    
+    # 监控对象
+    breed_name = db.Column(db.String(100), nullable=False)  # 品种名称
+    
+    # 预警条件
+    target_price = db.Column(db.Float, nullable=False)  # 目标价格
+    condition = db.Column(db.String(20), nullable=False)  # above/below（高于/低于）
+    
+    # 当前状态
+    is_active = db.Column(db.Boolean, default=True)  # 是否激活
+    triggered = db.Column(db.Boolean, default=False)  # 是否已触发
+    last_check_price = db.Column(db.Float)  # 最后检查的价格
+    
+    # 通知设置
+    notify_email = db.Column(db.Boolean, default=True)  # 邮件通知
+    notify_in_app = db.Column(db.Boolean, default=True)  # 站内通知
+    
+    # 时间戳
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
+    triggered_at = db.Column(db.DateTime)  # 触发时间
+    
+    # 索引
+    __table_args__ = (
+        db.Index('idx_user_breed', 'user_id', 'breed_name'),
+        db.Index('idx_active', 'is_active'),
+    )
+    
+    # 关联
+    user = db.relationship('User', backref=db.backref('price_alerts', lazy='dynamic'))
+    
+    def to_dict(self):
+        """转换为字典"""
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'breed_name': self.breed_name,
+            'target_price': self.target_price,
+            'condition': self.condition,
+            'is_active': self.is_active,
+            'triggered': self.triggered,
+            'last_check_price': self.last_check_price,
+            'notify_email': self.notify_email,
+            'notify_in_app': self.notify_in_app,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
+            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None,
+            'triggered_at': self.triggered_at.strftime('%Y-%m-%d %H:%M:%S') if self.triggered_at else None
+        }
+
+
+class BreedAlert(db.Model):
+    """新品种上架提醒订阅表"""
+    __tablename__ = 'breed_alerts'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    
+    # 订阅类型
+    alert_type = db.Column(db.String(50), nullable=False)  # all/new_breed/size_category
+    
+    # 过滤条件（JSON字符串）
+    filters = db.Column(db.Text)  # {"sizes": ["small"], "origins": ["中国"]}
+    
+    # 状态
+    is_active = db.Column(db.Boolean, default=True)
+    
+    # 通知设置
+    notify_email = db.Column(db.Boolean, default=True)
+    notify_in_app = db.Column(db.Boolean, default=True)
+    
+    # 时间戳
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
+    
+    # 索引
+    __table_args__ = (
+        db.Index('idx_user_type', 'user_id', 'alert_type'),
+        db.Index('idx_active', 'is_active'),
+    )
+    
+    # 关联
+    user = db.relationship('User', backref=db.backref('breed_alerts', lazy='dynamic'))
+    
+    def to_dict(self):
+        """转换为字典"""
+        import json
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'alert_type': self.alert_type,
+            'filters': json.loads(self.filters) if self.filters else {},
+            'is_active': self.is_active,
+            'notify_email': self.notify_email,
+            'notify_in_app': self.notify_in_app,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None,
+            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else None
+        }
+
+
+class AlertNotification(db.Model):
+    """预警通知记录表"""
+    __tablename__ = 'alert_notifications'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    
+    # 通知类型
+    notification_type = db.Column(db.String(50), nullable=False)  # price_alert/breed_alert
+    related_id = db.Column(db.Integer)  # 关联的预警ID
+    
+    # 通知内容
+    title = db.Column(db.String(200), nullable=False)  # 标题
+    content = db.Column(db.Text, nullable=False)  # 内容
+    
+    # 状态
+    is_read = db.Column(db.Boolean, default=False)  # 是否已读
+    read_at = db.Column(db.DateTime)  # 阅读时间
+    
+    # 时间戳
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    
+    # 索引
+    __table_args__ = (
+        db.Index('idx_user_unread', 'user_id', 'is_read'),
+        db.Index('idx_created', 'created_at'),
+    )
+    
+    # 关联
+    user = db.relationship('User', backref=db.backref('notifications', lazy='dynamic'))
+    
+    def to_dict(self):
+        """转换为字典"""
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'notification_type': self.notification_type,
+            'related_id': self.related_id,
+            'title': self.title,
+            'content': self.content,
+            'is_read': self.is_read,
+            'read_at': self.read_at.strftime('%Y-%m-%d %H:%M:%S') if self.read_at else None,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None
+        }
