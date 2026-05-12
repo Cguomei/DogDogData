@@ -1081,6 +1081,7 @@ def ai_chat():
         # Step 3: 保存对话历史
         import time
         start_time = time.time()
+        message_id = None  # 初始化message_id
         
         try:
             # 保存用户消息
