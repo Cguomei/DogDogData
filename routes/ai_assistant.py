@@ -180,8 +180,8 @@ def classify_question(question: str) -> dict:
             'params': {'breed': breed}
         }
     
-    # 2. 品种信息查询
-    elif any(keyword in question_lower for keyword in ['介绍', '特点', '习性', '寿命']):
+    # 2. 品种信息查询（扩展关键词）
+    elif any(keyword in question_lower for keyword in ['介绍', '特点', '习性', '寿命', '性格', '怎么样', '如何']):
         breed = extract_breed_name(question)
         return {
             'type': 'breed_info',
@@ -252,11 +252,16 @@ def detect_chart_type(question: str) -> str:
 
 
 def extract_breed_name(question: str) -> str:
-    """提取品种名称（简化版）"""
+    """提取品种名称（增强版）"""
     common_breeds = [
+        # 热门品种
         '金毛', '泰迪', '柯基', '哈士奇', '拉布拉多', 
         '柴犬', '边境牧羊犬', '萨摩耶', '阿拉斯加', '贵宾',
-        '比熊', '博美', '雪纳瑞', '斗牛犬', '约克夏'
+        '比熊', '博美', '雪纳瑞', '斗牛犬', '约克夏',
+        # 其他常见品种
+        '法国斗牛犬', '英国斗牛犬', '德国牧羊犬', '罗威纳',
+        '杜宾', '吉娃娃', '马尔济斯', '西施犬', '巴哥犬',
+        '松狮', '秋田犬', '大白熊', '藏獒', '中华田园犬'
     ]
     
     for breed in common_breeds:
@@ -267,11 +272,16 @@ def extract_breed_name(question: str) -> str:
 
 
 def extract_multiple_breeds(question: str) -> list:
-    """提取多个品种名称"""
+    """提取多个品种名称（增强版）"""
     common_breeds = [
+        # 热门品种
         '金毛', '泰迪', '柯基', '哈士奇', '拉布拉多',
         '柴犬', '边境牧羊犬', '萨摩耶', '阿拉斯加', '贵宾',
-        '比熊', '博美', '雪纳瑞', '斗牛犬', '约克夏'
+        '比熊', '博美', '雪纳瑞', '斗牛犬', '约克夏',
+        # 其他常见品种
+        '法国斗牛犬', '英国斗牛犬', '德国牧羊犬', '罗威纳',
+        '杜宾', '吉娃娃', '马尔济斯', '西施犬', '巴哥犬',
+        '松狮', '秋田犬', '大白熊', '藏獒', '中华田园犬'
     ]
     
     found_breeds = [breed for breed in common_breeds if breed in question]
@@ -357,29 +367,6 @@ def handle_breed_info(params: dict, context: list = None) -> str:
         return "请告诉我您想了解哪个品种？例如：金毛、泰迪等"
     
     logger.info(f"品种查询: {breed}")
-    
-    # 如果有上下文，使用模型进行更智能的回答
-    if context and len(context) > 0:
-        context_text = "\n".join([f"{msg['role']}: {msg['content']}" for msg in context[-4:]])
-        prompt = f"""
-        你是一个宠物专家。用户询问品种信息。
-        
-        对话历史：
-        {context_text}
-        
-        当前问题：了解{breed}的特点
-        
-        请结合上下文，提供个性化的品种介绍和养护建议。
-        """
-        
-        messages = [
-            {"role": "system", "content": "你是宠物专家"},
-            {"role": "user", "content": prompt}
-        ]
-        
-        return call_local_model(messages)
-    
-    # 无上下文时，查询数据库
     
     # 如果有上下文，使用模型进行更智能的回答
     if context and len(context) > 0:
@@ -606,8 +593,21 @@ def handle_chart_generation(params: dict, context: list = None) -> str:
 
 def handle_general_qa(question: str, context: list = None) -> str:
     """处理通用问答（支持上下文）"""
+    # 构建更专业的system prompt
+    system_prompt = """你是宠物知识专家，拥有丰富的狗狗养护、训练、健康等专业知识。
+
+回答要求：
+1. 专业准确：基于科学知识和实践经验
+2. 结构清晰：使用列表、分段等方式组织内容
+3. 实用性强：给出可操作的建议
+4. 语气友好：亲切自然，易于理解
+5. 长度适中：100-300字为宜
+6. 安全第一：涉及健康问题时提醒咨询兽医
+
+请根据用户问题提供专业、实用的回答。"""
+    
     messages = [
-        {"role": "system", "content": "你是宠物知识专家，回答要简洁专业"}
+        {"role": "system", "content": system_prompt}
     ]
     
     # 如果有上下文，添加到消息中
@@ -623,10 +623,18 @@ def handle_general_qa(question: str, context: list = None) -> str:
 
 def get_breed_info_from_model(breed: str) -> str:
     """从本地模型获取品种信息（当数据库没有时）"""
-    prompt = f"请介绍一下{breed}犬的特点，包括性格、体型、养护难度等。"
+    prompt = f"""请详细介绍{breed}犬，包括以下方面：
+
+1. **基本特征**：体型、毛色、寿命等
+2. **性格特点**：温顺度、活跃度、智商等
+3. **养护要点**：运动需求、梳理频率、饮食建议
+4. **训练建议**：难易程度、注意事项
+5. **适合人群**：新手/有经验、家庭/单身等
+
+请用清晰的结构呈现，语气友好专业。"""
     
     messages = [
-        {"role": "system", "content": "你是宠物专家"},
+        {"role": "system", "content": "你是宠物专家，提供专业、详细的品种介绍"},
         {"role": "user", "content": prompt}
     ]
     
@@ -744,14 +752,22 @@ def auto_learn_from_answer(question: str, answer: str, question_type: str, feedb
         
         # ===== 优化5: 添加到知识库 =====
         
-        success = kb.add_knowledge(
-            title=title,
-            question=question,
-            answer=answer,
-            category=question_type,
-            confidence=confidence,
-            metadata=metadata  # 添加元数据
-        )
+        # 生成知识键
+        key = f"{question_type}: {keywords}"
+        
+        # 构建知识条目
+        knowledge_item = {
+            "question_patterns": [question],
+            "answer": answer,
+            "category": question_type,
+            "confidence": confidence,
+            "created_at": datetime.now().isoformat(),
+            "usage_count": 0,
+            "source": "auto_learning",
+            **metadata
+        }
+        
+        success = kb.add_knowledge(key, knowledge_item)
         
         if success:
             logger.info(f"✅ 自动学习成功: {title} (置信度: {confidence:.2f})")
