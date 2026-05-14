@@ -1497,25 +1497,38 @@ def get_messages(session_id):
 
 
 @ai_bp.route('/api/ai/sessions/<int:session_id>', methods=['DELETE'])
-@login_required
 def delete_session(session_id):
-    """删除指定会话"""
+    """删除指定会话(硬删除+级联删除消息)"""
     try:
         session = ChatSession.query.get_or_404(session_id)
         
-        # 权限检查
-        if session.user_id != current_user.id:
-            return jsonify({'error': '无权访问'}), 403
+        # 权限检查：支持游客(user_id=None)和登录用户
+        if session.user_id is not None:
+            # 登录用户的会话，需要验证权限
+            try:
+                if not current_user.is_authenticated or session.user_id != current_user.id:
+                    return jsonify({'error': '无权访问'}), 403
+            except Exception:
+                # 未登录用户无法访问登录用户的会话
+                return jsonify({'error': '请先登录'}), 401
+        # 游客会话(user_id=None)，允许删除
         
-        # 软删除（标记为非活跃）
-        session.is_active = False
+        # 先删除该会话下的所有消息
+        deleted_messages = ChatMessage.query.filter_by(
+            session_id=session_id
+        ).delete()
+        
+        # 再删除会话本身
+        db.session.delete(session)
         db.session.commit()
         
-        logger.info(f"删除会话: ID={session_id}, 用户={current_user.username}")
+        username = current_user.username if current_user.is_authenticated else '游客'
+        logger.info(f"删除会话: ID={session_id}, 用户={username}, 删除消息数={deleted_messages}")
         
         return jsonify({
             'success': True,
-            'message': '会话已删除'
+            'message': '会话已删除',
+            'deleted_messages_count': deleted_messages
         })
     except Exception as e:
         db.session.rollback()
