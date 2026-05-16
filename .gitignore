@@ -20,15 +20,24 @@ ENV/
 # AI Assistant Config (Lingma)
 .lingma/
 
+# Test caches
+.pytest_cache/
+Test/__pycache__/
+routes/__pycache__/
+utils/__pycache__/
+scripts/__pycache__/
+api/__pycache__/
+
 # Environment variables（敏感文件，严禁上传）
 .env
 .env.local
 .env.production
 
-# Data files
-*.json
+# Data files (not config/manifest files)
 *.csv
 *.xlsx
+!package.json
+!package-lock.json
 
 # Logs
 *.log

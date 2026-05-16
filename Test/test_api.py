@@ -17,21 +17,20 @@ def test_get_breeds(client):
 
 
 def test_post_breed_requires_auth(client):
-    """未登录时 POST /api/breeds 应返回 400 或 401/403。"""
+    """未登录时 POST /api/breeds 应返回 400 或 401/403（或 302 重定向）。"""
     response = client.post('/api/breeds', json={
         'breed_name': '测试犬',
         'avg_life_years': 12.5,
         'size_category': '中型',
         'popularity': 100
     })
-    # 未登录时，可能返回 400 (JSON 为空) 或 401/403 (认证失败)
-    # 具体取决于应用的实现
-    assert response.status_code in (400, 401, 403)
+    # 未登录时 Flask-Login 返回 302 重定向到登录页（默认行为）
+    assert response.status_code in (302, 400, 401, 403)
 
 def test_post_breed_as_admin(admin_client):
     """管理员可以添加新品种。"""
     new_breed = {
-        'breed_name': '边境牧羊犬',
+        'breed_name': 'TEST_边境牧羊犬',
         'avg_life_years': 14.5,
         'size_category': '中型',
         'popularity': 95
@@ -46,13 +45,13 @@ def test_post_breed_as_admin(admin_client):
     get_resp = admin_client.get(f'/api/breeds/{breed_id}')
     assert get_resp.status_code == 200
     breed_data = get_resp.get_json()
-    assert breed_data['breed_name'] == '边境牧羊犬'
+    assert breed_data['breed_name'] == 'TEST_边境牧羊犬'
 
 def test_update_breed(admin_client):
     """管理员可以更新品种信息。"""
     # 先创建一个
     resp = admin_client.post('/api/breeds', json={
-        'breed_name': '金毛寻回犬',
+        'breed_name': 'TEST_金毛寻回犬',
         'avg_life_years': 12,
         'size_category': '大型',
         'popularity': 90
@@ -60,9 +59,8 @@ def test_update_breed(admin_client):
     breed_id = resp.get_json()['id']
 
     # 更新
-    update_data = {'popularity': 95}
     resp = admin_client.put(f'/api/breeds/{breed_id}', json={
-        'breed_name': '金毛寻回犬',
+        'breed_name': 'TEST_金毛寻回犬',
         'avg_life_years': 12,
         'size_category': '大型',
         'popularity': 95
@@ -78,7 +76,7 @@ def test_delete_breed(admin_client):
     """管理员可以删除品种。"""
     # 创建
     resp = admin_client.post('/api/breeds', json={
-        'breed_name': '柴犬',
+        'breed_name': 'TEST_柴犬',
         'avg_life_years': 13,
         'size_category': '小型',
         'popularity': 80

@@ -58,7 +58,7 @@ class TestUserAuthentication:
         
         try:
             # 先创建一个用户（使用时间戳保证唯一性）
-            unique_username = f'{TEST_PREFIX}duplicate_user_{TIMESTAMP}'
+            unique_username = f'{TEST_PREFIX}dup_{TIMESTAMP}'
             user = User(username=unique_username)
             user.set_password('password123')
             db.session.add(user)

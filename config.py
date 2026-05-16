@@ -111,7 +111,7 @@ config = {
 }
 
 
-def get_config():
+def get_config(config_name=None):
     """根据环境变量获取配置"""
-    env = os.getenv('FLASK_ENV', 'development')
+    env = config_name or os.getenv('FLASK_ENV', 'development')
     return config.get(env, config['default'])

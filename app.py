@@ -68,7 +68,7 @@ def create_app(config_name=None):
         from config_demo import DemoConfig
         app.config.from_object(DemoConfig)
     else:
-        app.config.from_object(get_config())
+        app.config.from_object(get_config(config_name))
     
     # 初始化扩展
     db.init_app(app)

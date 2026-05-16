@@ -36,7 +36,7 @@ class User(UserMixin, db.Model):
         if not username or len(username) < 3 or len(username) > 20:
             return False
         # 允许中文、字母、数字、下划线
-        pattern = r'^[\u4e00-\u9fa5a-zA-Z0-9_]+$'
+        pattern = '^[\u4e00-\u9fa5a-zA-Z0-9_]+$'
         return bool(re.match(pattern, username))
 
 
@@ -48,4 +48,7 @@ class DogBreed(db.Model):
     size_category = db.Column(db.Enum('小型', '中型', '大型', '超大型'))
     popularity = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
+
+    def __repr__(self):
+        return f'<DogBreed {self.breed_name}>'
 

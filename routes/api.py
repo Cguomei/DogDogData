@@ -3,9 +3,20 @@ from flask_login import login_required, current_user
 from models import DogBreed, db
 from sqlalchemy.exc import IntegrityError
 import os
+import sys
+import subprocess
+import re
 from datetime import datetime
 import pandas as pd
 from sqlalchemy import text
+
+try:
+    import psutil
+    HAS_PSUTIL = True
+except ImportError:
+    HAS_PSUTIL = False
+
+APP_VERSION = 'v4.9.17'
 
 api_bp = Blueprint('api', __name__)
 
@@ -14,24 +25,21 @@ api_bp = Blueprint('api', __name__)
 def save_pet_logs():
     """保存宠物日志到 log 文件夹"""
     try:
-        # 确保 log 文件夹存在
         log_dir = os.path.join(os.path.dirname(__file__), '..', 'log')
         os.makedirs(log_dir, exist_ok=True)
-        
-        # 解析日志内容
+
         content = request.data.decode('utf-8')
         lines = content.split('\n')
-        session = lines[0].replace('session=', '') if lines else 'unknown'
-        
-        # 生成文件名
+        raw_session = lines[0].replace('session=', '') if lines else 'unknown'
+        session = re.sub(r'[^a-zA-Z0-9_-]', '', raw_session)[:64] or 'unknown'
+
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f'pet_log_{session}_{timestamp}.txt'
         filepath = os.path.join(log_dir, filename)
-        
-        # 保存日志
+
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(content)
-        
+
         return jsonify({'success': True, 'filename': filename})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -566,21 +574,12 @@ def test_pet_alpine_page():
 @api_bp.route('/api/restart', methods=['POST'])
 def api_restart():
     """API: 重启应用（需要管理员权限）"""
-    from flask_login import current_user
-    
-    # 添加管理员权限检查
     if not current_user.is_authenticated or not current_user.is_admin():
         return jsonify({'success': False, 'message': '权限不足'}), 403
-    
-    import subprocess
-    import sys
+
     try:
-        # 获取当前脚本路径
         script_path = sys.argv[0]
-        # 启动新进程
         subprocess.Popen([sys.executable, script_path])
-        # 当前进程退出
-        os._exit(0)
         return jsonify({'success': True, 'message': '应用正在重启...'})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -704,37 +703,34 @@ def get_charts_list():
 @api_bp.route('/api/health')
 def health_check():
     """健康检查接口（供监控系统调用）"""
-    import sys
-    import psutil
-    
     try:
-        # 检查数据库连接
         db.session.execute(text('SELECT 1'))
         db_status = 'ok'
     except Exception as e:
         db_status = f'error: {str(e)}'
-    
-    # 检查系统资源
-    try:
-        memory = psutil.virtual_memory()
-        cpu_percent = psutil.cpu_percent(interval=0.1)
-        
-        system_info = {
-            'memory_usage_percent': memory.percent,
-            'cpu_usage_percent': cpu_percent,
-            'available_memory_mb': memory.available / (1024 * 1024)
-        }
-    except Exception:
-        system_info = {'status': 'unavailable'}
-    
-    # 判断整体状态
+
+    if HAS_PSUTIL:
+        try:
+            memory = psutil.virtual_memory()
+            cpu_percent = psutil.cpu_percent(interval=0.1)
+            system_info = {
+                'status': 'ok',
+                'memory_usage_percent': memory.percent,
+                'cpu_usage_percent': cpu_percent,
+                'available_memory_mb': memory.available / (1024 * 1024)
+            }
+        except Exception:
+            system_info = {'status': 'unavailable'}
+    else:
+        system_info = {'status': 'psutil not installed'}
+
     is_healthy = db_status == 'ok'
     status_code = 200 if is_healthy else 503
-    
+
     return jsonify({
         'status': 'healthy' if is_healthy else 'unhealthy',
         'timestamp': datetime.utcnow().isoformat(),
-        'version': 'v4.6.6',
+        'version': APP_VERSION,
         'python_version': sys.version,
         'checks': {
             'database': db_status,

@@ -6,11 +6,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 try:
-    from app import app as flask_app
-    from app import db as _db
+    from app import create_app, db as _db
     from models import User
-    from sqlalchemy import create_engine
-    from sqlalchemy.orm import sessionmaker, scoped_session
 except ImportError as e:
     # 如果导入失败，提供更友好的错误信息
     print(f"导入失败: {e}")
@@ -19,17 +16,12 @@ except ImportError as e:
 
 @pytest.fixture(scope='session')
 def app():
-    """创建测试用的 Flask 应用实例，使用独立的测试数据库配置。"""
-    # 从环境变量读取数据库配置，但可以指定一个测试数据库（例如 dog_test）
-    # 如果不想创建测试数据库，可以保留原库，但下面的事务回滚机制会保证数据不被污染
-    test_db_name = os.getenv('TEST_DB_NAME', 'dog_test')  # 建议新建一个测试库
-    flask_app.config.update({
-        'TESTING': True,
-        'SQLALCHEMY_DATABASE_URI': f"mysql+pymysql://{os.getenv('DB_USER', 'root')}:{os.getenv('DB_PASSWORD', '123456')}@{os.getenv('DB_HOST', 'localhost')}/{test_db_name}",
-        'SQLALCHEMY_TRACK_MODIFICATIONS': False,
-        'WTF_CSRF_ENABLED': False,  # 禁用 CSRF 保护以便测试
-        # 如果你不想新建库，可以注释掉上面两行，使用原库但依赖事务回滚
-    })
+    """创建测试用的 Flask 应用实例。"""
+    os.environ['FLASK_ENV'] = 'development'
+    flask_app = create_app('development')
+    # 禁用 CSRF 以便测试
+    flask_app.config['WTF_CSRF_ENABLED'] = False
+    flask_app.config['TESTING'] = True
     yield flask_app
 
 @pytest.fixture
@@ -60,11 +52,12 @@ def session(db, request):
     options = dict(bind=connection)
     session = db._make_scoped_session(options=options)
     
-    # 用 session 替换全局 db.session
+    # 保存原始 db.session，用事务 session 替换
+    original_session = db.session
     db.session = session
     
     def teardown():
-        # 清理带有TEST_前缀的测试数据
+        # 清理带有TEST_前缀的测试数据（使用事务 session，此时 db.session 仍指向它）
         try:
             from models import User, DogBreed
             # 删除测试用户
@@ -85,6 +78,8 @@ def session(db, request):
         transaction.rollback()
         connection.close()
         session.remove()
+        # 最后恢复原始 db.session
+        db.session = original_session
     
     request.addfinalizer(teardown)
     return session
@@ -108,46 +103,19 @@ def create_test_users(app, db):
             print(f"⚠️ 清理无效会话时出错: {e}")
             db.session.rollback()
         
-        # 先尝试删除旧的测试用户及其相关数据（如果存在）
-        from models_extended import ChatSession, ChatMessage, Feedback
+        # 只在用户不存在时创建，避免 delete+recreate 的并发/事务问题
+        if not User.query.filter_by(username='user').first():
+            # noinspection PyArgumentList
+            user = User(username='user')
+            user.set_password('123456')  # 至少 6 位
+            db.session.add(user)
         
-        old_user = User.query.filter_by(username='user').first()
-        if old_user:
-            # 先删除该用户的反馈
-            Feedback.query.filter_by(user_id=old_user.id).delete()
-            # 先删除该用户的聊天会话和消息
-            sessions = ChatSession.query.filter_by(user_id=old_user.id).all()
-            for session in sessions:
-                # 删除会话的消息
-                ChatMessage.query.filter_by(session_id=session.id).delete()
-                db.session.delete(session)
-            db.session.delete(old_user)
-        
-        old_admin = User.query.filter_by(username='admin').first()
-        if old_admin:
-            # 先删除该用户的反馈
-            Feedback.query.filter_by(user_id=old_admin.id).delete()
-            # 先删除该用户的聊天会话和消息
-            sessions = ChatSession.query.filter_by(user_id=old_admin.id).all()
-            for session in sessions:
-                # 删除会话的消息
-                ChatMessage.query.filter_by(session_id=session.id).delete()
-                db.session.delete(session)
-            db.session.delete(old_admin)
-        
-        db.session.commit()
-        
-        # 创建新的测试用户
-        # noinspection PyArgumentList
-        user = User(username='user')
-        user.set_password('123456')  # 至少 6 位
-        db.session.add(user)
-        
-        # noinspection PyArgumentList
-        # 编辑器忽略此行检查
-        admin = User(username='admin', role='admin')
-        admin.set_password('123456')
-        db.session.add(admin)
+        if not User.query.filter_by(username='admin').first():
+            # noinspection PyArgumentList
+            # 编辑器忽略此行检查
+            admin = User(username='admin', role='admin')
+            admin.set_password('123456')
+            db.session.add(admin)
         
         db.session.commit()
 

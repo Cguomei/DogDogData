@@ -11,14 +11,14 @@ class TestUserModel:
     """用户模型测试类"""
     
     @test_case('TC-MODEL-USER-001', priority='High', expected='密码正确加密')
-    def test_password_hashing(self, app, db):
+    def test_password_hashing(self, app, db, session):
         """测试密码加密"""
         result = TestResult('TC-MODEL-USER-001', 'test_password_hash', '模型 - 用户', 'High')
         result.expected_result = '密码被哈希加密存储'
-        
+
         try:
             with app.app_context():
-                user = User(username='password_test')
+                user = User(username='TEST_password_test')
                 user.set_password('plain_password')
                 db.session.add(user)
                 db.session.commit()
@@ -51,7 +51,7 @@ class TestUserModel:
             valid_usernames = [
                 'user123',
                 'test_user',
-                '张三',
+                '张三丰',
                 '用户_001',
                 'TestUser2026'
             ]
@@ -101,21 +101,21 @@ class TestUserModel:
             test_manager.record_result(result)
     
     @test_case('TC-MODEL-USER-004', priority='Medium', expected='管理员权限判断正确')
-    def test_is_admin(self, app, db):
+    def test_is_admin(self, app, db, session):
         """测试管理员权限判断"""
         result = TestResult('TC-MODEL-USER-004', 'test_is_admin', '模型 - 用户', 'Medium')
         result.expected_result = '正确识别管理员'
-        
+
         try:
             with app.app_context():
                 # 创建普通用户
-                user1 = User(username='normal_user')
-                user1.set_password('123')
+                user1 = User(username='TEST_normal_user')
+                user1.set_password('123456')
                 db.session.add(user1)
-                
+
                 # 创建管理员
-                user2 = User(username='admin_user', role='admin')
-                user2.set_password('123')
+                user2 = User(username='TEST_admin_user', role='admin')
+                user2.set_password('123456')
                 db.session.add(user2)
                 db.session.commit()
                 
@@ -137,15 +137,15 @@ class TestDogBreedModel:
     """品种模型测试类"""
     
     @test_case('TC-MODEL-BREED-001', priority='Medium', expected='创建品种成功')
-    def test_create_breed(self, app, db):
+    def test_create_breed(self, app, db, session):
         """创建品种记录"""
         result = TestResult('TC-MODEL-BREED-001', 'test_create_breed', '模型 - 品种', 'Medium')
         result.expected_result = '成功创建品种记录'
-        
+
         try:
             with app.app_context():
                 breed = DogBreed(
-                    breed_name='测试犬种',
+                    breed_name='TEST_测试犬种',
                     avg_life_years=12.5,
                     size_category='中型',
                     popularity=80
@@ -154,7 +154,7 @@ class TestDogBreedModel:
                 db.session.commit()
                 
                 assert breed.id is not None
-                assert breed.breed_name == '测试犬种'
+                assert breed.breed_name == 'TEST_测试犬种'
                 assert float(breed.avg_life_years) == 12.5
                 
                 result.status = 'PASS'
@@ -168,15 +168,15 @@ class TestDogBreedModel:
             test_manager.record_result(result)
     
     @test_case('TC-MODEL-BREED-002', priority='Low', expected='可选字段可以为空')
-    def test_optional_fields_null(self, app, db):
+    def test_optional_fields_null(self, app, db, session):
         """测试可选字段为空"""
         result = TestResult('TC-MODEL-BREED-002', 'test_breed_null_fields', '模型 - 品种', 'Low')
         result.expected_result = '平均寿命、体型、人气值可以为空'
-        
+
         try:
             with app.app_context():
                 breed = DogBreed(
-                    breed_name='极简犬种'
+                    breed_name='TEST_极简犬种'
                     # 其他字段都不填
                 )
                 db.session.add(breed)
@@ -197,14 +197,14 @@ class TestDogBreedModel:
             test_manager.record_result(result)
     
     @test_case('TC-MODEL-BREED-003', priority='Medium', expected='品种字符串表示正确')
-    def test_breed_repr(self, app, db):
+    def test_breed_repr(self, app, db, session):
         """测试品种的字符串表示"""
         result = TestResult('TC-MODEL-BREED-003', 'test_breed_repr', '模型 - 品种', 'Medium')
         result.expected_result = '__repr__返回正确的格式'
-        
+
         try:
             with app.app_context():
-                breed = DogBreed(breed_name=' repr 测试犬')
+                breed = DogBreed(breed_name='TEST_repr 测试犬')
                 db.session.add(breed)
                 db.session.commit()
                 
@@ -227,23 +227,23 @@ class TestDataIntegrity:
     """数据完整性测试"""
     
     @test_case('TC-INTEGRITY-001', priority='High', expected='用户名唯一性约束生效')
-    def test_username_uniqueness(self, app, db):
+    def test_username_uniqueness(self, app, db, session):
         """测试用户名唯一性"""
         result = TestResult('TC-INTEGRITY-001', 'test_username_unique', '数据完整性', 'High')
         result.expected_result = '拒绝重复用户名'
-        
+
         try:
             with app.app_context():
                 from sqlalchemy.exc import IntegrityError
-                
-                user1 = User(username='unique_test')
-                user1.set_password('123')
+
+                user1 = User(username='TEST_unique_test')
+                user1.set_password('123456')
                 db.session.add(user1)
                 db.session.commit()
                 
                 # 尝试创建同名用户
-                user2 = User(username='unique_test')
-                user2.set_password('456')
+                user2 = User(username='TEST_unique_test')
+                user2.set_password('123456')
                 db.session.add(user2)
                 
                 # 应该抛出完整性错误
@@ -263,21 +263,21 @@ class TestDataIntegrity:
             test_manager.record_result(result)
     
     @test_case('TC-INTEGRITY-002', priority='High', expected='品种名唯一性约束生效')
-    def test_breed_name_uniqueness(self, app, db):
+    def test_breed_name_uniqueness(self, app, db, session):
         """测试品种名唯一性"""
         result = TestResult('TC-INTEGRITY-002', 'test_breed_name_unique', '数据完整性', 'High')
         result.expected_result = '拒绝重复品种名'
-        
+
         try:
             with app.app_context():
                 from sqlalchemy.exc import IntegrityError
-                
-                breed1 = DogBreed(breed_name='唯一测试犬')
+
+                breed1 = DogBreed(breed_name='TEST_唯一测试犬')
                 db.session.add(breed1)
                 db.session.commit()
                 
                 # 尝试创建同名品种
-                breed2 = DogBreed(breed_name='唯一测试犬')
+                breed2 = DogBreed(breed_name='TEST_唯一测试犬')
                 db.session.add(breed2)
                 
                 # 应该抛出完整性错误
