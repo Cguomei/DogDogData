@@ -74,7 +74,10 @@ def create_app(config_name=None):
     db.init_app(app)
     login_manager.init_app(app)
     cache.init_app(app)
-    scheduler.init_app(app)
+
+    # 只在首次初始化scheduler
+    if not scheduler.running:
+        scheduler.init_app(app)
     
     # 设置 localeselector (Flask-Babel 4.0+ 使用新 API)
     def get_locale():
@@ -190,35 +193,26 @@ def create_app(config_name=None):
 def start_scheduler(app):
     """启动定时任务"""
     global _scheduler_started
-    
-    # 如果调度器已经启动，跳过
-    if _scheduler_started:
+
+    # 如果调度器已经在运行，跳过
+    if scheduler.running:
         return
-    
+
     try:
         with app.app_context():
-            # 检查调度器是否已经在运行
-            if not scheduler.running:
-                scheduler.add_job(
-                    id='update_summary',
-                    func=lambda: update_dashboard_summary(),
-                    trigger='interval',
-                    hours=6,
-                    replace_existing=True
-                )
-                scheduler.start()
-                _scheduler_started = True
+            scheduler.add_job(
+                id='update_summary',
+                func=lambda: update_dashboard_summary(),
+                trigger='interval',
+                hours=6,
+                replace_existing=True
+            )
+            scheduler.start()
+            _scheduler_started = True
     except Exception as e:
-        # 如果调度器启动失败，记录错误但不中断应用启动
         print(f"调度器启动警告: {e}")
 
 
-# 创建应用实例（仅在非测试环境中自动创建）
-if not os.getenv('TESTING') and not os.getenv('FLASK_ENV') == 'demo':
-    app = create_app()
-else:
-    app = None
-
-
 if __name__ == '__main__':
+    app = create_app()
     app.run(host='0.0.0.0', port=5000, debug=True)
