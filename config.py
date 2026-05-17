@@ -3,6 +3,8 @@
 集中管理应用配置，支持多环境切换
 """
 import os
+import secrets
+import warnings
 from dotenv import load_dotenv
 
 # 加载 .env 文件
@@ -11,8 +13,17 @@ load_dotenv()
 class Config:
     """基础配置类"""
     
-    # Flask 核心配置
-    SECRET_KEY = os.getenv('SECRET_KEY', 'your-secret-key-change-in-production')
+    # Flask 核心配置 — 生产环境务必从环境变量设置
+    _secret_key = os.getenv('SECRET_KEY')
+    if _secret_key:
+        SECRET_KEY = _secret_key
+    else:
+        SECRET_KEY = secrets.token_hex(32)
+        warnings.warn(
+            "SECRET_KEY 未设置，已自动生成随机密钥。"
+            "生产环境必须通过环境变量 SECRET_KEY 设置固定值！",
+            RuntimeWarning
+        )
     
     # 数据库配置
     DB_USER = os.getenv('DB_USER', 'doguser')
@@ -52,7 +63,16 @@ class Config:
     }
     
     # JWT 配置（为 APP 预留）
-    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'jwt-secret-key-change-in-production')
+    _jwt_secret = os.getenv('JWT_SECRET_KEY')
+    if _jwt_secret:
+        JWT_SECRET_KEY = _jwt_secret
+    else:
+        JWT_SECRET_KEY = secrets.token_hex(32)
+        warnings.warn(
+            "JWT_SECRET_KEY 未设置，已自动生成随机密钥。"
+            "生产环境必须通过环境变量 JWT_SECRET_KEY 设置固定值！",
+            RuntimeWarning
+        )
     JWT_ACCESS_TOKEN_EXPIRES = 3600  # 1 小时
     JWT_REFRESH_TOKEN_EXPIRES = 86400 * 7  # 7 天
     
@@ -96,10 +116,10 @@ class ProductionConfig(Config):
     
 
 class TestingConfig(Config):
-    """测试环境配置"""
+    """测试环境配置（事务回滚隔离，无需独立数据库）"""
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = f'{Config.SQLALCHEMY_DATABASE_URI}_test'
     WTF_CSRF_ENABLED = False
+    SQLALCHEMY_ECHO = False
     
 
 # 配置字典

@@ -7,6 +7,7 @@ from flask import Flask, request
 from flask_caching import Cache
 from flask_login import LoginManager
 from flask_apscheduler import APScheduler
+from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
 from flask_babel import Babel
 from prometheus_flask_exporter import PrometheusMetrics
@@ -72,6 +73,7 @@ def create_app(config_name=None):
     
     # 初始化扩展
     db.init_app(app)
+    Migrate(app, db)  # 数据库迁移（Alembic）
     login_manager.init_app(app)
     cache.init_app(app)
 

@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify, render_template
-from flask_login import login_required, current_user
+from flask_login import current_user
+from utils.auth import login_required_api
 from models import DogBreed, db
 from sqlalchemy.exc import IntegrityError
 import os
@@ -264,7 +265,7 @@ def get_breed(id):
     })
 
 @api_bp.route('/api/breeds', methods=['POST'])
-@login_required
+@login_required_api
 def add_breed():
     """添加新的狗狗品种（需要管理员权限）"""
     # 检查管理员权限
@@ -302,7 +303,7 @@ def add_breed():
         return jsonify({"error": f"添加失败：{str(e)}"}), 500
 
 @api_bp.route('/api/breeds/<int:id>', methods=['PUT'])
-@login_required
+@login_required_api
 def update_breed(id):
     """更新狗狗品种信息（需要管理员权限）"""
     # 检查管理员权限
@@ -347,7 +348,7 @@ def update_breed(id):
         return jsonify({"error": f"更新失败：{str(e)}"}), 500
 
 @api_bp.route('/api/breeds/<int:id>', methods=['DELETE'])
-@login_required
+@login_required_api
 def delete_breed(id):
     """删除狗狗品种（需要管理员权限）"""
     # 检查管理员权限

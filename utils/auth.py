@@ -79,6 +79,16 @@ def token_required(f):
     return decorated
 
 
+def _get_jwt_secret():
+    """安全获取 JWT_SECRET_KEY，避免在应用上下文外调用时崩溃。"""
+    try:
+        return current_app.config['JWT_SECRET_KEY']
+    except RuntimeError:
+        raise RuntimeError(
+            "generate_token / refresh_access_token 必须在 Flask 应用上下文中调用"
+        )
+
+
 def generate_token(user_id, expires_in=3600):
     """
     生成 JWT Token（为 APP 预留）
@@ -90,6 +100,8 @@ def generate_token(user_id, expires_in=3600):
     Returns:
         access_token, refresh_token
     """
+    secret = _get_jwt_secret()
+    
     # Access Token
     access_payload = {
         'user_id': user_id,
@@ -100,7 +112,7 @@ def generate_token(user_id, expires_in=3600):
     
     access_token = jwt.encode(
         access_payload,
-        current_app.config['JWT_SECRET_KEY'],
+        secret,
         algorithm='HS256'
     )
     
@@ -114,7 +126,7 @@ def generate_token(user_id, expires_in=3600):
     
     refresh_token = jwt.encode(
         refresh_payload,
-        current_app.config['JWT_SECRET_KEY'],
+        secret,
         algorithm='HS256'
     )
     
@@ -134,7 +146,7 @@ def refresh_access_token(refresh_token_str):
     try:
         data = jwt.decode(
             refresh_token_str,
-            current_app.config['JWT_SECRET_KEY'],
+            _get_jwt_secret(),
             algorithms=['HS256']
         )
         
@@ -176,5 +188,4 @@ def login_required_api(f):
     return decorated
 
 
-# 需要导入的模块
-from flask import current_app
+

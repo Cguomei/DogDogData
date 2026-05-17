@@ -16,12 +16,8 @@ except ImportError as e:
 
 @pytest.fixture(scope='session')
 def app():
-    """创建测试用的 Flask 应用实例。"""
-    os.environ['FLASK_ENV'] = 'development'
-    flask_app = create_app('development')
-    # 禁用 CSRF 以便测试
-    flask_app.config['WTF_CSRF_ENABLED'] = False
-    flask_app.config['TESTING'] = True
+    """创建测试用的 Flask 应用实例（TestingConfig + 事务回滚隔离）。"""
+    flask_app = create_app('testing')
     yield flask_app
 
 @pytest.fixture
