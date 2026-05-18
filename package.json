@@ -1,0 +1,26 @@
+{
+  "name": "fastapiproject",
+  "version": "1.0.0",
+  "description": "> 基于 Flask 的数据可视化平台 | **最新版本 v4.2.0** 🎉",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Cguomei/FastApiProject.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Cguomei/FastApiProject/issues"
+  },
+  "homepage": "https://github.com/Cguomei/FastApiProject#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^25.6.2"
+  }
+}

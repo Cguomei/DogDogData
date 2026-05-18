@@ -1,6 +1,7 @@
 """
 添加AI对话历史表的数据库迁移脚本
 """
+
 import sys
 import os
 
@@ -15,10 +16,10 @@ from sqlalchemy import text
 def upgrade():
     """执行升级"""
     app = create_app()
-    
+
     with app.app_context():
         print("🔄 开始添加AI对话历史表...")
-        
+
         # 创建 chat_sessions 表
         print("📝 创建 chat_sessions 表...")
         db.session.execute(text("""
@@ -35,7 +36,7 @@ def upgrade():
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         """))
-        
+
         # 创建 chat_messages 表
         print("📝 创建 chat_messages 表...")
         db.session.execute(text("""
@@ -54,7 +55,7 @@ def upgrade():
                 FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         """))
-        
+
         db.session.commit()
         print("✅ 数据库迁移完成！")
         print("   - chat_sessions 表已创建")
@@ -64,20 +65,20 @@ def upgrade():
 def downgrade():
     """执行回滚"""
     app = create_app()
-    
+
     with app.app_context():
         print("⚠️  开始回滚...")
-        
+
         # 删除表（注意顺序）
         db.session.execute(text("DROP TABLE IF EXISTS chat_messages"))
         db.session.execute(text("DROP TABLE IF EXISTS chat_sessions"))
-        
+
         db.session.commit()
         print("✅ 回滚完成！")
 
 
-if __name__ == '__main__':
-    if len(sys.argv) > 1 and sys.argv[1] == 'downgrade':
+if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1] == "downgrade":
         downgrade()
     else:
         upgrade()

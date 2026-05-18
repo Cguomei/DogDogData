@@ -2,6 +2,7 @@
 直接导入并运行测试用例
 完全绕过 pytest 命令行和 allure 插件
 """
+
 import sys
 import json
 from datetime import datetime
@@ -11,12 +12,12 @@ from importlib import import_module
 
 class TestRunner:
     """简单的测试运行器"""
-    
+
     def __init__(self):
         self.results = []
         self.start_time = None
         self.end_time = None
-        
+
     def run_test(self, test_module, test_class, test_method):
         """运行单个测试方法"""
         try:
@@ -26,23 +27,23 @@ class TestRunner:
             cls = getattr(module, test_class)
             # 获取方法
             method = getattr(cls, test_method)
-            
+
             # 创建实例并运行
             instance = cls()
             method()
-            
+
             return {
-                'status': 'PASS',
-                'test': f'{test_module}.{test_class}.{test_method}',
-                'error': None
+                "status": "PASS",
+                "test": f"{test_module}.{test_class}.{test_method}",
+                "error": None,
             }
         except Exception as e:
             return {
-                'status': 'FAIL',
-                'test': f'{test_module}.{test_class}.{test_method}',
-                'error': str(e)
+                "status": "FAIL",
+                "test": f"{test_module}.{test_class}.{test_method}",
+                "error": str(e),
             }
-    
+
     def run_all_tests(self):
         """运行所有测试"""
         print("=" * 80)
@@ -50,74 +51,81 @@ class TestRunner:
         print("=" * 80)
         print(f"开始时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         print()
-        
+
         self.start_time = datetime.now()
-        
+
         # 定义要运行的测试
         tests_to_run = [
             # 认证测试
-            ('Test.test_auth', 'TestUserAuthentication', 'test_register_success'),
-            ('Test.test_auth', 'TestUserAuthentication', 'test_login_success'),
-            ('Test.test_auth', 'TestUserAuthentication', 'test_logout'),
-            
+            ("Test.test_auth", "TestUserAuthentication", "test_register_success"),
+            ("Test.test_auth", "TestUserAuthentication", "test_login_success"),
+            ("Test.test_auth", "TestUserAuthentication", "test_logout"),
             # 品种管理测试
-            ('Test.test_breed', 'TestBreedManagement', 'test_get_breeds_list'),
+            ("Test.test_breed", "TestBreedManagement", "test_get_breeds_list"),
         ]
-        
+
         total = len(tests_to_run)
         passed = 0
         failed = 0
-        
+
         for i, (module, cls, method) in enumerate(tests_to_run, 1):
-            print(f"[{i}/{total}] 运行 {module}.{cls}.{method}...", end=' ')
+            print(f"[{i}/{total}] 运行 {module}.{cls}.{method}...", end=" ")
             result = self.run_test(module, cls, method)
             self.results.append(result)
-            
-            if result['status'] == 'PASS':
+
+            if result["status"] == "PASS":
                 print("✅ PASS")
                 passed += 1
             else:
                 print(f"❌ FAIL: {result['error']}")
                 failed += 1
-        
+
         self.end_time = datetime.now()
         duration = (self.end_time - self.start_time).total_seconds()
-        
+
         print()
         print("=" * 80)
         print(f"总计：{total} | ✅ 通过：{passed} | ❌ 失败：{failed}")
         print(f"耗时：{duration:.2f}秒")
         print("=" * 80)
-        
+
         return passed == total
-    
+
     def save_report(self):
         """保存测试报告"""
-        report_dir = Path('Test/reports')
+        report_dir = Path("Test/reports")
         report_dir.mkdir(exist_ok=True)
-        
+
         report = {
-            'summary': {
-                'total': len(self.results),
-                'passed': sum(1 for r in self.results if r['status'] == 'PASS'),
-                'failed': sum(1 for r in self.results if r['status'] == 'FAIL'),
-                'duration': (self.end_time - self.start_time).total_seconds() if self.end_time else 0
+            "summary": {
+                "total": len(self.results),
+                "passed": sum(1 for r in self.results if r["status"] == "PASS"),
+                "failed": sum(1 for r in self.results if r["status"] == "FAIL"),
+                "duration": (
+                    (self.end_time - self.start_time).total_seconds()
+                    if self.end_time
+                    else 0
+                ),
             },
-            'results': self.results,
-            'timestamp': datetime.now().isoformat()
+            "results": self.results,
+            "timestamp": datetime.now().isoformat(),
         }
-        
-        report_file = report_dir / f'test_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
-        with open(report_file, 'w', encoding='utf-8') as f:
+
+        report_file = (
+            report_dir / f'test_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
+        )
+        with open(report_file, "w", encoding="utf-8") as f:
             json.dump(report, f, ensure_ascii=False, indent=2)
-        
+
         print(f"\n📄 测试报告已保存：{report_file}")
-        
+
         # 生成 HTML 报告
-        html_file = report_dir / f'test_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.html'
+        html_file = (
+            report_dir / f'test_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.html'
+        )
         self.generate_html(report, html_file)
         print(f"📄 HTML 报告已保存：{html_file}")
-    
+
     def generate_html(self, report, filename):
         """生成简单的 HTML 报告"""
         html = f"""<!DOCTYPE html>
@@ -162,11 +170,11 @@ class TestRunner:
                 <th>错误信息</th>
             </tr>
 """
-        
-        for i, result in enumerate(report['results'], 1):
-            status_class = 'pass' if result['status'] == 'PASS' else 'fail'
-            status_icon = '✅' if result['status'] == 'PASS' else '❌'
-            
+
+        for i, result in enumerate(report["results"], 1):
+            status_class = "pass" if result["status"] == "PASS" else "fail"
+            status_icon = "✅" if result["status"] == "PASS" else "❌"
+
             html += f"""
             <tr>
                 <td>{i}</td>
@@ -175,19 +183,19 @@ class TestRunner:
                 <td>{result.get('error', '-') or '-'}</td>
             </tr>
 """
-        
+
         html += """
         </table>
     </div>
 </body>
 </html>
 """
-        
-        with open(filename, 'w', encoding='utf-8') as f:
+
+        with open(filename, "w", encoding="utf-8") as f:
             f.write(html)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     runner = TestRunner()
     success = runner.run_all_tests()
     runner.save_report()

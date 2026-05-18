@@ -1,6 +1,8 @@
 """创建对话历史表"""
+
 import sys
-sys.path.insert(0, '.')
+
+sys.path.insert(0, ".")
 
 from models import db
 from app import app

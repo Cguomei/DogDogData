@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据爬取管理 - 狗狗数据分析系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .crawler-card {
+            border-left: 4px solid #0d6efd;
+            transition: transform 0.2s;
+        }
+        .crawler-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .stats-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .log-container {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Courier New', monospace;
+            padding: 15px;
+            border-radius: 5px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+        .progress-bar-animated {
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    {% extends "base.html" %}
+    
+    {% block title %}数据爬取管理 - 狗狗数据分析{% endblock %}
+    
+    {% block content %}
+    <div class="container mt-4">
+        <!-- 页面标题 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2>🕷️ 数据爬取管理</h2>
+                <p class="text-muted">从公开数据源自动获取狗狗品种信息（无需登录）</p>
+            </div>
+        </div>
+        
+        <!-- 统计卡片 -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stats-box" id="freshness-card">
+                    <h5>数据状态</h5>
+                    <h2 id="data-status">-</h2>
+                    <small id="freshness-message">加载中...</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-box">
+                    <h5>总数据量</h5>
+                    <h2 id="total-count">-</h2>
+                    <small>条记录</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-box" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <h5>品种数量</h5>
+                    <h2 id="unique-breeds">-</h2>
+                    <small>个品种</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-box" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <h5>平均价格</h5>
+                    <h2 id="avg-price">-</h2>
+                    <small>元</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 爬取控制面板 -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card crawler-card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">🚀 启动爬取任务</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="crawler-form">
+                            <div class="mb-3">
+                                <label for="keyword" class="form-label">搜索关键词</label>
+                                <input type="text" class="form-control" id="keyword" value="宠物狗" 
+                                       placeholder="例如：宠物狗、泰迪、金毛">
+                                <small class="text-muted">建议关键词：宠物狗、泰迪犬、金毛寻回犬等（用于过滤品种）</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="max-pages" class="form-label">爬取品种数量 (1-10)</label>
+                                <input type="number" class="form-control" id="max-pages" value="3" 
+                                       min="1" max="10">
+                                <small class="text-muted">每个品种会生成多个来源的数据，建议3-5个品种</small>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary w-100" id="start-btn">
+                                <span class="spinner-border spinner-border-sm d-none" id="loading-spinner"></span>
+                                <span id="btn-text">开始爬取</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- 进度显示 -->
+                <div class="card mt-3 d-none" id="progress-card">
+                    <div class="card-header">
+                        <h6 class="mb-0">⏳ 爬取进度</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="progress mb-2">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 role="progressbar" id="progress-bar" style="width: 0%"></div>
+                        </div>
+                        <p class="mb-0 text-muted" id="progress-text">准备中...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">📊 TOP10 热门品种</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>排名</th>
+                                        <th>品种</th>
+                                        <th>数量</th>
+                                        <th>均价</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="top-breeds-table">
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted">加载中...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 爬取日志 -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">📝 爬取日志</h5>
+                        <button class="btn btn-sm btn-outline-light" onclick="clearLogs()">清空</button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="log-container" id="log-container">
+                            <div class="text-muted">等待爬取任务...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function escapeHtml(text) { if (text == null) return ''; var d = document.createElement('div'); d.textContent = String(text); return d.innerHTML; }
+        // 状态颜色映射
+        const statusColors = {
+            'fresh': '#43e97b',
+            'warning': '#ffc107',
+            'stale': '#ff6b6b',
+            'critical': '#f5576c',
+            'no_data': '#6c757d',
+            'error': '#dc3545'
+        };
+        
+        const statusLabels = {
+            'fresh': '✅ 新鲜',
+            'warning': '⚠️ 即将过期',
+            'stale': '❌ 已过期',
+            'critical': '🔴 严重过期',
+            'no_data': '📭 无数据',
+            'error': '❗ 错误'
+        };
+        
+        // 加载统计数据
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/crawler/stats');
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('total-count').textContent = data.stats.total_count || '-';
+                    document.getElementById('unique-breeds').textContent = data.stats.unique_breeds || '-';
+                    document.getElementById('avg-price').textContent = data.stats.avg_price ? `¥${data.stats.avg_price}` : '-';
+                    
+                    // 更新TOP10表格
+                    updateTopBreedsTable(data.top_breeds);
+                }
+            } catch (error) {
+                console.error('加载统计失败:', error);
+            }
+        }
+        
+        // 加载数据新鲜度
+        async function loadFreshness() {
+            try {
+                const response = await fetch('/api/data/freshness');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const freshness = data.freshness;
+                    const statusCard = document.getElementById('freshness-card');
+                    const statusText = document.getElementById('data-status');
+                    const messageText = document.getElementById('freshness-message');
+                    
+                    // 更新状态显示
+                    statusText.textContent = statusLabels[freshness.status] || freshness.status;
+                    messageText.textContent = freshness.message;
+                    
+                    // 更新卡片颜色
+                    const color = statusColors[freshness.status] || '#6c757d';
+                    statusCard.style.background = `linear-gradient(135deg, ${color} 0%, ${adjustColor(color, -20)} 100%)`;
+                    
+                    // 如果数据过期，显示警告
+                    if (['stale', 'critical'].includes(freshness.status)) {
+                        addLog(`⚠️ ${freshness.recommendation}`, 'warning');
+                    }
+                }
+            } catch (error) {
+                console.error('加载新鲜度失败:', error);
+            }
+        }
+        
+        // 辅助函数：调整颜色亮度
+        function adjustColor(color, amount) {
+            return color; // 简化版，实际可以使用更复杂的颜色调整逻辑
+        }
+        
+        // 更新TOP10表格
+        function updateTopBreedsTable(breeds) {
+            const tbody = document.getElementById('top-breeds-table');
+            
+            if (!breeds || breeds.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">暂无数据</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = breeds.map((breed, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${escapeHtml(breed.breed)}</td>
+                    <td>${escapeHtml(breed.count)}</td>
+                    <td>¥${escapeHtml(breed.avg_price)}</td>
+                </tr>
+            `).join('');
+        }
+        
+        // 添加日志
+        function addLog(message, type = 'info') {
+            const container = document.getElementById('log-container');
+            const timestamp = new Date().toLocaleTimeString('zh-CN');
+            const colors = {
+                'info': '#4facfe',
+                'success': '#43e97b',
+                'warning': '#ffc107',
+                'error': '#f5576c'
+            };
+            
+            const logEntry = document.createElement('div');
+            logEntry.style.color = colors[type] || '#d4d4d4';
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            
+            container.appendChild(logEntry);
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        // 清空日志
+        function clearLogs() {
+            document.getElementById('log-container').innerHTML = '<div class="text-muted">日志已清空</div>';
+        }
+        
+        // 启动爬取
+        document.getElementById('crawler-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const keyword = document.getElementById('keyword').value;
+            const maxPages = parseInt(document.getElementById('max-pages').value);
+            
+            // 验证
+            if (!keyword) {
+                alert('请输入搜索关键词');
+                return;
+            }
+            
+            if (maxPages < 1 || maxPages > 10) {
+                alert('页数必须在1-10之间');
+                return;
+            }
+            
+            // 禁用按钮
+            const startBtn = document.getElementById('start-btn');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const btnText = document.getElementById('btn-text');
+            
+            startBtn.disabled = true;
+            loadingSpinner.classList.remove('d-none');
+            btnText.textContent = '爬取中...';
+            
+            // 显示进度卡片
+            document.getElementById('progress-card').classList.remove('d-none');
+            
+            // 清空日志
+            clearLogs();
+            addLog(`开始爬取: 关键词="${keyword}", 品种数量=${maxPages}`, 'info');
+            addLog('数据源：公开品种数据库（包含15+常见犬种）', 'info');
+            
+            try {
+                // 模拟进度更新
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    progress += Math.random() * 15;
+                    if (progress > 90) progress = 90;
+                    
+                    document.getElementById('progress-bar').style.width = `${progress}%`;
+                    document.getElementById('progress-text').textContent = `正在处理第 ${Math.floor(progress / 20) + 1} 个品种...`;
+                }, 800);
+                
+                // 发起请求
+                const response = await fetch('/api/crawler/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        keyword: keyword,
+                        max_pages: maxPages
+                    })
+                });
+                
+                clearInterval(progressInterval);
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('progress-bar').style.width = '100%';
+                    document.getElementById('progress-text').textContent = '爬取完成！';
+                    
+                    addLog(`✅ 爬取成功！`, 'success');
+                    addLog(`总计: ${result.stats.total_items} 条数据`, 'info');
+                    addLog(`新增: ${result.stats.new_items} 条`, 'success');
+                    addLog(`更新: ${result.stats.updated_items} 条`, 'info');
+                    
+                    if (result.report) {
+                        // 分割报告为多行
+                        result.report.split('\n').forEach(line => {
+                            if (line.trim()) {
+                                addLog(line, 'info');
+                            }
+                        });
+                    }
+                    
+                    // 刷新统计和新鲜度
+                    setTimeout(() => {
+                        loadStats();
+                        loadFreshness();
+                    }, 1000);
+                    
+                    alert('爬取成功！');
+                } else {
+                    addLog(`❌ 爬取失败: ${result.message}`, 'error');
+                    alert(`爬取失败: ${result.message}`);
+                }
+                
+            } catch (error) {
+                addLog(`❌ 请求失败: ${error.message}`, 'error');
+                alert(`请求失败: ${error.message}`);
+            } finally {
+                // 恢复按钮
+                startBtn.disabled = false;
+                loadingSpinner.classList.add('d-none');
+                btnText.textContent = '开始爬取';
+                
+                // 隐藏进度条动画
+                setTimeout(() => {
+                    document.getElementById('progress-bar').classList.remove('progress-bar-animated');
+                }, 500);
+            }
+        });
+        
+        // 页面加载时获取统计和新鲜度
+        window.addEventListener('DOMContentLoaded', () => {
+            loadStats();
+            loadFreshness();
+        });
+        
+        // 每30秒自动刷新
+        setInterval(() => {
+            loadStats();
+            loadFreshness();
+        }, 30000);
+    </script>
+    {% endblock %}
+</body>
+</html>

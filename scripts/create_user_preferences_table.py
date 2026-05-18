@@ -1,27 +1,29 @@
 """简单数据库迁移 - 创建user_preferences表"""
+
 import pymysql
 
 # 数据库配置
 DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'doguser',
-    'password': '123456',
-    'database': 'dog',
-    'charset': 'utf8mb4'
+    "host": "localhost",
+    "user": "doguser",
+    "password": "123456",
+    "database": "dog",
+    "charset": "utf8mb4",
 }
+
 
 def create_table():
     """创建用户偏好表"""
     conn = pymysql.connect(**DB_CONFIG)
     cursor = conn.cursor()
-    
+
     try:
         # 检查表是否存在
         cursor.execute("SHOW TABLES LIKE 'user_preferences'")
         if cursor.fetchone():
             print("⚠️  user_preferences 表已存在")
             return
-        
+
         # 创建表
         print("📊 创建 user_preferences 表...")
         cursor.execute("""
@@ -59,10 +61,10 @@ def create_table():
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """)
-        
+
         conn.commit()
         print("✅ user_preferences 表创建成功")
-        
+
     except Exception as e:
         conn.rollback()
         print(f"❌ 创建失败: {e}")
@@ -72,6 +74,6 @@ def create_table():
         conn.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     create_table()
     print("\n🎉 迁移完成！")

@@ -3,25 +3,28 @@ import pytest
 from models import User, DogBreed
 from sqlalchemy.exc import IntegrityError
 
+
 def test_user_password_hashing(session):
     """测试用户密码哈希和验证。"""
     # noinspection PyArgumentList
-    user = User(username='testuser')
-    user.set_password('123456')  # 修改为 6 位数字密码
-    assert user.check_password('123456') is True
-    assert user.check_password('wrong') is False
+    user = User(username="testuser")
+    user.set_password("123456")  # 修改为 6 位数字密码
+    assert user.check_password("123456") is True
+    assert user.check_password("wrong") is False
+
 
 def test_user_unique_username(session):
     """测试用户名唯一约束。"""
     import time
-    unique_name = f'uniqueuser_{int(time.time())}'  # 使用时间戳确保唯一性
-    
+
+    unique_name = f"uniqueuser_{int(time.time())}"  # 使用时间戳确保唯一性
+
     # noinspection PyArgumentList
     user1 = User(username=unique_name)
-    user1.set_password('123456')  # 修改为 6 位数字密码
+    user1.set_password("123456")  # 修改为 6 位数字密码
     # noinspection PyArgumentList
     user2 = User(username=unique_name)
-    user2.set_password('654321')  # 修改为 6 位数字密码
+    user2.set_password("654321")  # 修改为 6 位数字密码
     session.add(user1)
     session.commit()
 
@@ -30,17 +33,19 @@ def test_user_unique_username(session):
         session.commit()
     session.rollback()
 
+
 def test_dog_breed_creation(session):
     """测试创建 DogBreed 记录。"""
     import time
     from decimal import Decimal
-    unique_name = f'拉布拉多_{int(time.time())}'  # 使用时间戳确保唯一性
-    
+
+    unique_name = f"拉布拉多_{int(time.time())}"  # 使用时间戳确保唯一性
+
     breed = DogBreed(
         breed_name=unique_name,
         avg_life_years=12.5,
-        size_category='大型',
-        popularity=100
+        size_category="大型",
+        popularity=100,
     )
     session.add(breed)
     session.commit()
@@ -49,5 +54,5 @@ def test_dog_breed_creation(session):
     assert saved is not None
     # 允许一定范围的浮点数误差（Decimal 转 float）
     assert abs(float(saved.avg_life_years) - 12.5) < 0.1
-    assert saved.size_category == '大型'
+    assert saved.size_category == "大型"
     assert saved.popularity == 100

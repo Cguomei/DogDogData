@@ -2,6 +2,7 @@
 Playwright 自动化测试运行脚本
 提供多种测试执行模式
 """
+
 import subprocess
 import sys
 import os
@@ -15,31 +16,33 @@ def run_command(command, description=""):
         print(f"\n{'='*60}")
         print(f"🚀 {description}")
         print(f"{'='*60}")
-    
+
     print(f"执行命令: {command}\n")
-    
+
     cmd_list = shlex.split(command, posix=False)
     result = subprocess.run(cmd_list, capture_output=False)
-    
+
     if result.returncode == 0:
         print(f"\n✅ {description} - 成功")
     else:
         print(f"\n❌ {description} - 失败")
-    
+
     return result.returncode
 
 
 def install_playwright():
     """安装 Playwright 和浏览器"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("📦 安装 Playwright")
-    print("="*60)
-    
+    print("=" * 60)
+
     # 安装 playwright 包
-    subprocess.run([sys.executable, "-m", "pip", "install", "playwright"], capture_output=False)
-    
+    subprocess.run(
+        [sys.executable, "-m", "pip", "install", "playwright"], capture_output=False
+    )
+
     subprocess.run(["playwright", "install", "chromium"], capture_output=False)
-    
+
     print("\n✅ Playwright 安装完成")
 
 
@@ -50,26 +53,26 @@ def run_all_tests():
         ("test_auth_playwright.py", "用户认证功能测试"),
         ("test_dashboard_playwright.py", "数据看板功能测试"),
     ]
-    
+
     failed_tests = []
-    
+
     for test_file, description in tests:
         test_path = f"Test/{test_file}"
         if not Path(test_path).exists():
             print(f"\n⚠️  跳过不存在的测试文件: {test_path}")
             continue
-        
+
         cmd_list = ["pytest", test_path, "-v", "--tb=short", "-s"]
         result = subprocess.run(cmd_list, capture_output=False)
         returncode = result.returncode
-        
+
         if returncode != 0:
             failed_tests.append(test_file)
-    
-    print("\n" + "="*60)
+
+    print("\n" + "=" * 60)
     print("📊 测试总结")
-    print("="*60)
-    
+    print("=" * 60)
+
     if failed_tests:
         print(f"\n❌ 失败的测试: {', '.join(failed_tests)}")
         return 1
@@ -85,55 +88,63 @@ def run_specific_test(test_name):
         "auth": "test_auth_playwright.py",
         "dashboard": "test_dashboard_playwright.py",
     }
-    
+
     if test_name not in test_mapping:
         print(f"\n❌ 未知的测试: {test_name}")
         print(f"可用的测试: {', '.join(test_mapping.keys())}")
         return 1
-    
+
     test_file = test_mapping[test_name]
     test_path = f"Test/{test_file}"
-    
+
     if not Path(test_path).exists():
         print(f"\n❌ 测试文件不存在: {test_path}")
         return 1
-    
-    cmd_list = ["pytest", test_path, "-v", "--tb=short", "-s", f"--html=Test/reports/{test_name}_test_report.html", "--self-contained-html"]
+
+    cmd_list = [
+        "pytest",
+        test_path,
+        "-v",
+        "--tb=short",
+        "-s",
+        f"--html=Test/reports/{test_name}_test_report.html",
+        "--self-contained-html",
+    ]
     return subprocess.run(cmd_list, capture_output=False).returncode
 
 
 def run_with_headless_mode(headless=True):
     """以无头/有头模式运行测试"""
     os.environ["TEST_HEADLESS"] = str(headless).lower()
-    
+
     mode = "无头模式" if headless else "有头模式（可见浏览器）"
     print(f"\n🔧 设置浏览器模式: {mode}")
-    
+
     return run_all_tests()
 
 
 def run_with_slow_mo(slow_mo=500):
     """以慢动作模式运行测试（便于观察）"""
     os.environ["TEST_SLOW_MO"] = str(slow_mo)
-    
+
     print(f"\n🐌 设置慢动作模式: {slow_mo}ms")
-    
+
     return run_all_tests()
 
 
 def generate_report():
     """生成测试报告"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("📝 生成测试报告")
-    print("="*60)
-    
+    print("=" * 60)
+
     # 检查报告目录
     reports_dir = Path("Test/reports")
     reports_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # 列出所有 HTML 报告
     html_reports = list(reports_dir.glob("*_report.html"))
-    
+
     if html_reports:
         print(f"\n找到 {len(html_reports)} 个测试报告:")
         for report in html_reports:
@@ -141,7 +152,7 @@ def generate_report():
             print(f"    路径: {report.absolute()}")
     else:
         print("\n⚠️  未找到测试报告，请先运行测试")
-    
+
     return 0
 
 
@@ -196,9 +207,9 @@ def main():
     if len(sys.argv) < 2:
         # 默认运行所有测试
         return run_all_tests()
-    
+
     command = sys.argv[1].lower()
-    
+
     commands = {
         "install": install_playwright,
         "all": run_all_tests,
@@ -211,7 +222,7 @@ def main():
         "report": generate_report,
         "help": show_help,
     }
-    
+
     if command in commands:
         return commands[command]()
     else:

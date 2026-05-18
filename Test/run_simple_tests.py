@@ -2,6 +2,7 @@
 最简测试执行器 - 不依赖任何外部框架
 直接运行测试方法并生成报告
 """
+
 import sys
 import os
 import json
@@ -19,120 +20,128 @@ def run_simple_tests():
     print("=" * 80)
     print(f"开始时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print()
-    
+
     results = []
-    
+
     # 测试 1: 导入 app 模块
-    print("[1/5] 测试导入 app 模块...", end=' ')
+    print("[1/5] 测试导入 app 模块...", end=" ")
     try:
         from app import app
+
         print("✅ PASS")
-        results.append({'test': '导入 app 模块', 'status': 'PASS', 'error': None})
+        results.append({"test": "导入 app 模块", "status": "PASS", "error": None})
     except Exception as e:
         print(f"❌ FAIL: {e}")
-        results.append({'test': '导入 app 模块', 'status': 'FAIL', 'error': str(e)})
-    
+        results.append({"test": "导入 app 模块", "status": "FAIL", "error": str(e)})
+
     # 测试 2: 导入 models
-    print("[2/5] 测试导入 models...", end=' ')
+    print("[2/5] 测试导入 models...", end=" ")
     try:
         from models import User, DogBreed
+
         print("✅ PASS")
-        results.append({'test': '导入 models', 'status': 'PASS', 'error': None})
+        results.append({"test": "导入 models", "status": "PASS", "error": None})
     except Exception as e:
         print(f"❌ FAIL: {e}")
-        results.append({'test': '导入 models', 'status': 'FAIL', 'error': str(e)})
-    
+        results.append({"test": "导入 models", "status": "FAIL", "error": str(e)})
+
     # 测试 3: 导入 conftest fixtures
-    print("[3/5] 测试导入 conftest...", end=' ')
+    print("[3/5] 测试导入 conftest...", end=" ")
     try:
         from Test import conftest
+
         print("✅ PASS")
-        results.append({'test': '导入 conftest', 'status': 'PASS', 'error': None})
+        results.append({"test": "导入 conftest", "status": "PASS", "error": None})
     except Exception as e:
         print(f"❌ FAIL: {e}")
-        results.append({'test': '导入 conftest', 'status': 'FAIL', 'error': str(e)})
-    
+        results.append({"test": "导入 conftest", "status": "FAIL", "error": str(e)})
+
     # 测试 4: 检查数据库配置
-    print("[4/5] 测试数据库配置...", end=' ')
+    print("[4/5] 测试数据库配置...", end=" ")
     try:
         from dotenv import load_dotenv
+
         load_dotenv()
-        db_user = os.getenv('DB_USER', 'doguser')
-        db_password = os.getenv('DB_PASSWORD', '123456')
+        db_user = os.getenv("DB_USER", "doguser")
+        db_password = os.getenv("DB_PASSWORD", "123456")
         if db_user and db_password:
             print("✅ PASS")
-            results.append({'test': '数据库配置', 'status': 'PASS', 'error': None})
+            results.append({"test": "数据库配置", "status": "PASS", "error": None})
         else:
             print("❌ FAIL: 缺少数据库配置")
-            results.append({'test': '数据库配置', 'status': 'FAIL', 'error': '配置为空'})
+            results.append(
+                {"test": "数据库配置", "status": "FAIL", "error": "配置为空"}
+            )
     except Exception as e:
         print(f"❌ FAIL: {e}")
-        results.append({'test': '数据库配置', 'status': 'FAIL', 'error': str(e)})
-    
+        results.append({"test": "数据库配置", "status": "FAIL", "error": str(e)})
+
     # 测试 5: 检查测试文件存在性
-    print("[5/5] 检查测试文件...", end=' ')
-    test_files = [
-        'Test/test_auth.py',
-        'Test/test_breed.py',
-        'Test/test_framework.py'
-    ]
+    print("[5/5] 检查测试文件...", end=" ")
+    test_files = ["Test/test_auth.py", "Test/test_breed.py", "Test/test_framework.py"]
     all_exist = True
     missing = []
     for f in test_files:
         if not Path(f).exists():
             all_exist = False
             missing.append(f)
-    
+
     if all_exist:
         print("✅ PASS")
-        results.append({'test': '测试文件检查', 'status': 'PASS', 'error': None})
+        results.append({"test": "测试文件检查", "status": "PASS", "error": None})
     else:
         print(f"❌ FAIL: 缺少 {missing}")
-        results.append({'test': '测试文件检查', 'status': 'FAIL', 'error': f'缺少：{missing}'})
-    
+        results.append(
+            {"test": "测试文件检查", "status": "FAIL", "error": f"缺少：{missing}"}
+        )
+
     # 统计结果
-    passed = sum(1 for r in results if r['status'] == 'PASS')
-    failed = sum(1 for r in results if r['status'] == 'FAIL')
+    passed = sum(1 for r in results if r["status"] == "PASS")
+    failed = sum(1 for r in results if r["status"] == "FAIL")
     total = len(results)
-    
+
     print()
     print("=" * 80)
     print(f"总计：{total} | ✅ 通过：{passed} | ❌ 失败：{failed}")
     print("=" * 80)
-    
+
     # 保存报告
     save_report(results)
-    
+
     return passed == total
 
 
 def save_report(results):
     """保存测试报告"""
-    report_dir = Path('Test/reports')
+    report_dir = Path("Test/reports")
     report_dir.mkdir(exist_ok=True)
-    
-    passed = sum(1 for r in results if r['status'] == 'PASS')
-    failed = sum(1 for r in results if r['status'] == 'FAIL')
-    
+
+    passed = sum(1 for r in results if r["status"] == "PASS")
+    failed = sum(1 for r in results if r["status"] == "FAIL")
+
     report = {
-        'summary': {
-            'total': len(results),
-            'passed': passed,
-            'failed': failed,
-            'pass_rate': f'{(passed/len(results)*100):.1f}%' if results else '0%'
+        "summary": {
+            "total": len(results),
+            "passed": passed,
+            "failed": failed,
+            "pass_rate": f"{(passed/len(results)*100):.1f}%" if results else "0%",
         },
-        'results': results,
-        'timestamp': datetime.now().isoformat()
+        "results": results,
+        "timestamp": datetime.now().isoformat(),
     }
-    
+
     # JSON 报告
-    json_file = report_dir / f'test_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
-    with open(json_file, 'w', encoding='utf-8') as f:
+    json_file = (
+        report_dir / f'test_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
+    )
+    with open(json_file, "w", encoding="utf-8") as f:
         json.dump(report, f, ensure_ascii=False, indent=2)
     print(f"\n📄 JSON 报告已保存：{json_file}")
-    
+
     # HTML 报告
-    html_file = report_dir / f'test_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.html'
+    html_file = (
+        report_dir / f'test_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.html'
+    )
     generate_html(report, html_file)
     print(f"📄 HTML 报告已保存：{html_file}")
 
@@ -199,12 +208,12 @@ def generate_html(report, filename):
             </thead>
             <tbody>
 """
-    
-    for i, result in enumerate(report['results'], 1):
-        status_class = 'status-pass' if result['status'] == 'PASS' else 'status-fail'
-        status_icon = '✅' if result['status'] == 'PASS' else '❌'
-        error_text = result.get('error', '') or '-'
-        
+
+    for i, result in enumerate(report["results"], 1):
+        status_class = "status-pass" if result["status"] == "PASS" else "status-fail"
+        status_icon = "✅" if result["status"] == "PASS" else "❌"
+        error_text = result.get("error", "") or "-"
+
         html += f"""
                 <tr>
                     <td>{i}</td>
@@ -213,23 +222,27 @@ def generate_html(report, filename):
                     <td>{error_text}</td>
                 </tr>
 """
-    
-    html += """
+
+    html += (
+        """
             </tbody>
         </table>
         
         <p style="margin-top: 30px; color: #666; font-size: 0.9em;">
-            报告生成时间：""" + report['timestamp'] + """
+            报告生成时间："""
+        + report["timestamp"]
+        + """
         </p>
     </div>
 </body>
 </html>
 """
-    
-    with open(filename, 'w', encoding='utf-8') as f:
+    )
+
+    with open(filename, "w", encoding="utf-8") as f:
         f.write(html)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     success = run_simple_tests()
     sys.exit(0 if success else 1)
