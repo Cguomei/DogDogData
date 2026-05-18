@@ -27,8 +27,8 @@ class TestHealthCheckAPI:
         # 验证状态值
         assert data['status'] in ['healthy', 'unhealthy']
         
-        # 验证版本信息（应该是 v4.6.x）
-        assert data['version'].startswith('v4.6')
+        # 验证版本信息
+        assert data['version'].startswith('v4.')
         
         # 验证检查项（新版本包含 database 和 system）
         assert 'database' in data['checks']

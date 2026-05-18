@@ -5,6 +5,7 @@ Playwright 自动化测试运行脚本
 import subprocess
 import sys
 import os
+import shlex
 from pathlib import Path
 
 
@@ -17,7 +18,8 @@ def run_command(command, description=""):
     
     print(f"执行命令: {command}\n")
     
-    result = subprocess.run(command, shell=True, capture_output=False)
+    cmd_list = shlex.split(command, posix=False)
+    result = subprocess.run(cmd_list, capture_output=False)
     
     if result.returncode == 0:
         print(f"\n✅ {description} - 成功")
@@ -34,10 +36,9 @@ def install_playwright():
     print("="*60)
     
     # 安装 playwright 包
-    run_command("pip install playwright", "安装 Playwright 包")
+    subprocess.run([sys.executable, "-m", "pip", "install", "playwright"], capture_output=False)
     
-    # 安装浏览器
-    run_command("playwright install chromium", "安装 Chromium 浏览器")
+    subprocess.run(["playwright", "install", "chromium"], capture_output=False)
     
     print("\n✅ Playwright 安装完成")
 
@@ -58,8 +59,9 @@ def run_all_tests():
             print(f"\n⚠️  跳过不存在的测试文件: {test_path}")
             continue
         
-        command = f"pytest {test_path} -v --tb=short -s"
-        returncode = run_command(command, description)
+        cmd_list = ["pytest", test_path, "-v", "--tb=short", "-s"]
+        result = subprocess.run(cmd_list, capture_output=False)
+        returncode = result.returncode
         
         if returncode != 0:
             failed_tests.append(test_file)
@@ -96,8 +98,8 @@ def run_specific_test(test_name):
         print(f"\n❌ 测试文件不存在: {test_path}")
         return 1
     
-    command = f"pytest {test_path} -v --tb=short -s --html=Test/reports/{test_name}_test_report.html --self-contained-html"
-    return run_command(command, f"运行 {test_name} 测试")
+    cmd_list = ["pytest", test_path, "-v", "--tb=short", "-s", f"--html=Test/reports/{test_name}_test_report.html", "--self-contained-html"]
+    return subprocess.run(cmd_list, capture_output=False).returncode
 
 
 def run_with_headless_mode(headless=True):

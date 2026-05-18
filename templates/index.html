@@ -301,10 +301,10 @@ fetch('/api/breeds')
         } else {
             tbody.innerHTML = data.map(b => `
                 <tr>
-                    <td>${b.breed_name}</td>
-                    <td>${b.avg_life_years ?? '-'}</td>
-                    <td>${b.size_category ?? '-'}</td>
-                    <td>${b.popularity}</td>
+                    <td>${escapeHtml(b.breed_name)}</td>
+                    <td>${escapeHtml(b.avg_life_years) || '-'}</td>
+                    <td>${escapeHtml(b.size_category) || '-'}</td>
+                    <td>${escapeHtml(b.popularity)}</td>
                 </tr>
             `).join('');
         }

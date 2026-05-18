@@ -186,6 +186,12 @@
     </div>
     
     <script>
+        function escapeHtml(text) {
+            if (text == null) return '';
+            var div = document.createElement('div');
+            div.textContent = String(text);
+            return div.innerHTML;
+        }
         // 重启 Flask
         function restartFlask() {
             const statusDiv = document.getElementById('restart-status');
@@ -203,7 +209,7 @@
                         }, 3000);
                     } else {
                         statusDiv.className = 'status error';
-                        statusDiv.innerHTML = '❌ 重启失败：' + data.message;
+                        statusDiv.innerHTML = '❌ 重启失败：' + escapeHtml(data.message);
                     }
                 })
                 .catch(err => {
@@ -225,15 +231,15 @@
                     
                     if (isCorrect) {
                         statusDiv.className = 'status success';
-                        statusDiv.innerHTML = `✅ JS 文件 MIME 类型正确：<code>${contentType}</code>`;
+                        statusDiv.innerHTML = `✅ JS 文件 MIME 类型正确：<code>${escapeHtml(contentType)}</code>`;
                     } else {
                         statusDiv.className = 'status error';
-                        statusDiv.innerHTML = `❌ JS 文件 MIME 类型错误：<code>${contentType}</code><br>应该是：<code>application/javascript</code>`;
+                        statusDiv.innerHTML = `❌ JS 文件 MIME 类型错误：<code>${escapeHtml(contentType)}</code><br>应该是：<code>application/javascript</code>`;
                     }
                 })
                 .catch(err => {
                     statusDiv.className = 'status error';
-                    statusDiv.innerHTML = '❌ 检查失败：' + err.message;
+                    statusDiv.innerHTML = '❌ 检查失败：' + escapeHtml(err.message);
                 });
         }
         

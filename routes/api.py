@@ -17,7 +17,7 @@ try:
 except ImportError:
     HAS_PSUTIL = False
 
-APP_VERSION = 'v4.9.17'
+APP_VERSION = 'v5.0.0'
 
 api_bp = Blueprint('api', __name__)
 

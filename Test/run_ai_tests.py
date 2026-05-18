@@ -5,6 +5,7 @@ AI助手测试运行脚本
 import subprocess
 import sys
 import os
+import shlex
 
 
 def run_command(cmd, description):
@@ -14,7 +15,8 @@ def run_command(cmd, description):
     print(f"{'='*60}")
     print(f"命令: {cmd}\n")
     
-    result = subprocess.run(cmd, shell=True, capture_output=False)
+    cmd_list = shlex.split(cmd, posix=False)
+    result = subprocess.run(cmd_list, capture_output=False)
     
     if result.returncode == 0:
         print(f"✅ {description} - 通过")

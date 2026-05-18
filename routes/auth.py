@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, flash, redirect, url_for
 from flask_login import login_user, logout_user, login_required, current_user
 from models import User, db
 from sqlalchemy.exc import IntegrityError
+from urllib.parse import urlparse, urljoin
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -21,6 +22,13 @@ def login():
         if user and user.check_password(password):
             login_user(user, remember=remember)
             next_page = request.args.get('next')
+            if next_page:
+                host = request.host_url.rstrip('/')
+                next_url = urljoin(host, next_page)
+                if not urlparse(next_url).netloc or urlparse(next_url).netloc == urlparse(host).netloc:
+                    next_page = next_url
+                else:
+                    next_page = None
             flash('登录成功！', 'success')
             return redirect(next_page or url_for('main.index'))
         else:

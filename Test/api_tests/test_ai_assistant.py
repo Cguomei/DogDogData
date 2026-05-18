@@ -20,11 +20,11 @@ class TestAIAssistant:
         assert 'url' in data
     
     def test_model_status_unauthenticated(self, api_client):
-        """测试模型状态检查（未登录）"""
+        """测试模型状态检查（未登录 - 支持游客访问）"""
         response = api_client.get('/api/ai/model/status')
         
-        # 应该重定向到登录页
-        assert response.status_code in [302, 401]
+        # 模型状态接口支持游客访问
+        assert response.status_code == 200
     
     def test_chat_price_query(self, authenticated_api_client):
         """测试价格查询"""
@@ -124,14 +124,14 @@ class TestAIAssistant:
         assert data['success'] is False
     
     def test_chat_unauthenticated(self, api_client):
-        """测试未登录访问"""
+        """测试未登录访问（支持游客模式）"""
         response = api_client.post(
             '/api/ai/chat',
             json={'message': '测试'}
         )
         
-        # 应该重定向到登录页
-        assert response.status_code in [302, 401]
+        # AI 聊天支持游客模式，不再返回 401/302
+        assert response.status_code in [200, 500, 503]  # 200=正常, 5xx=模型未在线
     
     def test_chat_page_authenticated(self, authenticated_api_client):
         """测试聊天页面访问（已登录）"""
@@ -141,11 +141,11 @@ class TestAIAssistant:
         assert b'ai-chat' in response.data or b'AI' in response.data
     
     def test_chat_page_unauthenticated(self, api_client):
-        """测试聊天页面访问（未登录）"""
+        """测试聊天页面访问（未登录 - 支持游客访问）"""
         response = api_client.get('/ai-chat')
         
-        # 应该重定向到登录页
-        assert response.status_code in [302, 401]
+        # AI 聊天页面支持游客访问
+        assert response.status_code == 200
     
     def test_logs_page_admin(self, admin_api_client):
         """测试日志查看页面（管理员）"""

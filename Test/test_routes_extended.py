@@ -299,20 +299,20 @@ class TestRedirects:
     """重定向逻辑测试"""
     
     @test_case('TC-REDIRECT-001', priority='Medium', expected='登录后重定向到首页')
-    def test_redirect_after_login(self, client, db):
+    def test_redirect_after_login(self, client, db, session):
         """登录成功后重定向"""
         result = TestResult('TC-REDIRECT-001', 'test_login_redirect', '重定向', 'Medium')
         result.expected_result = '重定向到首页'
         
         try:
             from models import User
-            user = User(username='redirect_test')
+            user = User(username='TEST_redirect_test')
             user.set_password('123456')
             db.session.add(user)
             db.session.commit()
             
             response = client.post('/login', data={
-                'username': 'redirect_test',
+                'username': 'TEST_redirect_test',
                 'password': '123456'
             }, follow_redirects=False)
             

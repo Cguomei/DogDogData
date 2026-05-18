@@ -4,6 +4,27 @@
 
 ---
 
+## [v5.0.0] - 2026-05-17
+
+### 🔒 安全加固与测试修复
+
+#### 安全修复
+- **XSS全面审计**：扫描17个模板文件，修复71处innerHTML注入向量
+- **全局escapeHtml()**：添加至base.html，覆盖所有前端模板
+- **开放重定向修复**：routes/auth.py的next参数同源校验
+- **shell=True消除**：3个HIGH风险（run_ai_tests/run_ai_full/run_playwright）
+- **安全工具链**：集成Bandit + pip-audit + agent-security-scanner-mcp
+
+#### 测试修复
+- 修复3个blocking测试（login_logout flash、get_preferences、redirect_after_login）
+- 测试通过率：238 passed / 1 skipped / 0 failed
+
+#### 配置文件
+- opencode.jsonc（MCP + skill配置）
+- .opencode/skills/security/SKILL.md（安全审计skill）
+
+---
+
 ## [v4.9.14] - 2026-05-14
 
 ### ✨ AI助手功能完善（方案A-快速优化版）

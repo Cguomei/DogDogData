@@ -480,7 +480,7 @@ def ai_chat():
 **测试代码**：
 
 ```python
-# Test/test_ai_assistant.py
+# Test/api_tests/test_ai_assistant.py (原 Test/test_ai_assistant.py)
 import pytest
 from app import create_app
 from models import db, User
@@ -542,7 +542,7 @@ class TestAIAssistant:
 
 运行测试：
 ```bash
-pytest Test/test_ai_assistant.py -v
+pytest Test/api_tests/test_ai_assistant.py -v
 ```
 
 ---

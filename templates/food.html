@@ -85,7 +85,7 @@
 // 绘制产地分布饼图
 const originCtx = document.getElementById('originChart').getContext('2d');
 const originData = {
-    labels: [{% for name, cnt in stats.top_origins %}'{{ name }}',{% endfor %}],
+    labels: [{% for name, cnt in stats.top_origins %}'{{ name | e }}',{% endfor %}],
     datasets: [{
         data: [{% for name, cnt in stats.top_origins %}{{ cnt }},{% endfor %}],
         backgroundColor: ['#36a2eb', '#ff6384', '#ffce56', '#4bc0c0', '#9966ff']
@@ -98,7 +98,7 @@ new Chart(originCtx, {
 
 // 绘制价格分布柱状图
 const priceCtx = document.getElementById('priceDistChart').getContext('2d');
-const priceLabels = [{% for label, cnt in stats.price_dist %}'{{ label }}',{% endfor %}];
+const priceLabels = [{% for label, cnt in stats.price_dist %}'{{ label | e }}',{% endfor %}];
 const priceCounts = [{% for label, cnt in stats.price_dist %}{{ cnt }},{% endfor %}];
 new Chart(priceCtx, {
     type: 'bar',
@@ -142,9 +142,9 @@ function renderTable(data) {
     }
     tbody.innerHTML = data.map(item => `
         <tr>
-            <td>${item.name || '-'}</td>
-            <td>¥${item.price || '-'}</td>
-            <td>${item.origin || '-'}</td>
+            <td>${escapeHtml(item.name) || '-'}</td>
+            <td>¥${escapeHtml(item.price) || '-'}</td>
+            <td>${escapeHtml(item.origin) || '-'}</td>
         </tr>
     `).join('');
 }

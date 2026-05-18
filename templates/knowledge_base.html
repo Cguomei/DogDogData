@@ -167,6 +167,7 @@
     </div>
     
     <script>
+        function escapeHtml(text) { if (text == null) return ''; var d = document.createElement('div'); d.textContent = String(text); return d.innerHTML; }
         // 加载知识库统计
         async function loadStats() {
             try {
@@ -216,7 +217,7 @@
             };
             
             for (const [cat, count] of Object.entries(categories)) {
-                const name = categoryNames[cat] || cat;
+                const name = categoryNames[cat] || escapeHtml(cat);
                 const cls = categoryClasses[cat] || '';
                 html += `<span class="category-badge ${cls}">${name}: ${count}</span>`;
             }

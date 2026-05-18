@@ -350,8 +350,8 @@
             
             container.innerHTML = reversedLogs.map(log => {
                 let html = '<div class="log-entry">';
-                html += `<span class="log-timestamp">${log.timestamp || '-'}</span>`;
-                html += `<span class="log-level ${log.level}">${log.level || 'UNKNOWN'}</span>`;
+                html += `<span class="log-timestamp">${escapeHtml(log.timestamp) || '-'}</span>`;
+                html += `<span class="log-level ${escapeHtml(log.level)}">${escapeHtml(log.level) || 'UNKNOWN'}</span>`;
                 html += `<span class="log-message">${escapeHtml(log.message || log.raw || '')}</span>`;
                 
                 // 如果有堆栈跟踪
@@ -375,7 +375,7 @@
         }
         
         function showError(message) {
-            document.getElementById('logContainer').innerHTML = `<div class="empty" style="color: #f48771;">${message}</div>`;
+            document.getElementById('logContainer').innerHTML = `<div class="empty" style="color: #f48771;">${escapeHtml(message)}</div>`;
         }
     </script>
 </body>

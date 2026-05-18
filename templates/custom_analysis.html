@@ -255,7 +255,7 @@ function showDataPreview(data, cols) {
     // 表头
     let headerHtml = '<tr>';
     cols.forEach(col => {
-        headerHtml += `<th>${col}</th>`;
+        headerHtml += `<th>${escapeHtml(col)}</th>`;
     });
     headerHtml += '</tr>';
     thead.innerHTML = headerHtml;
@@ -265,7 +265,7 @@ function showDataPreview(data, cols) {
     data.slice(0, 10).forEach(row => {
         bodyHtml += '<tr>';
         cols.forEach(col => {
-            bodyHtml += `<td>${row[col] !== undefined ? row[col] : ''}</td>`;
+            bodyHtml += `<td>${escapeHtml(row[col] !== undefined ? row[col] : '')}</td>`;
         });
         bodyHtml += '</tr>';
     });
@@ -444,7 +444,7 @@ function displayQualityReport(report) {
                     issue.severity === 'warning' ? '⚠️' : 'ℹ️';
         const color = issue.severity === 'error' ? 'text-danger' : 
                      issue.severity === 'warning' ? 'text-warning' : 'text-info';
-        html += `<li class="${color}">${icon} ${issue.message}</li>`;
+        html += `<li class="${color}">${icon} ${escapeHtml(issue.message)}</li>`;
     });
     
     html += '</ul></div>';

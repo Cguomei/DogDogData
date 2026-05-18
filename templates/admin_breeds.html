@@ -132,14 +132,14 @@ function loadBreeds() {
             } else {
                 tbody.innerHTML = data.map(b => `
                     <tr>
-                        <td>${b.id}</td>
-                        <td>${b.breed_name}</td>
-                        <td>${b.avg_life_years ?? '-'}</td>
-                        <td>${b.size_category ?? '-'}</td>
-                        <td>${b.popularity}</td>
+                        <td>${escapeHtml(b.id)}</td>
+                        <td>${escapeHtml(b.breed_name)}</td>
+                        <td>${escapeHtml(b.avg_life_years) || '-'}</td>
+                        <td>${escapeHtml(b.size_category) || '-'}</td>
+                        <td>${escapeHtml(b.popularity)}</td>
                         <td>
-                            <button class="btn btn-sm btn-warning" onclick="editBreed(${b.id})">编辑</button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteBreed(${b.id})">删除</button>
+                            <button class="btn btn-sm btn-warning" onclick="editBreed(${escapeHtml(b.id)})">编辑</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteBreed(${escapeHtml(b.id)})">删除</button>
                         </td>
                     </tr>
                 `).join('');

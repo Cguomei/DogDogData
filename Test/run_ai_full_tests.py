@@ -4,7 +4,9 @@ AI助手完整测试套件
 """
 import subprocess
 import sys
+import shlex
 from pathlib import Path
+from datetime import datetime
 
 
 def run_api_tests():
@@ -67,7 +69,7 @@ def main():
     """主函数"""
     print("\n" + "🚀 AI助手自动化测试套件")
     print("="*60)
-    print("开始时间:", subprocess.check_output(["date"], shell=True).decode().strip())
+    print("开始时间:", datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     
     results = {
         "API测试": False,
