@@ -1,100 +1,179 @@
 {% extends "base.html" %}
 
-{% block title %}图表列表{% endblock %}
+{% block title %}数据大盘{% endblock %}
 
 {% block extra_head %}
 <style>
-    /* 隐藏宠物容器在图表列表页面 */
-    #virtual-pet-container {
-        display: none !important;
+    #virtual-pet-container { display: none !important; }
+    .dashboard-card {
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+        border: none;
+        background: #fff;
+    }
+    .dashboard-card .card-header {
+        border: none;
+        padding: 14px 20px;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+    .dashboard-card .chart-body {
+        padding: 8px 12px 12px;
+        min-height: 400px;
+        position: relative;
+    }
+    .chart-loader {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 380px;
+        color: #aaa;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .chart-loader .spinner-border {
+        width: 2rem;
+        height: 2rem;
+    }
+    /* override pyecharts fixed dimensions for responsive layout */
+    .chart-body .chart-container {
+        width: 100% !important;
+        height: 420px !important;
+        max-width: 100%;
+        overflow: hidden;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container mt-4" x-data="chartList()">
-    <h1 class="mb-4">📊 图表列表</h1>
-    
-    <!-- 搜索和筛选 -->
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <input 
-                type="text" 
-                x-model="searchQuery"
-                class="form-control" 
-                placeholder="🔍 搜索图表..."
-            >
-        </div>
-        <div class="col-md-6">
-            <select x-model="selectedCategory" class="form-select">
-                <template x-for="cat in categories" :key="cat.value">
-                    <option :value="cat.value" x-text="cat.icon + ' ' + cat.label"></option>
-                </template>
-            </select>
-        </div>
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex align-items-center mb-4">
+        <h1 class="mb-0 fw-bold" style="font-size: 1.6rem;">📊 数据大盘</h1>
+        <span class="badge bg-light text-muted ms-3 px-3 py-2" style="font-weight:400;">实时数据看板</span>
     </div>
-    
-    <!-- 加载状态 -->
-    <div x-show="isLoading" class="text-center py-5">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">加载中...</span>
-        </div>
-        <p class="mt-3 text-muted">正在加载图表...</p>
-    </div>
-    
-    <!-- 图表网格 -->
-    <div class="row g-4" x-show="!isLoading">
-        <template x-for="chart in filteredCharts" :key="chart.id">
-            <div class="col-md-6 col-lg-4">
-                <div 
-                    class="card h-100 shadow-sm chart-card" 
-                    @click="navigateToChart(chart.id)"
-                    style="cursor: pointer; transition: all 0.3s ease;"
-                    onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 20px rgba(0,0,0,0.15)'"
-                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow=''"
-                >
-                    <div class="card-body text-center">
-                        <i :class="'bi ' + getIconClass(chart.id)" style="font-size: 3rem;" :style="'color: ' + getColorClass(chart.id)"></i>
-                        <h5 class="card-title mt-3" x-text="chart.title"></h5>
-                        <p class="card-text" x-text="chart.description"></p>
-                        <span class="badge" :style="'background: ' + getColorClass(chart.id)">点击查看</span>
-                    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="dashboard-card card">
+                <div class="card-header" style="background: linear-gradient(135deg, #667eea20, #764ba220); color:#667eea;">
+                    <i class="bi bi-scatter-chart me-2"></i>价格散点图
+                </div>
+                <div class="card-body chart-body" id="chart-scatter">
+                    <div class="chart-loader"><div class="spinner-border text-primary" role="status"></div><span>加载中...</span></div>
                 </div>
             </div>
-        </template>
-    </div>
-    
-    <!-- 无结果提示 -->
-    <div x-show="!isLoading && filteredCharts.length === 0" class="text-center py-5">
-        <i class="bi bi-inbox" style="font-size: 4rem; color: #ccc;"></i>
-        <p class="mt-3 text-muted">没有找到匹配的图表</p>
+        </div>
+        <div class="col-lg-6">
+            <div class="dashboard-card card">
+                <div class="card-header" style="background: linear-gradient(135deg, #43e97b20, #38f9d720); color:#2d8f5e;">
+                    <i class="bi bi-graph-up me-2"></i>体重折线图
+                </div>
+                <div class="card-body chart-body" id="chart-line">
+                    <div class="chart-loader"><div class="spinner-border text-success" role="status"></div><span>加载中...</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="dashboard-card card">
+                <div class="card-header" style="background: linear-gradient(135deg, #fa709a20, #fee14020); color:#d4537a;">
+                    <i class="bi bi-bar-chart-fill me-2"></i>级别柱状图
+                </div>
+                <div class="card-body chart-body" id="chart-bar">
+                    <div class="chart-loader"><div class="spinner-border text-danger" role="status"></div><span>加载中...</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="dashboard-card card">
+                <div class="card-header" style="background: linear-gradient(135deg, #4facfe20, #00f2fe20); color:#2d7fc1;">
+                    <i class="bi bi-bar-chart-line me-2"></i>店铺 TOP10 直方图
+                </div>
+                <div class="card-body chart-body" id="chart-hist">
+                    <div class="chart-loader"><div class="spinner-border text-info" role="status"></div><span>加载中...</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="dashboard-card card">
+                <div class="card-header" style="background: linear-gradient(135deg, #a18cd120, #fbc2eb20); color:#7c5fa8;">
+                    <i class="bi bi-funnel me-2"></i>价格段漏斗图
+                </div>
+                <div class="card-body chart-body" id="chart-funnel">
+                    <div class="chart-loader"><div class="spinner-border" style="color:#a18cd1;" role="status"></div><span>加载中...</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="dashboard-card card">
+                <div class="card-header" style="background: linear-gradient(135deg, #f093fb20, #f5576c20); color:#c45a8a;">
+                    <i class="bi bi-globe me-2"></i>狗狗家乡分布
+                </div>
+                <div class="card-body chart-body" id="chart-map">
+                    <div class="chart-loader"><div class="spinner-border" style="color:#f5576c;" role="status"></div><span>加载中...</span></div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
-<script>
-// 辅助函数
-function getIconClass(chartId) {
-    const icons = {
-        'scatter': 'bi-scatter-chart',
-        'line': 'bi-graph-up',
-        'bar': 'bi-bar-chart-fill',
-        'hist': 'bi-bar-chart-line',
-        'funnel': 'bi-funnel',
-        'map': 'bi-globe'
-    };
-    return icons[chartId] || 'bi-graph-up';
-}
+{% endblock %}
 
-function getColorClass(chartId) {
-    const colors = {
-        'scatter': '#667eea',
-        'line': '#43e97b',
-        'bar': '#fa709a',
-        'hist': '#fee140',
-        'funnel': '#4facfe',
-        'map': '#38f9d7'
-    };
-    return colors[chartId] || '#667eea';
-}
+{% block extra_scripts %}
+<script>
+(function() {
+    var CHARTS = ['scatter','line','bar','hist','funnel','map'];
+
+    function execScripts(container, html) {
+        var tmp = document.createElement('div');
+        tmp.innerHTML = html;
+        var scripts = Array.from(tmp.querySelectorAll('script'));
+        scripts.forEach(function(s) { s.remove(); });
+        container.innerHTML = tmp.innerHTML;
+        function runNext(i) {
+            if (i >= scripts.length) return;
+            var old = scripts[i];
+            var s = document.createElement('script');
+            if (old.src) {
+                s.src = old.src;
+                s.onload = function() { runNext(i + 1); };
+                s.onerror = function() { runNext(i + 1); };
+                container.appendChild(s);
+            } else {
+                s.textContent = old.textContent;
+                container.appendChild(s);
+                runNext(i + 1);
+            }
+        }
+        runNext(0);
+    }
+
+    var loaded = 0;
+    CHARTS.forEach(function(id) {
+        var container = document.getElementById('chart-' + id);
+        if (!container) return;
+        fetch('/api/chart/' + id)
+            .then(function(r) { return r.text(); })
+            .then(function(html) {
+                execScripts(container, html);
+                loaded++;
+                if (loaded === CHARTS.length) {
+                    window.addEventListener('resize', function() {
+                        CHARTS.forEach(function(cid) {
+                            var el = document.getElementById('chart-' + cid);
+                            if (!el) return;
+                            var chartDiv = el.querySelector('.chart-container');
+                            if (!chartDiv) return;
+                            var instance = echarts.getInstanceByDom(chartDiv);
+                            if (instance) instance.resize();
+                        });
+                    });
+                }
+            })
+            .catch(function() {
+                container.innerHTML = '<div class="chart-loader"><span style="color:#e74c3c;">加载失败</span></div>';
+            });
+    });
+})();
 </script>
 {% endblock %}

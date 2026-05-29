@@ -20,10 +20,10 @@ def index():
     return render_template("index.html", stats=stats)
 
 
-# ===== 图表列表页面 =====
+# ===== 数据大盘页面 =====
 @main_bp.route("/charts")
 def charts_list():
-    """图表列表页面"""
+    """数据大盘页面 - 前端异步加载所有图表"""
     return render_template("charts_list.html")
 
 

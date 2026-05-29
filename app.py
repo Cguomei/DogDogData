@@ -20,6 +20,7 @@ from config import get_config
 from models import db, User
 from errors import register_error_handlers
 from charts import update_dashboard_summary
+import models_charts  # noqa: F401 — register chart table models with SQLAlchemy
 
 # 导入路由模块
 from routes.main import main_bp

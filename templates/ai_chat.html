@@ -89,10 +89,63 @@
             border-color: #667eea;
             box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
         }
-        
+
+        .session-item:hover .session-delete-btn {
+            opacity: 1;
+        }
+
         .session-item.active {
             border-color: #667eea;
             background: #f0f4ff;
+        }
+
+        .session-item {
+            position: relative;
+        }
+
+        .session-delete-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: none;
+            background: #fc8181;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 2;
+            line-height: 1;
+        }
+
+        .session-delete-btn:hover {
+            background: #e53e3e;
+            transform: scale(1.1);
+        }
+
+        .back-to-site {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 12px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+
+        .back-to-site:hover {
+            background: rgba(255,255,255,0.35);
         }
         
         .session-title {
@@ -429,6 +482,7 @@
             <div class="chat-header-left">
                 <h2>🤖 AI智能宠物顾问</h2>
                 <p class="chat-header-subtitle">问我任何关于狗狗的问题</p>
+                <a href="/" class="back-to-site" style="margin-top: 6px;">← 返回首页</a>
             </div>
             <div class="chat-header-right">
                 <div class="model-status" id="modelStatus">检查模型状态...</div>
@@ -479,6 +533,11 @@
         
         // 当前会话ID
         let currentSessionId = null;
+
+        // 安全比较两个 sessionId（number vs string 兼容）
+        function sameId(a, b) {
+            return Number(a) === Number(b);
+        }
         
         // 关闭游客提示横幅
         function closeGuestBanner() {
@@ -554,7 +613,7 @@
                     console.log(`检测到其他窗口切换会话: ${currentSessionId} -> ${newSessionId}`);
                     
                     // 更新当前会话ID
-                    currentSessionId = newSessionId;
+                    currentSessionId = Number(newSessionId);
                     
                     // 如果新会话ID有效，加载该会话的消息
                     if (currentSessionId) {
@@ -656,8 +715,11 @@
             }
             
             sessionList.innerHTML = sessions.map(session => `
-                <div class="session-item ${session.id === currentSessionId ? 'active' : ''}" 
+                <div class="session-item ${sameId(session.id, currentSessionId) ? 'active' : ''}"
                      onclick="switchSession(${escapeHtml(session.id)})">
+                    <button class="session-delete-btn"
+                            onclick="event.stopPropagation(); deleteSession(${escapeHtml(session.id)})"
+                            title="删除此对话">✕</button>
                     <div class="session-title">${escapeHtml(session.title)}</div>
                     <div class="session-meta">
                         <span>${formatTime(session.last_message_at)}</span>
@@ -685,7 +747,7 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    currentSessionId = data.session_id;
+                    currentSessionId = Number(data.session_id);
                     // 保存到 localStorage 以便离开页面后恢复
                     localStorage.setItem('currentSessionId', currentSessionId);
                     
@@ -714,7 +776,7 @@
         
         // 切换会话
         async function switchSession(sessionId) {
-            currentSessionId = sessionId;
+            currentSessionId = Number(sessionId);
             // 保存到 localStorage
             localStorage.setItem('currentSessionId', currentSessionId);
             
@@ -742,6 +804,59 @@
             await loadSessionMessages(sessionId);
         }
         
+        // 删除会话
+        async function deleteSession(sessionId) {
+            if (!confirm('确定要删除这个对话吗？此操作不可撤销。')) return;
+
+            try {
+                const response = await fetch(`/api/ai/sessions/${sessionId}`, {
+                    method: 'DELETE',
+                });
+
+                // 404 = 会话已被其他标签页删除，静默刷新
+                if (response.status === 404) {
+                    if (sameId(sessionId, currentSessionId)) {
+                        currentSessionId = null;
+                        localStorage.removeItem('currentSessionId');
+                        chatMessages.innerHTML = `
+                            <div class="welcome-message">
+                                <h3>你好！我是你的AI宠物顾问 👋</h3>
+                                <p>我可以帮你查询价格、了解品种、获取养护建议...</p>
+                                <p style="margin-top: 10px; font-size: 14px;">试试下面的快捷问题开始吧！</p>
+                            </div>
+                        `;
+                    }
+                    await loadSessions();
+                    return;
+                }
+
+                if (!response.ok) {
+                    const data = await response.json().catch(() => ({}));
+                    throw new Error(data.error || `HTTP ${response.status}`);
+                }
+
+                // 如果删除的是当前会话，清空聊天区域
+                if (sameId(sessionId, currentSessionId)) {
+                    currentSessionId = null;
+                    localStorage.removeItem('currentSessionId');
+                    chatMessages.innerHTML = `
+                        <div class="welcome-message">
+                            <h3>你好！我是你的AI宠物顾问 👋</h3>
+                            <p>我可以帮你查询价格、了解品种、获取养护建议...</p>
+                            <p style="margin-top: 10px; font-size: 14px;">试试下面的快捷问题开始吧！</p>
+                        </div>
+                    `;
+                }
+
+                // 刷新会话列表
+                await loadSessions();
+                showNotification('对话已删除', 'success');
+            } catch (error) {
+                console.error('删除会话失败:', error);
+                showNotification('删除失败：' + error.message, 'error');
+            }
+        }
+
         // 加载会话消息
         async function loadSessionMessages(sessionId) {
             try {
@@ -754,6 +869,7 @@
                     localStorage.removeItem('currentSessionId');
                     currentSessionId = null;
                     await createNewSession();
+                    await loadSessions();
                     return;
                 }
                 
@@ -839,7 +955,7 @@
                 // 从 localStorage 获取最新的会话ID（防止多窗口不同步）
                 const latestSessionId = localStorage.getItem('currentSessionId');
                 if (latestSessionId) {
-                    currentSessionId = parseInt(latestSessionId);
+                    currentSessionId = Number(latestSessionId);
                 }
                 
                 // 调用API
@@ -917,7 +1033,13 @@
                 if (data.success) {
                     // 显示AI回复（传递消息ID用于反馈）
                     addMessage(data.answer, 'ai', true, data.message_id);
-                    
+
+                    // 保存服务器返回的会话ID
+                    if (data.session_id) {
+                        currentSessionId = Number(data.session_id);
+                        localStorage.setItem('currentSessionId', currentSessionId);
+                    }
+
                     // 更新会话列表（刷新消息计数）
                     loadSessions();
                 } else {
@@ -1194,6 +1316,20 @@
             // 其他
             return `${date.getMonth() + 1}/${date.getDate()}`;
         }
+        
+        // 切回标签页时刷新会话内容
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden && currentSessionId) {
+                loadSessionMessages(currentSessionId);
+                loadSessions();
+            }
+        });
+        window.addEventListener('pageshow', function(e) {
+            if (e.persisted && currentSessionId) {
+                loadSessionMessages(currentSessionId);
+                loadSessions();
+            }
+        });
         
 
     </script>

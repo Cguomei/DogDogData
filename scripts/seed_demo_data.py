@@ -150,6 +150,137 @@ def seed_favorites():
     db.session.commit()
 
 
+def seed_chart_data():
+    """为demo模式生成图表种子数据（jd_dogs / dog_price / dog_wykl）"""
+    import random
+    from datetime import datetime, timedelta
+
+    print("📈 创建图表种子数据...")
+
+    # 先检查是否已有数据
+    from models_charts import JdDog, DogPrice, DogWykl
+
+    if JdDog.query.count() > 0:
+        print("  ⚠ 图表数据已存在，跳过")
+        return
+
+    breeds_pool = [
+        "金毛寻回犬", "拉布拉多", "哈士奇", "萨摩耶", "柴犬", "泰迪",
+        "比熊", "边境牧羊犬", "阿拉斯加", "柯基", "德国牧羊犬", "法国斗牛犬",
+        "博美犬", "雪纳瑞", "巴哥犬", "吉娃娃", "杜宾犬", "罗威纳",
+        "松狮犬", "秋田犬", "马尔济斯", "约克夏", "西高地白梗", "中华田园犬",
+    ]
+    shops_pool = [
+        "宠爱有家犬舍", "萌宠乐园", "汪星球宠物店", "爱犬之家", "优宠犬业",
+        "天宠犬舍", "乐宠园", "星宠时代", "皇家犬舍", "阳光宠物",
+    ]
+    sizes_pool = {"小型犬": (1, 8), "中型犬": (8, 20), "大型犬": (20, 45), "超大型犬": (35, 65)}
+    levels_pool = ["宠物级", "血统级", "赛级"]
+    hair_pool = ["短毛", "长毛", "卷毛", "刚毛", "中长毛"]
+    age_pool = ["2个月", "3个月", "4个月", "5个月", "6个月", "8个月", "1岁"]
+
+    random.seed(42)
+    now = datetime.utcnow()
+
+    # ---- jd_dogs ----
+    dogs = []
+    for i in range(250):
+        breed = random.choice(breeds_pool)
+        size = random.choice(list(sizes_pool.keys()))
+        w_min, w_max = sizes_pool[size]
+        weight_raw = random.uniform(w_min, w_max * 0.9 + 0.1)
+        weight = round(weight_raw, 1)
+
+        # 价格：小/中/大型犬价格区间不同
+        if size == "小型犬":
+            price = round(random.uniform(500, 6000), 2)
+        elif size == "中型犬":
+            price = round(random.uniform(1500, 12000), 2)
+        elif size == "大型犬":
+            price = round(random.uniform(2000, 20000), 2)
+        else:
+            price = round(random.uniform(3000, 30000), 2)
+
+        dogs.append(JdDog(
+            number=10000 + i,
+            link=f"https://example.com/dog/{10000 + i}",
+            price=price,
+            shop_name=random.choice(shops_pool),
+            dog_name=breed,
+            pet_level=random.choice(levels_pool),
+            size=size,
+            weight=weight,
+            hair_length=random.choice(hair_pool),
+            pet_age=random.choice(age_pool),
+            crawl_time=now - timedelta(days=random.randint(0, 60)),
+            updated_at=now - timedelta(days=random.randint(0, 7)),
+        ))
+    db.session.bulk_save_objects(dogs)
+    db.session.commit()
+    print(f"  ✓ jd_dogs: {len(dogs)} 条")
+
+    # ---- dog_price ----
+    origins = ["英国", "日本", "德国", "美国", "中国", "法国", "俄罗斯", "加拿大", "澳大利亚", "韩国"]
+    prices = []
+    for i in range(60):
+        breed = random.choice(breeds_pool)
+        origin = random.choice(origins)
+        price_raw = random.randint(800, 25000)
+        prices.append(DogPrice(
+            links=f"https://example.com/price/{20000 + i}",
+            img_src=f"/static/dogs/placeholder.jpg",
+            dog_name=breed,
+            price=str(price_raw),
+            Hairy=random.choice(hair_pool),
+            height=f"{random.randint(20, 70)}cm",
+            Origin_wool=origin,
+            dog_function=random.choice(["伴侣犬", "工作犬", "护卫犬", "猎犬", "牧羊犬"]),
+        ))
+    db.session.bulk_save_objects(prices)
+    db.session.commit()
+    print(f"  ✓ dog_price: {len(prices)} 条")
+
+    # ---- dog_wykl ----
+    food_brands = [
+        ("皇家狗粮 A3 全价粮 15kg", 380, 480),
+        ("冠能 Pro Plan 中型犬粮 12kg", 320, 420),
+        ("比瑞吉天然粮 10kg", 260, 350),
+        ("伯纳天纯无谷粮 10kg", 280, 380),
+        ("海洋之星三文鱼配方 12kg", 450, 580),
+        ("渴望 Orijen 无谷六种鱼 11.4kg", 780, 980),
+        ("爱肯拿 Acana 草原配方 11.4kg", 680, 850),
+        ("纽顿 Nutram T27 无谷粮 11.4kg", 520, 680),
+        ("NOW FRESH 四叶草 无谷粮 11.3kg", 580, 720),
+        ("GO! 天然粮 鸡肉配方 11.3kg", 420, 560),
+        ("皇家奶糕 小型犬幼犬粮 8kg", 350, 450),
+        ("冠能幼犬粮 鸡肉米饭 12kg", 280, 380),
+        ("麦富迪黑森林天然粮 15kg", 220, 300),
+        ("疯狂小狗鲜肉粮 10kg", 150, 220),
+        ("力狼天然粮 牛肉味 15kg", 120, 180),
+        ("比乐 Bile 原味鲜系列 10kg", 360, 460),
+        ("佩玛思特 PetMaster 天然粮 10kg", 200, 280),
+        ("醇粹黑标无谷粮 10kg", 260, 340),
+        ("蓝氏 LEGENDS 生鲜系列 10kg", 320, 420),
+        ("网易严选全价犬粮 10kg", 180, 260),
+    ]
+    foods = []
+    for i, (name, disc, orig_price) in enumerate(food_brands):
+        # 给每个品牌添加几条记录（不同规格/口味）
+        for variant in range(random.randint(1, 3)):
+            foods.append(DogWykl(
+                food_id=30000 + len(foods),
+                link=f"https://example.com/food/{30000 + len(foods)}",
+                img_src="/static/dogs/placeholder.jpg",
+                food_name=name if variant == 0 else f"{name}（{['鸡肉味','牛肉味','鱼肉味'][variant-1]}）",
+                discount_price=str(disc),
+                price=str(orig_price),
+                origin=random.choice(["中国", "加拿大", "美国", "英国", "比利时"]),
+            ))
+    db.session.bulk_save_objects(foods)
+    db.session.commit()
+    print(f"  ✓ dog_wykl: {len(foods)} 条")
+
+
 def seed_dashboard_summary():
     """创建仪表盘汇总数据"""
     print("📊 创建仪表盘数据...")
@@ -199,6 +330,7 @@ def init_demo_data(clear=False):
         # 执行数据种子
         seed_users()
         seed_dog_breeds()
+        seed_chart_data()
         seed_user_profiles()
         seed_favorites()
         seed_dashboard_summary()

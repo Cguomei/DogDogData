@@ -1086,7 +1086,6 @@ def ai_chat():
 
                 guest_user = User.query.filter_by(username="guest").first()
                 if not guest_user:
-                    # 如果guest用户不存在，创建它
                     guest_user = User(
                         username="guest",
                         password_hash=generate_password_hash("guest"),
@@ -1096,29 +1095,41 @@ def ai_chat():
                     db.session.commit()
                     logger.info(f"[{request_id}] 创建guest用户: ID={guest_user.id}")
 
-                user_id_for_session = guest_user.id
+                # 游客复用已有活跃会话
+                existing = ChatSession.query.filter_by(
+                    user_id=guest_user.id, is_active=True
+                ).order_by(ChatSession.updated_at.desc()).first()
+                if existing:
+                    session_id = existing.id
+                    existing.title = user_message[:50]
+                    db.session.commit()
+                    logger.info(f"[{request_id}] 游客复用已有会话: ID={session_id}")
+                else:
+                    user_id_for_session = guest_user.id
             else:
                 user_id_for_session = current_user.id
 
-            session = ChatSession(
-                user_id=user_id_for_session,
-                title=user_message[:50],  # 用第一条消息作为标题
-            )
-            db.session.add(session)
-            db.session.commit()
-            session_id = session.id
-            logger.info(
-                f"[{request_id}] 创建新会话: ID={session_id} (游客: {is_guest})"
-            )
+            if not session_id:
+                session = ChatSession(
+                    user_id=user_id_for_session,
+                    title=user_message[:50],
+                )
+                db.session.add(session)
+                db.session.commit()
+                session_id = session.id
+                logger.info(
+                    f"[{request_id}] 创建新会话: ID={session_id} (游客: {is_guest})"
+                )
         else:
-            # 验证会话归属
+            # 验证会话归属（会话不存在则忽略旧ID，下面自动创建新会话）
             session = ChatSession.query.get(session_id)
-            if not session:
-                return jsonify({"error": "会话不存在"}), 404
-
-            # 如果是登录用户，验证会话归属
-            if not is_guest and session.user_id != current_user.id:
-                return jsonify({"error": "无权访问该会话"}), 403
+            if session:
+                # 如果是登录用户，验证会话归属
+                if not is_guest and session.user_id != current_user.id:
+                    return jsonify({"error": "无权访问该会话"}), 403
+            else:
+                # 会话已删除或不存在，忽略旧ID让下面创建新会话
+                session_id = None
 
             # 游客只能访问自己创建的会话（通过localStorage中的sessionId）
             # 这里不做严格验证，因为游客没有身份标识
@@ -1525,6 +1536,22 @@ def create_session():
                 db.session.add(guest_user)
                 db.session.commit()
             user_id_for_session = guest_user.id
+
+            # 游客单一会话：复用已有活跃会话
+            existing = ChatSession.query.filter_by(
+                user_id=guest_user.id, is_active=True
+            ).order_by(ChatSession.updated_at.desc()).first()
+            if existing:
+                existing.title = title
+                db.session.commit()
+                logger.info(f"游客复用已有会话: ID={existing.id}")
+                return jsonify({
+                    "success": True,
+                    "session_id": existing.id,
+                    "title": existing.title,
+                    "is_guest": True,
+                    "reused": True,
+                }), 200
         else:
             user_id_for_session = current_user.id
 
@@ -1559,7 +1586,9 @@ def create_session():
 def get_session(session_id):
     """获取指定会话的详细信息 - 支持游客"""
     try:
-        session = ChatSession.query.get_or_404(session_id)
+        session = ChatSession.query.get(session_id)
+        if not session:
+            return jsonify({"success": False, "error": "会话不存在"}), 404
 
         # 检查用户状态
         is_guest = not current_user.is_authenticated
@@ -1585,15 +1614,25 @@ def get_session(session_id):
 
 
 @ai_bp.route("/api/ai/sessions/<int:session_id>/messages")
-@login_required
 def get_messages(session_id):
-    """获取指定会话的消息历史"""
+    """获取指定会话的消息历史 - 支持游客"""
     try:
-        session = ChatSession.query.get_or_404(session_id)
+        session = ChatSession.query.get(session_id)
+        if not session:
+            return jsonify({"success": False, "error": "会话不存在"}), 404
 
         # 权限检查
-        if session.user_id != current_user.id:
-            return jsonify({"error": "无权访问"}), 403
+        if session.user_id is not None:
+            if current_user.is_authenticated:
+                # 登录用户：验证会话归属
+                if session.user_id != current_user.id:
+                    return jsonify({"error": "无权访问"}), 403
+            else:
+                # 游客：只能访问 guest 用户的会话
+                from models import User
+                guest_user = User.query.filter_by(username="guest").first()
+                if not guest_user or session.user_id != guest_user.id:
+                    return jsonify({"error": "无权访问"}), 403
 
         # 获取消息（按时间排序）
         messages = (
@@ -1619,21 +1658,22 @@ def get_messages(session_id):
 def delete_session(session_id):
     """删除指定会话(硬删除+级联删除消息)"""
     try:
-        session = ChatSession.query.get_or_404(session_id)
+        session = ChatSession.query.get(session_id)
+        if not session:
+            return jsonify({"success": False, "error": "会话不存在或已删除"}), 404
 
-        # 权限检查：支持游客(user_id=None)和登录用户
+        # 权限检查
         if session.user_id is not None:
-            # 登录用户的会话，需要验证权限
-            try:
-                if (
-                    not current_user.is_authenticated
-                    or session.user_id != current_user.id
-                ):
+            if current_user.is_authenticated:
+                # 登录用户：验证会话归属
+                if session.user_id != current_user.id:
                     return jsonify({"error": "无权访问"}), 403
-            except Exception:
-                # 未登录用户无法访问登录用户的会话
-                return jsonify({"error": "请先登录"}), 401
-        # 游客会话(user_id=None)，允许删除
+            else:
+                # 游客：只能访问 guest 用户的会话
+                from models import User
+                guest_user = User.query.filter_by(username="guest").first()
+                if not guest_user or session.user_id != guest_user.id:
+                    return jsonify({"error": "无权访问"}), 403
 
         # 先删除该会话下的所有消息
         deleted_messages = ChatMessage.query.filter_by(session_id=session_id).delete()
@@ -1691,10 +1731,14 @@ def submit_feedback():
             )
 
         # 查询消息
-        message = ChatMessage.query.get_or_404(message_id)
+        message = ChatMessage.query.get(message_id)
+        if not message:
+            return jsonify({"success": False, "error": "消息不存在"}), 404
 
         # 验证会话归属
         session = ChatSession.query.get(message.session_id)
+        if not session:
+            return jsonify({"success": False, "error": "会话不存在"}), 404
         if session.user_id != current_user.id:
             return jsonify({"error": "无权访问"}), 403
 

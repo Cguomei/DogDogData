@@ -878,3 +878,33 @@ def get_map_data():
         return jsonify(data)
     except Exception as e:
         return jsonify({"error": f"获取地图数据失败: {str(e)}"}), 500
+
+
+@api_bp.route("/api/chart/<name>")
+def get_chart_embed(name):
+    """返回指定图表的 embed HTML（用于数据大盘）"""
+    try:
+        from charts import (
+            get_price_scatter,
+            get_weight_line,
+            get_level_bar,
+            get_shop_top10_hist,
+            get_price_funnel,
+            get_world_map,
+        )
+
+        funcs = {
+            "scatter": get_price_scatter,
+            "line": get_weight_line,
+            "bar": get_level_bar,
+            "hist": get_shop_top10_hist,
+            "funnel": get_price_funnel,
+            "map": get_world_map,
+        }
+        func = funcs.get(name)
+        if not func:
+            return jsonify({"error": "未知图表"}), 404
+        html = func()
+        return html, 200, {"Content-Type": "text/html; charset=utf-8"}
+    except Exception as e:
+        return f"<p>图表加载失败: {str(e)}</p>", 500, {"Content-Type": "text/html; charset=utf-8"}

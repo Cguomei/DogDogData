@@ -48,11 +48,9 @@
                     <li class="nav-item"><a class="nav-link" href="/">首页</a></li>
                     <li class="nav-item"><a class="nav-link" href="/custom-analysis">📊 自定义分析</a></li>
                     <li class="nav-item"><a class="nav-link" href="/admin/breeds">📋 品种管理</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/charts">图表列表</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/charts">数据大盘</a></li>
                     <!-- AI智能助手 -->
-                    {% if current_user.is_authenticated %}
                     <li class="nav-item"><a class="nav-link" href="/ai-chat">🤖 AI助手</a></li>
-                    {% endif %}
 
                 {% if current_user.is_authenticated %}
                     <li class="nav-item dropdown">

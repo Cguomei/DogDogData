@@ -416,7 +416,8 @@ def get_unread_count():
 def check_price_alerts():
     """检查价格预警（内部接口，可由定时任务调用）"""
     try:
-        from charts import get_db_connection
+        from models_charts import JdDog
+        from sqlalchemy import func
 
         # 获取所有活跃的价格预警
         active_alerts = PriceAlert.query.filter_by(
@@ -426,24 +427,15 @@ def check_price_alerts():
         triggered_count = 0
 
         for alert in active_alerts:
-            # 查询当前价格
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute(
-                """
-                SELECT AVG(price) as avg_price 
-                FROM jd_dogs 
-                WHERE dog_name LIKE %s
-            """,
-                (f"%{alert.breed_name}%",),
+            # 查询当前价格（用 SQLAlchemy 替代 raw pymysql cursor）
+            result = (
+                db.session.query(func.avg(JdDog.price))
+                .filter(JdDog.dog_name.like(f"%{alert.breed_name}%"))
+                .scalar()
             )
 
-            result = cursor.fetchone()
-            cursor.close()
-            conn.close()
-
-            if result and result[0]:
-                current_price = float(result[0])
+            if result:
+                current_price = float(result)
                 alert.last_check_price = current_price
 
                 # 检查是否触发

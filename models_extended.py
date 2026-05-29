@@ -723,9 +723,8 @@ class BreedAlert(db.Model):
     # 索引
     __table_args__ = (
         db.Index("idx_user_type", "user_id", "alert_type"),
-        db.Index("idx_active", "is_active"),
+        db.Index("idx_breed_active", "is_active"),
     )
-
     # 关联
     user = db.relationship("User", backref=db.backref("breed_alerts", lazy="dynamic"))
 

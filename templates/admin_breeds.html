@@ -8,12 +8,10 @@
     <p class="text-center text-muted">在这里可以增、删、改、查狗狗品种</p>
 </div>
 
-<!-- 新增品种表单（模态框） -->
 <button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addModal">
     ➕ 新增品种
 </button>
 
-<!-- 品种列表表格 -->
 <table class="table table-striped" id="breed-admin-table">
     <thead>
         <tr>
@@ -30,7 +28,7 @@
     </tbody>
 </table>
 
-<!-- 新增品种模态框 -->
+<!-- 新增模态框 -->
 <div class="modal fade" id="addModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -72,7 +70,7 @@
     </div>
 </div>
 
-<!-- 编辑品种模态框（结构类似，但用 data-id 记录当前编辑的ID） -->
+<!-- 编辑模态框 -->
 <div class="modal fade" id="editModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -116,125 +114,103 @@
 </div>
 
 <script>
-// 获取CSRF令牌
+var breedTable = null;
+
 function getCSRFToken() {
     return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 }
 
-// 加载数据并渲染表格
 function loadBreeds() {
     fetch('/api/breeds')
-        .then(res => res.json())
-        .then(data => {
-            const tbody = document.getElementById('admin-breed-tbody');
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            var tbody = document.getElementById('admin-breed-tbody');
             if (data.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" class="text-center">暂无数据</td></tr>';
+                if (breedTable) { breedTable.destroy(); breedTable = null; }
             } else {
-                tbody.innerHTML = data.map(b => `
-                    <tr>
-                        <td>${escapeHtml(b.id)}</td>
-                        <td>${escapeHtml(b.breed_name)}</td>
-                        <td>${escapeHtml(b.avg_life_years) || '-'}</td>
-                        <td>${escapeHtml(b.size_category) || '-'}</td>
-                        <td>${escapeHtml(b.popularity)}</td>
-                        <td>
-                            <button class="btn btn-sm btn-warning" onclick="editBreed(${escapeHtml(b.id)})">编辑</button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteBreed(${escapeHtml(b.id)})">删除</button>
-                        </td>
-                    </tr>
-                `).join('');
+                tbody.innerHTML = data.map(function(b) {
+                    return '<tr>' +
+                        '<td>' + escapeHtml(b.id) + '</td>' +
+                        '<td>' + escapeHtml(b.breed_name) + '</td>' +
+                        '<td>' + (escapeHtml(b.avg_life_years) || '-') + '</td>' +
+                        '<td>' + (escapeHtml(b.size_category) || '-') + '</td>' +
+                        '<td>' + escapeHtml(b.popularity) + '</td>' +
+                        '<td>' +
+                            '<button class="btn btn-sm btn-warning" onclick="editBreed(' + escapeHtml(b.id) + ')">编辑</button> ' +
+                            '<button class="btn btn-sm btn-danger" onclick="deleteBreed(' + escapeHtml(b.id) + ')">删除</button>' +
+                        '</td>' +
+                    '</tr>';
+                }).join('');
+                if (breedTable) { breedTable.destroy(); }
+                breedTable = $('#breed-admin-table').DataTable({
+                    language: {
+                        search: '搜索：',
+                        lengthMenu: '每页 _MENU_ 条',
+                        info: '显示 _START_ 到 _END_ 条，共 _TOTAL_ 条',
+                        paginate: { first: '首页', last: '末页', next: '下一页', previous: '上一页' }
+                    },
+                    pageLength: 20,
+                    lengthMenu: [10, 20, 50, 100],
+                    order: [[0, 'asc']]
+                });
             }
         });
 }
 
-// 新增品种
-document.getElementById('saveAddBtn').addEventListener('click', () => {
-    const data = {
+document.getElementById('saveAddBtn').addEventListener('click', function() {
+    var data = {
         breed_name: document.getElementById('breed_name').value,
         avg_life_years: document.getElementById('avg_life_years').value || null,
         size_category: document.getElementById('size_category').value || null,
         popularity: parseInt(document.getElementById('popularity').value) || 0
     };
-    console.log('发送的数据:', data);
-    console.log('CSRF令牌:', getCSRFToken());
     fetch('/api/breeds', {
         method: 'POST',
-        headers: { 
+        headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': getCSRFToken()
         },
         body: JSON.stringify(data)
     })
-    .then(res => {
-        console.log('响应状态码:', res.status);
-        return res.json();
-    })
-    .then(res => {
-        console.log('响应内容:', res);
+    .then(function(res) { return res.json(); })
+    .then(function(res) {
         if (res.id) {
-            console.log('添加成功，关闭模态框');
-            // 使用Bootstrap 5的原生方法关闭模态框
-            const modal = bootstrap.Modal.getInstance(document.getElementById('addModal'));
-            if (modal) {
-                modal.hide();
-            } else {
-                console.log('模态框实例不存在');
-            }
-            loadBreeds();  // 重新加载表格
-            // 清空表单
+            var modal = bootstrap.Modal.getInstance(document.getElementById('addModal'));
+            if (modal) modal.hide();
+            loadBreeds();
             document.getElementById('addForm').reset();
         } else {
             alert(res.error || '添加失败');
         }
     })
-    .catch(error => {
-        console.error('请求失败:', error);
+    .catch(function(err) {
+        console.error(err);
         alert('请求失败，请稍后重试');
     });
 });
 
-// 删除品种（需要后端实现 DELETE 接口）
 function deleteBreed(id) {
-    console.log('删除按钮被点击，ID:', id);
-    // 先显示确认对话框
-    const confirmed = confirm('确定要删除该品种吗？');
-    console.log('用户确认:', confirmed);
-    if (!confirmed) {
-        console.log('用户取消删除，不执行任何操作');
-        return;
-    }
-    console.log('开始发送删除请求...');
-    fetch(`/api/breeds/${id}`, {
+    if (!confirm('确定要删除该品种吗？')) return;
+    fetch('/api/breeds/' + id, {
         method: 'DELETE',
-        headers: {
-            'X-CSRFToken': getCSRFToken()
-        }
+        headers: { 'X-CSRFToken': getCSRFToken() }
     })
-    .then(res => {
-        console.log('删除请求响应状态:', res.status);
-        return res.json();
+    .then(function(res) { return res.json(); })
+    .then(function(res) {
+        if (res.message) { loadBreeds(); }
+        else { alert(res.error || '删除失败'); }
     })
-    .then(res => {
-        console.log('删除请求响应内容:', res);
-        if (res.message) {
-            console.log('删除成功，重新加载表格');
-            loadBreeds();
-        } else {
-            alert(res.error || '删除失败');
-        }
-    })
-    .catch(error => {
-        console.error('删除请求失败:', error);
+    .catch(function(err) {
+        console.error(err);
         alert('删除请求失败，请稍后重试');
     });
 }
 
-// 编辑：打开模态框并加载数据
 function editBreed(id) {
-    // 先获取当前数据（可从已有表格获取，也可重新请求）
-    fetch(`/api/breeds/${id}`)
-        .then(res => res.json())
-        .then(b => {
+    fetch('/api/breeds/' + id)
+        .then(function(res) { return res.json(); })
+        .then(function(b) {
             document.getElementById('edit_id').value = b.id;
             document.getElementById('edit_breed_name').value = b.breed_name;
             document.getElementById('edit_avg_life_years').value = b.avg_life_years || '';
@@ -244,16 +220,15 @@ function editBreed(id) {
         });
 }
 
-// 保存编辑
-document.getElementById('saveEditBtn').addEventListener('click', () => {
-    const id = document.getElementById('edit_id').value;
-    const data = {
+document.getElementById('saveEditBtn').addEventListener('click', function() {
+    var id = document.getElementById('edit_id').value;
+    var data = {
         breed_name: document.getElementById('edit_breed_name').value,
         avg_life_years: document.getElementById('edit_avg_life_years').value || null,
         size_category: document.getElementById('edit_size_category').value || null,
         popularity: parseInt(document.getElementById('edit_popularity').value) || 0
     };
-    fetch(`/api/breeds/${id}`, {
+    fetch('/api/breeds/' + id, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -261,8 +236,8 @@ document.getElementById('saveEditBtn').addEventListener('click', () => {
         },
         body: JSON.stringify(data)
     })
-    .then(res => res.json())
-    .then(res => {
+    .then(function(res) { return res.json(); })
+    .then(function(res) {
         if (res.message) {
             $('#editModal').modal('hide');
             loadBreeds();
@@ -272,7 +247,6 @@ document.getElementById('saveEditBtn').addEventListener('click', () => {
     });
 });
 
-// 页面加载时首次加载数据
 loadBreeds();
 </script>
 {% endblock %}
