@@ -1,0 +1,74 @@
+<h2>页面布局设计</h2>
+<p class="subtitle">淘宝/JD 风格，5 个页面</p>
+
+<div class="section">
+  <h3>① 商品列表页 /store</h3>
+  <div class="mockup">
+    <div class="mockup-header">顶部: 导航栏（含"购物车"图标+数量角标）</div>
+    <div class="mockup-body">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:12px;">
+        <div style="border:1px solid #ddd;border-radius:8px;padding:8px;text-align:center;">
+          <div style="height:120px;background:#f0f0f0;border-radius:4px;margin-bottom:6px;">📷 商品图</div>
+          <div style="font-weight:bold;font-size:13px;">商品名称</div>
+          <div style="color:#f40;font-size:16px;">¥29.90</div>
+          <button style="background:#f40;color:#fff;border:none;border-radius:20px;padding:4px 12px;font-size:12px;">加入购物车</button>
+        </div>
+        <div style="border:1px solid #ddd;border-radius:8px;padding:8px;text-align:center;">
+          <div style="height:120px;background:#f0f0f0;border-radius:4px;margin-bottom:6px;">📷 商品图</div>
+          <div style="font-weight:bold;font-size:13px;">商品名称</div>
+          <div style="color:#f40;font-size:16px;">¥29.90</div>
+          <button style="background:#f40;color:#fff;border:none;border-radius:20px;padding:4px 12px;font-size:12px;">加入购物车</button>
+        </div>
+        <div style="border:1px solid #ddd;border-radius:8px;padding:8px;text-align:center;">
+          <div style="height:120px;background:#f0f0f0;border-radius:4px;margin-bottom:6px;">📷 商品图</div>
+          <div style="font-weight:bold;font-size:13px;">商品名称</div>
+          <div style="color:#f40;font-size:16px;">¥29.90</div>
+          <button style="background:#f40;color:#fff;border:none;border-radius:20px;padding:4px 12px;font-size:12px;">加入购物车</button>
+        </div>
+        <div style="border:1px solid #ddd;border-radius:8px;padding:8px;text-align:center;">
+          <div style="height:120px;background:#f0f0f0;border-radius:4px;margin-bottom:6px;">📷 商品图</div>
+          <div style="font-weight:bold;font-size:13px;">商品名称</div>
+          <div style="color:#f40;font-size:16px;">¥29.90</div>
+          <button style="background:#f40;color:#fff;border:none;border-radius:20px;padding:4px 12px;font-size:12px;">加入购物车</button>
+        </div>
+      </div>
+      <div style="text-align:center;color:#999;padding:8px;">共 12 款商品（4 列网格）</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>② 商品详情页 /store/&lt;id&gt;</h3>
+  <div class="mockup">
+    <div class="mockup-body" style="display:flex;gap:20px;padding:16px;">
+      <div style="flex:1;background:#f0f0f0;border-radius:8px;height:200px;display:flex;align-items:center;justify-content:center;">📷 商品大图</div>
+      <div style="flex:1;">
+        <div style="font-size:20px;font-weight:bold;">商品名称</div>
+        <div style="color:#f40;font-size:28px;margin:12px 0;">¥29.90</div>
+        <div style="color:#666;margin:8px 0;">商品描述信息...</div>
+        <div style="display:flex;align-items:center;gap:12px;margin:16px 0;">
+          <span>数量:</span>
+          <button style="border:1px solid #ddd;padding:4px 12px;">−</button>
+          <span>1</span>
+          <button style="border:1px solid #ddd;padding:4px 12px;">+</button>
+        </div>
+        <button style="background:#f40;color:#fff;border:none;border-radius:20px;padding:10px 32px;font-size:16px;">加入购物车</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>③ 购物车 /store/cart</h3>
+  <p>商品列表 + 数量调整 + 全选 + 结算按钮</p>
+</div>
+
+<div class="section">
+  <h3>④ 结算 /store/checkout</h3>
+  <p>收货信息 + 订单摘要 + 支付方式选择 + 提交订单</p>
+</div>
+
+<div class="section">
+  <h3>⑤ 我的订单 /store/orders</h3>
+  <p>订单列表，显示状态、金额、操作</p>
+</div>

@@ -1,0 +1,49 @@
+<h2>整体架构设计</h2>
+<p class="subtitle">狗粮商城 Demo — 新建 Flask 蓝图</p>
+
+<div class="section">
+  <h3>🗂 数据模型 (models_store.py)</h3>
+  <div class="mockup">
+    <div class="mockup-header">4 张新表</div>
+    <div class="mockup-body">
+      <code>Product</code> — 商品（id, 名称, 描述, 价格, 图片, 库存）<br>
+      <code>CartItem</code> — 购物车（用户id, 商品id, 数量）<br>
+      <code>Order</code> — 订单（用户id, 总金额, 状态, 创建时间）<br>
+      <code>OrderItem</code> — 订单明细（订单id, 商品, 单价, 数量）
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>📄 页面模板 (templates/)</h3>
+  <div class="mockup">
+    <div class="mockup-body">
+      <code>store_list.html</code> — 商品网格列表（展示全部12款）<br>
+      <code>store_detail.html</code> — 商品详情（大图+描述+加入购物车）<br>
+      <code>store_cart.html</code> — 购物车页面<br>
+      <code>store_checkout.html</code> — 结算页（地址+支付+下单）<br>
+      <code>store_orders.html</code> — 我的订单
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>🛣 路由 (routes/store.py)</h3>
+  <div class="mockup">
+    <div class="mockup-body">
+      <code>/store</code> — 商品列表<br>
+      <code>/store/&lt;id&gt;</code> — 商品详情<br>
+      <code>/store/cart</code> — 购物车（需登录）<br>
+      <code>/cart/add</code> — 加入购物车 (AJAX)<br>
+      <code>/cart/update</code> — 修改数量 (AJAX)<br>
+      <code>/store/checkout</code> — 结算（需登录）<br>
+      <code>/store/orders</code> — 我的订单（需登录）
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>🎨 前端技术</h3>
+  <p>复用现有 Bootstrap 5.3 + 自定义 CSS，淘宝风格设计。<br>
+  商品图片从 <code>img/</code> 复制到 <code>static/img/products/</code> 通过 Flask 静态服务提供。</p>
+</div>

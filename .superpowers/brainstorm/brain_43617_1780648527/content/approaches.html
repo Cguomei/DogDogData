@@ -1,0 +1,46 @@
+<h2>实现方案对比</h2>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)" style="border-color: #4CAF50;">
+    <div class="letter" style="background: #4CAF50;">A ★</div>
+    <div class="content">
+      <h3>新建 Flask 蓝图（推荐）</h3>
+      <p>新建 <code>routes/store.py</code> 蓝图 + 数据库模型（Product/Cart/Order），<br>
+      按淘宝风格分页：商品列表 → 详情页 → 购物车页 → 结算页。<br>
+      复用现有 base.html + Bootstrap 5.3 + Flask-Login。</p>
+      <div class="pros-cons" style="margin-top:8px;font-size:0.85em;">
+        <div class="pros"><h4>优点</h4><ul><li>符合项目现有架构</li><li>页面独立、结构清晰</li><li>容易扩展和维护</li></ul></div>
+        <div class="cons"><h4>缺点</h4><ul><li>需建新表、新路由</li><li>代码量较多</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Alpine.js 单页应用</h3>
+      <p>单个 Flask 路由 + Alpine.js 前端状态管理，<br>
+      购物车存在前端，通过 API 获取商品数据。<br>
+      无需页面跳转，交互流畅。</p>
+      <div class="pros-cons" style="margin-top:8px;font-size:0.85em;">
+        <div class="pros"><h4>优点</h4><ul><li>交互流畅、无刷新</li><li>路由代码少</li></ul></div>
+        <div class="cons"><h4>缺点</h4><ul><li>不符合常规电商模式</li><li>数据不持久化（刷新丢失）</li><li>难扩展</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>基于现有 food.html 扩展</h3>
+      <p>在现有 food.html 基础上增加购物车功能，<br>
+      利用已有的 /api/food/ 数据端点。</p>
+      <div class="pros-cons" style="margin-top:8px;font-size:0.85em;">
+        <div class="pros"><h4>优点</h4><ul><li>代码改动最小</li><li>已有数据可用</li></ul></div>
+        <div class="cons"><h4>缺点</h4><ul><li>现有页面偏数据展示</li><li>改造后结构混乱</li><li>不如新建干净</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p style="margin-top:16px;"><strong>推荐方案 A</strong> —— 新建蓝图，复用项目现有 Flask + Bootstrap + Flask-Login 架构，页面结构完全按淘宝/JD风格。</p>

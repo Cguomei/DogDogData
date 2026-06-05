@@ -1,0 +1,56 @@
+<h2>路由 & 种子数据</h2>
+
+<div class="section">
+  <h3>🛣 路由表 (routes/store.py)</h3>
+  <div class="mockup">
+    <div class="mockup-body">
+      <table style="width:100%;border-collapse:collapse;">
+        <tr style="background:#f5f5f5;"><th style="padding:6px;text-align:left;border-bottom:1px solid #ddd;">路由</th><th style="padding:6px;text-align:left;border-bottom:1px solid #ddd;">方法</th><th style="padding:6px;text-align:left;border-bottom:1px solid #ddd;">功能</th></tr>
+        <tr><td style="padding:6px;border-bottom:1px solid #eee;">/store</td><td>GET</td><td>商品列表</td></tr>
+        <tr><td style="padding:6px;border-bottom:1px solid #eee;">/store/&lt;id&gt;</td><td>GET</td><td>商品详情</td></tr>
+        <tr><td style="padding:6px;border-bottom:1px solid #eee;">/store/cart</td><td>GET</td><td>购物车页 (需登录)</td></tr>
+        <tr><td style="padding:6px;border-bottom:1px solid #eee;">/store/cart/add</td><td>POST</td><td>加入购物车 (AJAX)</td></tr>
+        <tr><td style="padding:6px;border-bottom:1px solid #eee;">/store/cart/update</td><td>POST</td><td>修改数量 (AJAX)</td></tr>
+        <tr><td style="padding:6px;border-bottom:1px solid #eee;">/store/cart/remove</td><td>POST</td><td>删除商品 (AJAX)</td></tr>
+        <tr><td style="padding:6px;border-bottom:1px solid #eee;">/store/checkout</td><td>GET</td><td>结算页 (需登录)</td></tr>
+        <tr><td style="padding:6px;border-bottom:1px solid #eee;">/store/order/place</td><td>POST</td><td>提交订单 (AJAX)</td></tr>
+        <tr><td style="padding:6px;border-bottom:1px solid #eee;">/store/orders</td><td>GET</td><td>我的订单 (需登录)</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>🌱 种子数据</h3>
+  <div class="mockup">
+    <div class="mockup-body">
+      在 <code>init_db.py</code> 或一个新的 <code>seed_store.py</code> 脚本中创建 12 条商品：<br><br>
+      <code>汪汪超爱吃狗粮（鸡肉味）</code> — ¥29.90<br>
+      <code>汪汪超爱吃狗粮（牛肉味）</code> — ¥35.90<br>
+      <code>汪汪超爱吃狗粮（三文鱼味）</code> — ¥42.90<br>
+      ...等 12 种口味，<br>
+      每种对应 product_01.png ~ product_12.png<br>
+      随机价格 ¥19.90 ~ ¥89.90，随机库存 50~200
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>📋 修改文件清单</h3>
+  <div class="mockup">
+    <div class="mockup-body">
+      <span style="color:green;">新建</span> <code>models_store.py</code> — 数据模型<br>
+      <span style="color:green;">新建</span> <code>routes/store.py</code> — 蓝图路由<br>
+      <span style="color:green;">新建</span> <code>templates/store_list.html</code> — 商品列表<br>
+      <span style="color:green;">新建</span> <code>templates/store_detail.html</code> — 商品详情<br>
+      <span style="color:green;">新建</span> <code>templates/store_cart.html</code> — 购物车<br>
+      <span style="color:green;">新建</span> <code>templates/store_checkout.html</code> — 结算<br>
+      <span style="color:green;">新建</span> <code>templates/store_orders.html</code> — 订单<br>
+      <span style="color:green;">新建</span> <code>static/CSS/store.css</code> — 商城样式<br>
+      <span style="color:orange;">修改</span> <code>app.py</code> — 注册蓝图<br>
+      <span style="color:orange;">修改</span> <code>templates/base.html</code> — 导航栏加"商城"入口<br>
+      <span style="color:orange;">修改</span> <code>routes/auth.py</code> — 登录后重定向回商店<br>
+      <span style="color:orange;">修改</span> <code>routes/main.py</code> — 首页加商城入口
+    </div>
+  </div>
+</div>

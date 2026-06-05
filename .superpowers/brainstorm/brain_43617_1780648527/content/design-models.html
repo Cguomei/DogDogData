@@ -1,0 +1,59 @@
+<h2>数据模型详细设计</h2>
+<p class="subtitle">models_store.py — 4 张表</p>
+
+<div class="section">
+  <h3>Product 商品表</h3>
+  <div class="mockup">
+    <div class="mockup-body">
+      <code>id</code> — Integer, PK<br>
+      <code>name</code> — String(100), 商品名称<br>
+      <code>description</code> — Text, 商品描述<br>
+      <code>price</code> — Float, 价格<br>
+      <code>image</code> — String(200), 图片文件名<br>
+      <code>stock</code> — Integer, 库存数量<br>
+      <code>is_active</code> — Boolean, 是否上架<br>
+      <code>created_at</code> — DateTime
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>CartItem 购物车表</h3>
+  <div class="mockup">
+    <div class="mockup-body">
+      <code>id</code> — Integer, PK<br>
+      <code>user_id</code> — Integer, FK → User.id<br>
+      <code>product_id</code> — Integer, FK → Product.id<br>
+      <code>quantity</code> — Integer, 数量<br>
+      <code>created_at</code> — DateTime<br><br>
+      <em>unique constraint: (user_id, product_id)</em>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Order / OrderItem 订单表</h3>
+  <div class="mockup">
+    <div class="mockup-header">Order</div>
+    <div class="mockup-body">
+      <code>id</code> — Integer, PK<br>
+      <code>user_id</code> — Integer, FK → User.id<br>
+      <code>total_amount</code> — Float, 总金额<br>
+      <code>status</code> — String(20), 状态: pending/paid/shipped/completed/cancelled<br>
+      <code>created_at</code> — DateTime
+    </div>
+  </div>
+  <br>
+  <div class="mockup-header">OrderItem</div>
+  <div class="mockup-body">
+      <code>id</code> — Integer, PK<br>
+      <code>order_id</code> — Integer, FK → Order.id<br>
+      <code>product_id</code> — Integer, FK → Product.id<br>
+      <code>product_name</code> — String(100), 快照名称<br>
+      <code>price</code> — Float, 快照价格<br>
+      <code>quantity</code> — Integer, 数量
+    </div>
+  </div>
+</div>
+
+<p>首次启动时会用 12 张狗粮图片创建 12 条商品种子数据。</p>
