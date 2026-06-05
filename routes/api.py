@@ -558,6 +558,41 @@ def export_food_data():
         )
 
 
+
+# ===== 狗粮购买 API =====
+@api_bp.route("/api/food/order", methods=["POST"])
+def place_food_order():
+    """提交狗粮订单（模拟支付）"""
+    try:
+        data = request.get_json()
+        if not data or not data.get("items"):
+            return jsonify({"success": False, "error": "购物车为空"}), 400
+
+        items = data["items"]
+        payment_method = data.get("payment_method", "微信支付")
+        customer = data.get("customer", {})
+
+        # 计算总金额
+        total = sum(
+            float(item.get("price", 0)) * int(item.get("quantity", 1))
+            for item in items
+        )
+
+        # 模拟订单号
+        import time
+        order_id = f"FD{int(time.time())}"
+
+        return jsonify({
+            "success": True,
+            "order_id": order_id,
+            "total": round(total, 2),
+            "items_count": len(items),
+            "payment_method": payment_method,
+            "message": "下单成功！"
+        })
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 # ===== 数据导出 API =====
 @api_bp.route("/api/export-data", methods=["POST"])
 def export_data():
