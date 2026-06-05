@@ -52,3 +52,35 @@ class TestOrderModel:
         session.commit()
         assert order.items.count() == 1
         assert order.total_amount == 30.0
+
+
+class TestStoreRoutes:
+    def test_product_list_public(self, client):
+        resp = client.get('/store/')
+        assert resp.status_code == 200
+
+    def test_product_detail(self, client, db):
+        from models_store import Product
+        p = Product.query.first()
+        if not p:
+            p = Product(name='TEST_Route', price=10.0)
+            db.session.add(p)
+            db.session.commit()
+        resp = client.get(f'/store/{p.id}')
+        assert resp.status_code == 200
+
+    def test_cart_requires_login(self, client):
+        resp = client.get('/store/cart')
+        assert resp.status_code == 302
+
+    def test_cart_add_requires_login(self, client):
+        resp = client.post('/store/cart/add', json={'product_id': 1, 'quantity': 1})
+        assert resp.status_code in (302, 401)
+
+    def test_checkout_requires_login(self, client):
+        resp = client.get('/store/checkout')
+        assert resp.status_code == 302
+
+    def test_orders_requires_login(self, client):
+        resp = client.get('/store/orders')
+        assert resp.status_code == 302
