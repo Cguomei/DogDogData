@@ -139,6 +139,13 @@ def place_order():
     return jsonify({'success': True, 'order_id': order.id, 'total': float(total)})
 
 
+@store_bp.route('/orders')
+@login_required
+def orders():
+    orders_list = Order.query.filter_by(user_id=current_user.id).order_by(Order.created_at.desc()).all()
+    return render_template('store_orders.html', orders=orders_list)
+
+
 @store_bp.record_once
 def on_load(state):
     with state.app.app_context():

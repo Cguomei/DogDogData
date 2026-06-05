@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}我的订单 - 狗粮商城{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/store.css') }}">
+<style>
+.order-card { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px; border: 1px solid #f0f0f0; }
+.order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #f0f0f0; }
+.order-id { font-size: 14px; color: #999; }
+.order-item-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; font-size: 14px; }
+.order-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f0f0f0; }
+.order-total { color: #f40; font-weight: bold; font-size: 18px; }
+.order-time { color: #999; font-size: 13px; }
+.orders-empty { text-align: center; padding: 60px 20px; color: #999; }
+.status-label { display: inline-block; padding: 2px 12px; border-radius: 12px; font-size: 12px; }
+.status-label.pending { background: #fff3e0; color: #f90; }
+.status-label.paid { background: #e8f5e9; color: #090; }
+.status-label.shipped { background: #e3f2fd; color: #06c; }
+.status-label.completed { background: #f5f5f5; color: #999; }
+.status-label.cancelled { background: #ffebee; color: #f00; }
+</style>
+{% endblock %}
+{% block content %}
+<h2 class="store-section-title" style="margin-top:16px;">我的订单</h2>
+{% if orders %}
+{% for order in orders %}
+<div class="order-card">
+    <div class="order-header">
+        <span class="order-id">订单号：#{{ order.id }}</span>
+        <span class="status-label {{ order.status.value }}">
+            {% if order.status.value == 'pending' %}待付款
+            {% elif order.status.value == 'paid' %}已付款
+            {% elif order.status.value == 'shipped' %}已发货
+            {% elif order.status.value == 'completed' %}已完成
+            {% elif order.status.value == 'cancelled' %}已取消
+            {% else %}{{ order.status.value }}{% endif %}
+        </span>
+    </div>
+    {% for item in order.items %}
+    <div class="order-item-row">
+        <span>{{ item.product_name }} x {{ item.quantity }}</span>
+        <span>¥{{ '%.2f'|format(item.price * item.quantity) }}</span>
+    </div>
+    {% endfor %}
+    <div class="order-footer">
+        <span class="order-time">{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+        <span class="order-total">合计：¥{{ '%.2f'|format(order.total_amount) }}</span>
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="orders-empty">
+    <h4>暂无订单</h4>
+    <p>去商城选购狗粮吧！</p>
+    <a href="{{ url_for('store.product_list') }}" class="store-btn-primary" style="display:inline-block;text-decoration:none;">去逛逛</a>
+</div>
+{% endif %}
+{% endblock %}
