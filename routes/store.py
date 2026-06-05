@@ -101,6 +101,44 @@ def cart():
     return render_template('store_cart.html', items=items, total=total)
 
 
+@store_bp.route('/checkout')
+@login_required
+def checkout():
+    items = CartItem.query.filter_by(user_id=current_user.id).all()
+    if not items:
+        flash('购物车是空的', 'warning')
+        return redirect(url_for('store.cart'))
+    total = sum(float(item.product.price) * item.quantity for item in items if item.product)
+    return render_template('store_checkout.html', items=items, total=total)
+
+
+@store_bp.route('/order/place', methods=['POST'])
+@login_required
+def place_order():
+    items = CartItem.query.filter_by(user_id=current_user.id).all()
+    if not items:
+        return jsonify({'success': False, 'error': '购物车为空'}), 400
+    total = sum(float(item.product.price) * item.quantity for item in items if item.product)
+    order = Order(user_id=current_user.id, total_amount=total, status=OrderStatus.pending)
+    db.session.add(order)
+    db.session.flush()
+    for cart in items:
+        item = OrderItem(
+            order_id=order.id,
+            product_id=cart.product_id,
+            product_name=cart.product.name,
+            price=cart.product.price,
+            quantity=cart.quantity
+        )
+        db.session.add(item)
+        product = cart.product
+        if product.stock >= cart.quantity:
+            product.stock -= cart.quantity
+        db.session.delete(cart)
+    db.session.commit()
+    return jsonify({'success': True, 'order_id': order.id, 'total': float(total)})
+
+
 @store_bp.record_once
 def on_load(state):
     with state.app.app_context():

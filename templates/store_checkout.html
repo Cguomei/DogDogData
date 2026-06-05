@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}结算 - 狗粮商城{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/store.css') }}">
+<style>
+.checkout-wrap { background: #fff; border-radius: 12px; padding: 24px; margin-top: 20px; }
+.checkout-section { margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid #f0f0f0; }
+.checkout-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.checkout-section h5 { font-weight: 600; margin-bottom: 16px; }
+.order-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; }
+.order-summary-line { display: flex; justify-content: space-between; padding: 6px 0; font-size: 15px; }
+.order-total { font-size: 24px; color: #f40; font-weight: bold; }
+.payment-option { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 8px; cursor: pointer; }
+.payment-option:hover { border-color: #f40; }
+.payment-option input { margin: 0; }
+</style>
+{% endblock %}
+{% block content %}
+<h2 class="store-section-title" style="margin-top:16px;">确认订单</h2>
+<div class="checkout-wrap">
+    <div class="checkout-section">
+        <h5>商品清单</h5>
+        {% for cart in items %}
+        <div class="order-item">
+            <span>{{ cart.product.name }} x {{ cart.quantity }}</span>
+            <span style="color:#f40;font-weight:bold;">¥{{ '%.2f'|format(cart.product.price * cart.quantity) }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="checkout-section">
+        <h5>支付方式</h5>
+        <label class="payment-option">
+            <input type="radio" name="payment" value="wechat" checked> 微信支付
+        </label>
+        <label class="payment-option">
+            <input type="radio" name="payment" value="alipay"> 支付宝
+        </label>
+    </div>
+    <div class="checkout-section">
+        <div class="order-summary-line"><span>商品金额</span><span>¥{{ '%.2f'|format(total) }}</span></div>
+        <div class="order-summary-line"><span>运费</span><span>免运费</span></div>
+        <div class="order-summary-line" style="border-top:1px solid #eee;padding-top:12px;margin-top:8px;">
+            <span style="font-size:16px;font-weight:bold;">合计</span>
+            <span class="order-total">¥{{ '%.2f'|format(total) }}</span>
+        </div>
+    </div>
+    <button class="store-btn-primary" style="width:100%;padding:14px;font-size:18px;" onclick="submitOrder()">提交订单</button>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+function submitOrder() {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = '提交中...';
+    fetch('{{ url_for("store.place_order") }}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content},
+        body: JSON.stringify({payment: document.querySelector('input[name="payment"]:checked').value})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('\u4e0b\u5355\u6210\u529f\uff01\u8ba2\u5355\u53f7\uff1a#' + data.order_id);
+            window.location.href = '{{ url_for("store.orders") }}';
+        } else {
+            alert(data.error || '\u4e0b\u5355\u5931\u8d25');
+            btn.disabled = false;
+            btn.textContent = '\u63d0\u4ea4\u8ba2\u5355';
+        }
+    })
+    .catch(() => { alert('\u7f51\u7edc\u9519\u8bef'); btn.disabled = false; btn.textContent = '\u63d0\u4ea4\u8ba2\u5355'; });
+}
+</script>
+{% endblock %}
