@@ -28,6 +28,11 @@ def seed_products():
             db.session.add(p)
         db.session.commit()
 
+@store_bp.route('/')
+def product_list():
+    products = Product.query.filter_by(is_active=True).all()
+    return render_template('store_list.html', products=products)
+
 @store_bp.record_once
 def on_load(state):
     with state.app.app_context():
