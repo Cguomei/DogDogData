@@ -33,6 +33,11 @@ def product_list():
     products = Product.query.filter_by(is_active=True).all()
     return render_template('store_list.html', products=products)
 
+@store_bp.route('/<int:product_id>')
+def product_detail(product_id):
+    product = Product.query.get_or_404(product_id)
+    return render_template('store_detail.html', product=product)
+
 @store_bp.record_once
 def on_load(state):
     with state.app.app_context():
