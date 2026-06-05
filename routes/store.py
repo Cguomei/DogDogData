@@ -38,6 +38,69 @@ def product_detail(product_id):
     product = Product.query.get_or_404(product_id)
     return render_template('store_detail.html', product=product)
 
+
+@store_bp.route('/cart/add', methods=['POST'])
+@login_required
+def cart_add():
+    data = request.get_json()
+    product_id = data.get('product_id')
+    quantity = data.get('quantity', 1)
+    product = Product.query.get(product_id)
+    if not product or not product.is_active:
+        return jsonify({'success': False, 'error': '商品不存在'}), 404
+    cart = CartItem.query.filter_by(user_id=current_user.id, product_id=product_id).first()
+    if cart:
+        cart.quantity += quantity
+    else:
+        cart = CartItem(user_id=current_user.id, product_id=product_id, quantity=quantity)
+        db.session.add(cart)
+    db.session.commit()
+    count = CartItem.query.filter_by(user_id=current_user.id).count()
+    return jsonify({'success': True, 'cart_count': count})
+
+
+@store_bp.route('/cart/update', methods=['POST'])
+@login_required
+def cart_update():
+    data = request.get_json()
+    cart = CartItem.query.filter_by(id=data.get('cart_id'), user_id=current_user.id).first()
+    if not cart:
+        return jsonify({'success': False, 'error': '购物车项不存在'}), 404
+    qty = data.get('quantity', 1)
+    if qty <= 0:
+        db.session.delete(cart)
+    else:
+        cart.quantity = qty
+    db.session.commit()
+    return jsonify({'success': True})
+
+
+@store_bp.route('/cart/remove', methods=['POST'])
+@login_required
+def cart_remove():
+    data = request.get_json()
+    cart = CartItem.query.filter_by(id=data.get('cart_id'), user_id=current_user.id).first()
+    if cart:
+        db.session.delete(cart)
+        db.session.commit()
+    return jsonify({'success': True})
+
+
+@store_bp.route('/cart/count')
+@login_required
+def cart_count():
+    count = CartItem.query.filter_by(user_id=current_user.id).count()
+    return jsonify({'count': count})
+
+
+@store_bp.route('/cart')
+@login_required
+def cart():
+    items = CartItem.query.filter_by(user_id=current_user.id).all()
+    total = sum(float(item.product.price) * item.quantity for item in items if item.product)
+    return render_template('store_cart.html', items=items, total=total)
+
+
 @store_bp.record_once
 def on_load(state):
     with state.app.app_context():

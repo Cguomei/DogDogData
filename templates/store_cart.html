@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}购物车 - 狗粮商城{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/store.css') }}">
+<style>
+.cart-wrap { background: #fff; border-radius: 12px; padding: 20px; margin-top: 20px; }
+.cart-item { display: flex; align-items: center; padding: 16px 0; border-bottom: 1px solid #f0f0f0; gap: 16px; }
+.cart-item:last-child { border-bottom: none; }
+.cart-item img { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; background: #f8f8f8; }
+.cart-item-info { flex: 1; }
+.cart-item-name { font-weight: 600; margin-bottom: 4px; }
+.cart-item-price { color: #f40; font-weight: bold; }
+.cart-summary { margin-top: 20px; padding-top: 20px; border-top: 2px solid #f0f0f0; text-align: right; }
+.cart-total { font-size: 24px; color: #f40; font-weight: bold; }
+.cart-empty { text-align: center; padding: 60px 20px; color: #999; }
+</style>
+{% endblock %}
+{% block content %}
+<h2 class="store-section-title" style="margin-top:16px;">购物车</h2>
+{% if items %}
+<div class="cart-wrap" id="cart-wrap">
+    {% for item in items %}
+    <div class="cart-item" id="cart-item-{{ item.id }}">
+        <img src="{{ url_for('static', filename='img/products/' + item.product.image) }}" alt="{{ item.product.name }}">
+        <div class="cart-item-info">
+            <div class="cart-item-name">{{ item.product.name }}</div>
+            <div class="cart-item-price">¥{{ '%.2f'|format(item.product.price) }}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+            <button class="store-qty-btn" onclick="updateQty({{ item.id }}, {{ item.quantity - 1 if item.quantity > 1 else 0 }})">-</button>
+            <span id="qty-{{ item.id }}">{{ item.quantity }}</span>
+            <button class="store-qty-btn" onclick="updateQty({{ item.id }}, {{ item.quantity + 1 }})">+</button>
+        </div>
+        <div style="color:#f40;font-weight:bold;font-size:18px;min-width:100px;text-align:right;">
+            ¥{{ '%.2f'|format(item.product.price * item.quantity) }}
+        </div>
+        <button class="btn btn-sm btn-outline-danger" onclick="removeItem({{ item.id }})">删除</button>
+    </div>
+    {% endfor %}
+    <div class="cart-summary">
+        <p style="margin-bottom:8px;">合计：<span class="cart-total" id="cart-total">¥{{ '%.2f'|format(total) }}</span></p>
+        <a href="{{ url_for('store.checkout') }}" class="store-btn-primary" style="display:inline-block;text-decoration:none;font-size:18px;padding:12px 48px;">去结算</a>
+    </div>
+</div>
+{% else %}
+<div class="cart-empty">
+    <h4>购物车是空的</h4>
+    <p>去商城挑选喜欢的狗粮吧！</p>
+    <a href="{{ url_for('store.product_list') }}" class="store-btn-primary" style="display:inline-block;text-decoration:none;">去逛逛</a>
+</div>
+{% endif %}
+{% endblock %}
+{% block extra_scripts %}
+<script>
+function updateQty(cartId, qty) {
+    if (qty < 0) return;
+    fetch('{{ url_for("store.cart_update") }}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content},
+        body: JSON.stringify({cart_id: cartId, quantity: qty})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) { location.reload(); }
+    });
+}
+function removeItem(cartId) {
+    if (!confirm('确定删除此商品？')) return;
+    fetch('{{ url_for("store.cart_remove") }}', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content},
+        body: JSON.stringify({cart_id: cartId})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) { location.reload(); }
+    });
+}
+</script>
+{% endblock %}
