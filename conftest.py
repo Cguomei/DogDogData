@@ -43,6 +43,15 @@ def db(app):
     # 测试数据通过 session fixture 的事务回滚自动清理
 
 
+@pytest.fixture(scope="function", autouse=True)
+def _app_context(app):
+    """为每个测试函数自动推送应用上下文。"""
+    ctx = app.app_context()
+    ctx.push()
+    yield
+    ctx.pop()
+
+
 @pytest.fixture(scope="function")
 def session(db, request):
     """为每个测试函数创建一个独立的事务，测试结束后回滚，保证数据隔离。"""
