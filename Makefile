@@ -29,13 +29,19 @@ run-demo: ## Start Flask in demo mode (SQLite)
 	FLASK_ENV=demo python app.py
 
 test: ## Run all Python tests
+	python run.py --type all
+
+test-fast: ## Quick dev tests (unit + api, excludes slow/e2e/perf)
 	pytest
 
-test-cov: ## Run tests with HTML coverage report
-	pytest --cov=. --cov-report=html:Test/reports/coverage_html --cov-report=term-missing
+test-cov: ## Run tests with HTML coverage report (min 70%)
+	python run.py --type all --cov --cov-fail 70 --html
 
 test-p0: ## Run P0 smoke tests only
-	pytest -m p0
+	python run.py --type p0
+
+test-store: ## Run store module tests only
+	python run.py --type store
 
 lint: ## Lint - critical errors only
 	flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics

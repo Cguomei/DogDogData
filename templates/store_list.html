@@ -30,7 +30,7 @@
     {% for p in products %}
     <div class="store-card">
         <a href="{{ url_for('store.product_detail', product_id=p.id) }}">
-            <img src="{{ url_for('static', filename='img/products/' + p.image) }}" class="card-img-top" alt="{{ p.name }}">
+            <img src="{{ url_for('static', filename='img/products/' + p.image) }}" class="card-img-top" alt="{{ p.name }}" loading="lazy" width="600" height="200">
         </a>
         <div class="card-body">
             <a href="{{ url_for('store.product_detail', product_id=p.id) }}" style="text-decoration:none;color:inherit;">

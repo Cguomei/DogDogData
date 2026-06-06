@@ -69,6 +69,15 @@ scripts/demo.db
 # JMeter
 JMeter/
 
+# Coverage data
+.coverage
+
+# Scratch files
+_inspect_store.py
+test_cart.py
+test_out.html
+task_plan.md
+
 # OS
 .DS_Store
 Thumbs.db
