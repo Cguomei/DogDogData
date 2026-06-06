@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}商品管理 - 狗粮商城{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/store.css') }}">
+{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center" style="margin-top:16px;">
+    <h2 class="store-section-title" style="border:none;margin:0;padding:0;">商品管理</h2>
+    <a href="{{ url_for('store_admin.product_add') }}" class="store-btn-primary" style="padding:10px 24px;text-decoration:none;">+ 添加商品</a>
+</div>
+<form method="get" class="row g-2 align-items-end" style="margin-top:12px;">
+    <div class="col-auto">
+        <label class="form-label small text-muted">价格</label>
+        <div class="d-flex gap-1 align-items-center">
+            <input type="number" name="price_min" class="form-control form-control-sm" style="width:90px;" placeholder="最低" step="0.01" value="{{ price_min or '' }}">
+            <span style="color:#999;">—</span>
+            <input type="number" name="price_max" class="form-control form-control-sm" style="width:90px;" placeholder="最高" step="0.01" value="{{ price_max or '' }}">
+        </div>
+    </div>
+    <div class="col-auto">
+        <label class="form-label small text-muted">库存</label>
+        <div class="d-flex gap-1 align-items-center">
+            <input type="number" name="stock_min" class="form-control form-control-sm" style="width:80px;" placeholder="最少" value="{{ stock_min or '' }}">
+            <span style="color:#999;">—</span>
+            <input type="number" name="stock_max" class="form-control form-control-sm" style="width:80px;" placeholder="最多" value="{{ stock_max or '' }}">
+        </div>
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-sm btn-outline-primary">筛选</button>
+        <a href="{{ url_for('store_admin.product_list') }}" class="btn btn-sm btn-outline-secondary">清空</a>
+    </div>
+</form>
+{% if products %}
+<div class="table-responsive" style="background:#fff;border-radius:12px;padding:16px;margin-top:16px;">
+    <table class="table table-hover align-middle" style="margin:0;">
+        <thead class="table-light">
+            <tr>
+                <th style="width:60px;">图片</th>
+                <th>名称</th>
+                <th style="width:100px;">价格</th>
+                <th style="width:80px;">库存</th>
+                <th style="width:80px;">状态</th>
+                <th style="width:160px;">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in products %}
+            <tr>
+                <td>
+                    {% if p.image %}
+                    <img src="{{ url_for('static', filename='img/products/' + p.image) }}" alt="{{ p.name }}" style="width:50px;height:50px;object-fit:cover;border-radius:6px;background:#f8f8f8;">
+                    {% else %}
+                    <span style="color:#ccc;">无图</span>
+                    {% endif %}
+                </td>
+                <td>{{ p.name }}</td>
+                <td style="color:#f40;font-weight:bold;">¥{{ '%.2f'|format(p.price) }}</td>
+                <td>{{ p.stock }}</td>
+                <td>{% if p.is_active %}<span class="badge bg-success">上架</span>{% else %}<span class="badge bg-secondary">下架</span>{% endif %}</td>
+                <td>
+                    <a href="{{ url_for('store_admin.product_edit', pid=p.id) }}" class="btn btn-sm btn-outline-primary">编辑</a>
+                    <form method="post" action="{{ url_for('store_admin.product_delete', pid=p.id) }}" style="display:inline;" onsubmit="return confirm('确定要删除「{{ p.name }}」吗？');">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">删除</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="text-center text-muted" style="margin-top:60px;">
+    <p style="font-size:18px;">暂无商品</p>
+    <a href="{{ url_for('store_admin.product_add') }}" class="store-btn-primary" style="padding:10px 24px;text-decoration:none;">添加第一个商品</a>
+</div>
+{% endif %}
+{% endblock %}

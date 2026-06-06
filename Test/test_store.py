@@ -6,7 +6,7 @@ from models_store import Product, CartItem, Order, OrderItem, OrderStatus
 
 class TestProductModel:
     def test_create_product(self, db, session):
-        p = Product(name='TEST_狗粮', price=29.9, image='product_01.png', stock=100)
+        p = Product(name='TEST_狗粮', price=29.9, image='product_01.jpg', stock=100)
         session.add(p)
         session.commit()
         assert p.id is not None

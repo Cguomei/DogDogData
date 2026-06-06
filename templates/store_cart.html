@@ -59,20 +59,22 @@ function updateQty(cartId, qty) {
         headers: {'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content},
         body: JSON.stringify({cart_id: cartId, quantity: qty})
     })
-    .then(r => r.json())
-    .then(data => {
+    .then(r => r.json().then(data => ({ok: r.ok, data: data})))
+    .then(({ok, data}) => {
+        if (data.redirect) { window.location.href = data.redirect; return; }
         if (data.success) { location.reload(); }
     });
 }
 function removeItem(cartId) {
-    if (!confirm('确定删除此商品？')) return;
+    if (!confirm('\u786e\u5b9a\u5220\u9664\u6b64\u5546\u54c1\uff1f')) return;
     fetch('{{ url_for("store.cart_remove") }}', {
         method: 'POST',
         headers: {'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content},
         body: JSON.stringify({cart_id: cartId})
     })
-    .then(r => r.json())
-    .then(data => {
+    .then(r => r.json().then(data => ({ok: r.ok, data: data})))
+    .then(({ok, data}) => {
+        if (data.redirect) { window.location.href = data.redirect; return; }
         if (data.success) { location.reload(); }
     });
 }

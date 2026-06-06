@@ -507,24 +507,10 @@
 
 /* ==================== 导航栏召唤按钮 ==================== */
 #summon-pet-btn {
-    animation: pulse-glow 2s ease-in-out infinite;
+    box-shadow: none;
 }
-
-@keyframes pulse-glow {
-    0%, 100% {
-        box-shadow: 0 0 10px rgba(255, 182, 193, 0.6);
-        transform: scale(1);
-    }
-    50% {
-        box-shadow: 0 0 25px rgba(255, 105, 180, 0.9), 0 0 35px rgba(255, 182, 193, 0.5);
-        transform: scale(1.05);
-    }
-}
-
 #summon-pet-btn:hover {
-    animation: none;
-    box-shadow: 0 0 30px rgba(255, 105, 180, 1), 0 0 40px rgba(255, 182, 193, 0.6);
-    transform: scale(1.15);
+    box-shadow: none;
 }
 
 #summon-pet-btn.active {

@@ -34,6 +34,7 @@ from routes.pet_api import pet_api_bp
 from routes.user_preference import preference_bp
 from routes.alert_system import alert_bp
 from routes.store import store_bp
+from routes.store_admin import store_admin_bp
 
 # 加载环境变量
 load_dotenv()
@@ -188,6 +189,7 @@ def create_app(config_name=None):
     app.register_blueprint(preference_bp)
     app.register_blueprint(alert_bp)
     app.register_blueprint(store_bp)
+    app.register_blueprint(store_admin_bp)
 
     # 为API路由添加CSRF豁免
     csrf.exempt(api_bp)
@@ -196,6 +198,8 @@ def create_app(config_name=None):
     csrf.exempt(ai_bp)
     csrf.exempt(log_viewer_bp)
     csrf.exempt(pet_api_bp)
+    csrf.exempt(store_bp)
+    csrf.exempt(store_admin_bp)
 
     # 启动定时任务
     start_scheduler(app)

@@ -27,12 +27,12 @@
     <!-- 移动端响应式优化样式 -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive-mobile.css') }}">
 
-<!--    <style>-->
-<!--        body { padding-top: 60px; background-color: #f8f9fa; }-->
-<!--        .navbar-brand { font-weight: bold; }-->
-<!--        .chart-container { margin: 20px auto; background: white; border-radius: 8px; padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }-->
-<!--        footer { margin-top: 40px; text-align: center; color: #6c757d; }-->
-<!--    </style>-->
+    <style>
+        body { padding-top: 60px; background-color: #f8f9fa; }
+        .navbar-brand { font-weight: bold; }
+        .chart-container { margin: 20px auto; background: white; border-radius: 8px; padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        footer { margin-top: 40px; text-align: center; color: #6c757d; }
+    </style>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -52,7 +52,16 @@
                     <!-- AI智能助手 -->
                     <li class="nav-item"><a class="nav-link" href="/ai-chat">🤖 AI助手</a></li>
                     <!-- 狗粮商城 -->
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('store.product_list') }}">🏪 狗粮商城</a></li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('store.product_list') }}">🏪 狗粮商城
+                            <span id="cart-badge-nav" class="badge bg-danger rounded-pill" style="display:none;">0</span>
+                        </a>
+                    </li>
+                    {% if current_user.is_authenticated and current_user.is_admin() %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('store_admin.product_list') }}">📦 商品管理</a>
+                    </li>
+                    {% endif %}
 
                 {% if current_user.is_authenticated %}
                     <li class="nav-item dropdown">
@@ -63,10 +72,8 @@
                             <li><a class="dropdown-item" href="{{ url_for('store.cart') }}">🛒 购物车 <span id="cart-badge" class="badge bg-danger rounded-pill" style="display:none;">0</span></a></li>
                             <li><a class="dropdown-item" href="{{ url_for('store.orders') }}">📄 我的订单</a></li>
                             <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('store_admin.product_list') }}">📦 商品管理</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">登出</a></li>
-                            {% if current_user.is_admin() %}
-                            <li><a class="dropdown-item" href="{{ url_for('main.admin_breeds') }}">品种管理</a></li>
-                            {% endif %}
                         </ul>
                     </li>
                 {% else %}
@@ -107,8 +114,41 @@
         <p>© 2025 狗狗数据分析 · 由 Flask + PyECharts 驱动</p>
     </footer>
 
+    <!-- 购物车 Toast 提示 -->
+    <div id="cart-toast-container" style="position:fixed;top:80px;right:20px;z-index:9999;"></div>
+    {% block cart_fab %}{% endblock %}
+
     <!-- Bootstrap JS（用于下拉菜单等） -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- 商城购物车 JS（放在 CDN 脚本前面，避免被 Live2D 等阻塞） -->
+    <script>
+    function showCartToast(msg) {
+        var el = document.createElement('div');
+        el.className = 'toast show align-items-center text-bg-success border-0';
+        el.role = 'alert';
+        el.innerHTML = '<div class="d-flex"><div class="toast-body">' + msg + '</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>';
+        document.getElementById('cart-toast-container').appendChild(el);
+        setTimeout(function() { el.remove(); }, 2500);
+    }
+    function updateCartBadges(count) {
+        var badge1 = document.getElementById('cart-badge');
+        var badge2 = document.getElementById('cart-badge-nav');
+        var badge3 = document.getElementById('cart-fab-badge');
+        var show = count > 0;
+        if (badge1) { badge1.textContent = count; badge1.style.display = show ? 'inline-block' : 'none'; }
+        if (badge2) { badge2.textContent = count; badge2.style.display = show ? 'inline-block' : 'none'; }
+        if (badge3) { badge3.textContent = count; badge3.style.display = show ? 'inline-block' : 'none'; }
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        fetch('{{ url_for("store.cart_count") }}')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                updateCartBadges(data.count);
+            })
+            .catch(function() {});
+    });
+    </script>
     
     <!-- 网页小宠物脚本 -->
     <!-- 注释掉旧的宠物系统，改用 Live2D -->
@@ -118,13 +158,13 @@
     -->
     
     <!-- Live2D 看板娘（狗狗模型） -->
-    <script src="https://fastly.jsdelivr.net/npm/live2d-widget@3.1.4/lib/L2Dwidget.min.js"></script>
+    <script async src="https://fastly.jsdelivr.net/npm/live2d-widget@3.1.4/lib/L2Dwidget.min.js"></script>
     
     <!-- Live2D 智能交互增强 -->
-    <script src="{{ url_for('static', filename='js/pet-smart-interaction.js') }}"></script>
+    <script async src="{{ url_for('static', filename='js/pet-smart-interaction.js') }}"></script>
     
     <!-- Alpine.js 通用组件库 -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script async src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="{{ url_for('static', filename='js/alpine-components.js') }}"></script>
     <script src="{{ url_for('static', filename='js/skeleton-loader.js') }}"></script>
     <script src="{{ url_for('static', filename='js/responsive-utils.js') }}"></script>
@@ -302,19 +342,6 @@
             div.textContent = String(text);
             return div.innerHTML;
         }
-    </script>
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        {% if current_user.is_authenticated %}
-        fetch('{{ url_for("store.cart_count") }}')
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                var badge = document.getElementById('cart-badge');
-                if (badge && data.count > 0) { badge.textContent = data.count; badge.style.display = 'inline-block'; }
-            })
-            .catch(function() {});
-        {% endif %}
-    });
     </script>
     {% block extra_scripts %}{% endblock %}
 </body>

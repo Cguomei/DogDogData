@@ -13,3 +13,6 @@
 .store-qty-btn:hover { background: #f5f5f5; }
 .store-qty-input { width: 60px; text-align: center; border: 1px solid #ddd; border-radius: 4px; height: 32px; }
 .store-section-title { font-size: 22px; font-weight: bold; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #f40; }
+.cart-fab { position: fixed; top: 70px; right: 20px; z-index: 99999; background: #f40; color: #fff; padding: 8px 18px; border-radius: 20px; display: flex; align-items: center; gap: 6px; font-size: 14px; text-decoration: none; box-shadow: 0 2px 12px rgba(244,64,0,0.3); transition: transform .2s, box-shadow .2s; }
+.cart-fab:hover { transform: scale(1.05); box-shadow: 0 4px 20px rgba(244,64,0,0.4); color: #fff; }
+.cart-fab .badge { font-size: 12px; padding: 2px 7px; }
