@@ -2,6 +2,7 @@
 狗狗数据分析系统 - 主应用入口
 重构版本：模块化、规范化、易维护
 """
+__version__ = "5.2.0"
 
 import os
 from flask import Flask, request

@@ -4,6 +4,50 @@
 
 ---
 
+## [v5.2.0] - 2026-06-06
+
+### ✨ 狗粮商城系统
+
+#### 商品模块
+- **数据模型**：Product、CartItem、Order、OrderItem（含 Enum OrderStatus）
+- **种子数据**：35 款狗粮（12 款原始 + 23 款高端系列）
+- **商品列表**：4 列响应式网格，`loading="lazy"` 图片懒加载
+- **商品详情**：大图展示 + 数量选择 + 加入购物车 + 立即购买
+- **图片自动压缩**：~4MB PNG → 40-70KB JPG（600x600）
+
+#### 购物车模块
+- AJAX 增量增删改，购物车页面实时更新
+- 导航栏角标显示商品总数
+- 浮动 FAB 结算按钮（替代被跟踪防护屏蔽的下拉菜单）
+
+#### 订单模块
+- 结算页 → 下单（库存扣减）→ 订单列表（按状态标签展示）
+
+#### 商品管理系统
+- 管理员专用 CRUD（Admin 权限）
+- 支持商品新增/编辑/下架/删除
+- 图片上传 + 自动缩放
+
+#### 技术改进
+- 商城蓝图（store）和后台蓝图（store_admin）CSRF 全局豁免
+- AJAX 认证修复：返回 JSON 401 + `redirect` 字段
+- 购物车数量统计改用 `func.sum(quantity)` 确保准确性
+
+#### 测试体系专业化
+- **pytest.ini 清理**：移除 `--browser chromium`，默认 `-m "not slow and not e2e and not performance"`
+- **统一运行器 `run.py`**：支持 `--type store|api|e2e|p0|all`、`--cov`、`--html`
+- **`.coveragerc`**：标准 INI 格式，`fail_under = 70`
+- **Makefile 更新**：`test`/`test-cov`/`test-p0`/`test-store` 改用 `run.py`
+- **文件清理**：删除临时文件，`qa_test.py` 移至 `Test/`，`.coverage` 加入 `.gitignore`
+
+#### 测试覆盖
+- ✅ 10 个 pytest 单元测试
+- ✅ 37 项 QA 集成测试
+- ✅ 12 项 Playwright E2E 测试
+- ✅ 总计 59 项测试全部通过
+
+---
+
 ## [v5.0.0] - 2026-05-17
 
 ### 🔒 安全加固与测试修复
